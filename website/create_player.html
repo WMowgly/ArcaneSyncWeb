@@ -23,6 +23,10 @@
       <input type="text" id="player_race" placeholder="Race de votre personnage">
       <br>
 
+      <p>Entrez la vie de votre personnage</p>
+      <input type="text" id="player_hp" placeholder="Vie de votre personnage">
+      <br>
+
       <p>Entrez le mana de votre personnage</p>
       <input type="text" id="player_mana" placeholder="Mana de votre personnage">
       <br>
@@ -62,6 +66,7 @@
       classe: document.getElementById('player_class').value,
       race: document.getElementById('player_race').value,
       mana: parseInt(document.getElementById('player_mana').value),
+      hp: parseInt(document.getElementById('player_hp').value),
       stats: {
         force: parseInt(document.getElementById('stat_force').value),
         dexterite: parseInt(document.getElementById('stat_dexterite').value),

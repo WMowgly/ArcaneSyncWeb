@@ -8,8 +8,54 @@
 </head>
 <body>
   <h1>Interface du Maitre du Jeu</h1>
-    <a href="index.html">
-        <button id="retour_accueil">Accueil</button>
-    </a>
+  <a href="index.html">
+    <button id="retour_accueil">Accueil</button>
+  </a>
+
+  <!-- Zone pour afficher les joueurs -->
+  <div id="joueurs-list">
+    <h2>Liste des joueurs</h2>
+  </div>
+
+  <script>
+    // Récupérer les joueurs depuis l'API
+    fetch('http://localhost:3000/api/joueurs')
+      .then(response => response.json())
+      .then(joueurs => {
+        const listContainer = document.getElementById('joueurs-list');
+        
+        // Si aucun joueur, afficher un message
+        if (joueurs.length === 0) {
+          listContainer.innerHTML = '<p>Aucun joueur enregistré.</p>';
+        } else {
+          joueurs.forEach(joueur => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.setAttribute('data-id', joueur.nom);
+
+            // Ajout des informations du joueur dans la carte (Nom, HP, Mana)
+            card.innerHTML = `
+              <h3>${joueur.nom}</h3>
+              <p>HP: ${joueur.hp}</p>
+              <p>Mana: ${joueur.mana}</p>
+            `;
+
+            // Gérer la sélection du joueur
+            card.addEventListener('click', () => {
+              document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+              card.classList.add('selected');
+              alert(`Vous avez sélectionné le joueur: ${joueur.nom}`);
+            });
+
+            // Ajouter la carte à la liste
+            listContainer.appendChild(card);
+          });
+        }
+      })
+      .catch(err => {
+        console.error("Erreur lors de la récupération des joueurs:", err);
+        alert("Erreur lors de la récupération des joueurs.");
+      });
+  </script>
 </body>
 </html>
