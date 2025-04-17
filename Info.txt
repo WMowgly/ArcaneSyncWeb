@@ -1,0 +1,12 @@
+Page MJ:
+    Liste des joueurs (avec info simplifié, HP - Mana), joueurs cliquable pour avoir toutes les infos
+    Lien avec back
+    
+    Idée mob MJ (même fonctionnement que joueur mais en plus simple, sauf boss case à cocher boss pour mettre info)
+
+Page Création de joueur:
+    Améliorer visuel
+    Lien avec back
+
+Sélection du joueur
+    Lien avec back
