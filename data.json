@@ -30,5 +30,38 @@
       "chance": null,
       "intelligence": null
     }
+  },
+  {
+    "nom": "jhjh",
+    "classe": "",
+    "race": "",
+    "mana": 10,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    }
+  },
+  {
+    "nom": "lmmlm",
+    "classe": "",
+    "race": "",
+    "mana": 10,
+    "hp": 10,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    }
   }
 ]
