@@ -55,3 +55,37 @@
     </div> 
 </body>
 </html>
+<script>
+  document.getElementById('save_player_creation').addEventListener('click', () => {
+    const data = {
+      nom: document.getElementById('player_name').value,
+      classe: document.getElementById('player_class').value,
+      race: document.getElementById('player_race').value,
+      mana: parseInt(document.getElementById('player_mana').value),
+      stats: {
+        force: parseInt(document.getElementById('stat_force').value),
+        dexterite: parseInt(document.getElementById('stat_dexterite').value),
+        magie: parseInt(document.getElementById('stat_magie').value),
+        constitution: parseInt(document.getElementById('stat_constitution').value),
+        charisme: parseInt(document.getElementById('stat_charisme').value),
+        perception: parseInt(document.getElementById('stat_perception').value),
+        chance: parseInt(document.getElementById('stat_chance').value),
+        intelligence: parseInt(document.getElementById('stat_intelligence').value)
+      }
+    };
+  
+    fetch('http://localhost:3000/api/joueurs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(json => {
+      alert('Joueur enregistré avec succès !');
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Erreur lors de l'enregistrement du joueur.");
+    });
+  });
+  </script>
