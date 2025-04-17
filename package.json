@@ -17,8 +17,9 @@
     "url": "https://github.com/WMowgly/ArcaneSyncWeb/issues"
   },
   "homepage": "https://github.com/WMowgly/ArcaneSyncWeb#readme",
-  "description": "",
   "dependencies": {
     "express": "^5.1.0"
-  }
+  },
+  "devDependencies": {},
+  "description": ""
 }
