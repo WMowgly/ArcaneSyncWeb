@@ -1,0 +1,34 @@
+[
+  {
+    "nom": "gf",
+    "classe": "gf",
+    "race": "gf",
+    "mana": null,
+    "stats": {
+      "force": 10,
+      "dexterite": 10,
+      "magie": 10,
+      "constitution": 10,
+      "charisme": 10,
+      "perception": 10,
+      "chance": 10,
+      "intelligence": 10
+    }
+  },
+  {
+    "nom": "test",
+    "classe": "test",
+    "race": "test",
+    "mana": null,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    }
+  }
+]
