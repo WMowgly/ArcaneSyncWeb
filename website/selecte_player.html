@@ -36,10 +36,34 @@
             // Ajout des informations du joueur dans la carte
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
-              <p>Classe: ${joueur.classe}</p>
               <p>Race: ${joueur.race}</p>
+              <p>Classe: ${joueur.classe}</p>
+              <p>HP: ${joueur.hp}</p>
               <p>Mana: ${joueur.mana}</p>
+              <button class="delete-btn">Supprimer</button>
             `;
+
+            // Suppression de personnage
+            const deleteBtn = card.querySelector('.delete-btn'); 
+
+            deleteBtn.addEventListener('click', (e) => {
+              e.stopPropagation(); // Évite le déclenchement de la sélection
+
+              if (confirm(`Supprimer le joueur ${joueur.nom} ?`)) {
+                fetch(`http://localhost:3000/api/joueurs/delete}`, {
+                  method: 'DELETE'
+                })
+                .then(res => res.text())
+                .then(message => {
+                  console.log("Réponse serveur :", message);
+                  //card.remove();
+                })
+                .catch(err => {
+                  console.error("Erreur suppression:", err);
+                  alert("Erreur lors de la suppression du joueur.");
+                });
+              }
+            });
 
             // Gérer la sélection du joueur
             card.addEventListener('click', () => {

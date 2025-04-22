@@ -28,4 +28,17 @@ function getJoueurs() {
   return joueurs;
 }
 
-module.exports = { ajouterJoueur, getJoueurs };
+// Supprimer un joueur
+function supprimerJoueur(joueur) {
+  const index = joueurs.findIndex(j => j.joueur === joueur);
+  console.log("supprimerJoueur debug :", joueurs); // Debug
+  if (index !== -1) {
+    joueurs.splice(index, 1);
+    fs.writeFileSync(cheminFichier, JSON.stringify(joueurs, null, 2));
+    console.log("Joueurs restants :", joueurs); // Debug
+    return true;
+  }
+  return false;
+}
+
+module.exports = { ajouterJoueur, getJoueurs, supprimerJoueur };

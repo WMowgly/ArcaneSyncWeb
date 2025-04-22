@@ -3,9 +3,7 @@ const app = express();
 const port = 3000;
 const os = require('os');
 const path = require('path');
-const { ajouterJoueur, getJoueurs } = require('./joueur'); // <-- Import
-
-const interfaceName = 'Ethernet 5';
+const { ajouterJoueur, getJoueurs, supprimerJoueur } = require('./joueur'); // <-- Import
 
 // Middleware pour lire du JSON
 app.use(express.json());
@@ -30,21 +28,17 @@ app.get('/api/joueurs', (req, res) => {
   res.json(getJoueurs());
 });
 
-// Adresse IP
-function getIPAddress(interfaceName) {
-  const interfaces = os.networkInterfaces();
-  if (interfaces[interfaceName]) {
-    for (const iface of interfaces[interfaceName]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
-    }
+app.delete('/api/joueurs/delete', (req, res) => {
+  const nom = req.params.nom;
+  console.log("Suppression du joueur :", nom);
+  const success = supprimerJoueur(nom);
+  if (success) {
+    res.status(200).send(`Joueur ${nom} supprimé`);
+  } else {
+    res.status(404).send(`Joueur ${nom} non trouvé`);
   }
-  return null;
-}
+});
 
-const ip = getIPAddress(interfaceName);
-
-app.listen(port, ip, () => {
-  console.log(`Serveur en ligne : http://${ip}:${port}`);
+app.listen(port, () => {
+  console.log(`Serveur en ligne : http://localhost:${port}`);
 });
