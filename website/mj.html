@@ -7,16 +7,17 @@
   <link rel="icon" type="image/png" href="img/icon.png"/>
 </head>
 <body>
+  <div id="navbar-placeholder"></div>
   <h1>Interface du Maitre du Jeu</h1>
   <a href="index.html">
     <button id="retour_accueil">Accueil</button>
   </a>
 
   <!-- Zone pour afficher les joueurs -->
-  <div id="joueurs-list">
-    <h2>Liste des joueurs</h2>
-  </div>
+  <h2>Liste des joueurs</h2>
+  <div id="joueurs-list"></div>
 
+  <script src="navbar.js"></script>
   <script>
     // Récupérer les joueurs depuis l'API
     fetch('http://localhost:3000/api/joueurs')
