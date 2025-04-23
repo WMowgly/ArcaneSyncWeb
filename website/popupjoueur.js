@@ -43,5 +43,5 @@ export function openFicheJoueur(joueur) {
   if (joueur.levelup) params.set("Choix de level up et Effets permanents", joueur.levelup);
 
   // Redirection
-  window.open(`fiche_perso.html?${params.toString()}`, '_blank');
+  window.open(`interface_jeu.html?${params.toString()}`, '_blank');
 }

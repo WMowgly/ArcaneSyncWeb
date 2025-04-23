@@ -102,16 +102,19 @@
   <div class="section">
     <h2>Interface de Jeu</h2>
     <div class="grid">
+      <div class="field"><label>Nom</label><input type="text"></div>
+      <div class="field"><label>Classe Spécialisation</label><input type="text"></div>
+      <div class="field"><label>Race</label><input type="text"></div>
       <div class="field">
-        <label>Jets de survie</label>
-        <input type="text">
+        <label>Survie</label>
+        <input type="number">
       </div>
 
       <div class="field">
         <label>Vie</label>
         <div class="dual-input">
           <input type="number" placeholder="Min">
-          <input type="number" placeholder="Max">
+          <input type="number">
         </div>
       </div>
 
@@ -124,7 +127,7 @@
         <label>Valeur protection</label>
         <div class="dual-input">
           <input type="number" placeholder="Min">
-          <input type="number" placeholder="Max">
+          <input type="number">
         </div>
       </div>
 
@@ -137,7 +140,7 @@
         <label>Mana</label>
         <div class="dual-input">
           <input type="number" placeholder="Min">
-          <input type="number" placeholder="Max">
+          <input type="number">
         </div>
       </div>
 
@@ -150,6 +153,49 @@
       </div>
     </div>
   </div>
-
+  <div style="text-align: center; margin-top: 30px;">
+    <button id="fiche-btn" style="
+      background-color: #8b5e3c;
+      color: white;
+      font-family: 'Uncial Antiqua', cursive;
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 2px 2px 5px #3b2f1e66;
+    ">
+      Voir Fiche de Perso
+    </button>
+  </div>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+    
+      document.querySelectorAll('input').forEach(input => {
+        const placeholder = input.placeholder?.toLowerCase();
+        const name = input.previousElementSibling?.innerText?.trim();
+    
+        if (!name) return;
+    
+        const value = params.get(name);
+        if (value !== null) {
+          input.value = value;
+        }
+      });
+    
+      // Pour afficher le nom du joueur dans le titre (optionnel)
+      const nom = params.get("Nom");
+      if (nom) {
+        document.querySelector("h1").innerText = `Interface de Jeu – ${nom}`;
+      }
+    });
+    </script>
+    <script>
+        document.getElementById("fiche-btn").addEventListener("click", () => {
+          const currentParams = new URLSearchParams(window.location.search);
+          window.location.href = `fiche_perso.html?${currentParams.toString()}`;
+        });
+    </script>
 </body>
 </html>
