@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Création de Personnage</title>
+  <link rel="stylesheet" href="style.css"/> 
+  <link rel="icon" type="image/png" href="img/icon.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <style>
     body {
@@ -78,6 +80,7 @@
 </head>
 <body>
 
+  <div id="navbar-placeholder"></div>
   <h1>Création de votre Personnage</h1>
 
   <div class="section">
@@ -138,6 +141,7 @@
 
   <button id="save_player_creation">Enregistrer</button>
 
+  <script src="navbar.js"></script>
   <script>
     document.getElementById('save_player_creation').addEventListener('click', () => {
       const data = {

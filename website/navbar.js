@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     navbar.innerHTML = `
       <a href="index.html">Accueil</a>
       <a href="mj.html">MJ</a>
+      <a href="selecte_player.html">Liste des joueurs</a>
+      <a href="create_player.html">Créer un joueur</a>
     `;
     document.body.insertBefore(navbar, document.body.firstChild);
   });
