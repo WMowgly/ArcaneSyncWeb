@@ -28,7 +28,7 @@ app.get('/api/joueurs', (req, res) => {
   res.json(getJoueurs());
 });
 
-app.delete('/api/joueurs/delete', (req, res) => {
+app.delete('/api/joueurs/delete/:nom', (req, res) => {
   const nom = req.params.nom;
   console.log("Suppression du joueur :", nom);
   const success = supprimerJoueur(nom);
