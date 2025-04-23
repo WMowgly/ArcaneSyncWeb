@@ -51,13 +51,14 @@
               e.stopPropagation(); // Évite le déclenchement de la sélection
 
               if (confirm(`Supprimer le joueur ${joueur.nom} ?`)) {
-                fetch(`http://localhost:3000/api/joueurs/delete}`, {
+                fetch(`http://localhost:3000/api/joueurs/delete/${encodeURIComponent(joueur.nom)}`, {
                   method: 'DELETE'
                 })
                 .then(res => res.text())
                 .then(message => {
                   console.log("Réponse serveur :", message);
-                  //card.remove();
+                  // Suppression de la carte du joueur de l'interface
+                  card.remove();  // Cela retire la carte du DOM
                 })
                 .catch(err => {
                   console.error("Erreur suppression:", err);

@@ -29,16 +29,23 @@ function getJoueurs() {
 }
 
 // Supprimer un joueur
-function supprimerJoueur(joueur) {
-  const index = joueurs.findIndex(j => j.joueur === joueur);
-  console.log("supprimerJoueur debug :", joueurs); // Debug
+function supprimerJoueur(nom) {
+  console.log("Tentative de suppression du joueur avec le nom :", nom); // Debug
+  const index = joueurs.findIndex(j => j.nom.toLowerCase() === nom.toLowerCase()); // Comparaison insensible à la casse
+  console.log("Index trouvé pour suppression :", index); // Debug
   if (index !== -1) {
     joueurs.splice(index, 1);
-    fs.writeFileSync(cheminFichier, JSON.stringify(joueurs, null, 2));
-    console.log("Joueurs restants :", joueurs); // Debug
+    try {
+      fs.writeFileSync(cheminFichier, JSON.stringify(joueurs, null, 2));
+      console.log("Joueurs restants après suppression :", joueurs); // Debug
+    } catch (err) {
+      console.error("Erreur lors de la sauvegarde après suppression:", err);
+    }
     return true;
   }
+  console.log("Aucun joueur trouvé avec le nom :", nom); // Debug
   return false;
 }
+
 
 module.exports = { ajouterJoueur, getJoueurs, supprimerJoueur };

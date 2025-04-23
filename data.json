@@ -1,70 +1,5 @@
 [
   {
-    "nom": "gf",
-    "classe": "gf",
-    "race": "gf",
-    "mana": null,
-    "stats": {
-      "force": 10,
-      "dexterite": 10,
-      "magie": 10,
-      "constitution": 10,
-      "charisme": 10,
-      "perception": 10,
-      "chance": 10,
-      "intelligence": 10
-    }
-  },
-  {
-    "nom": "test",
-    "classe": "test",
-    "race": "test",
-    "mana": null,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    }
-  },
-  {
-    "nom": "jhjh",
-    "classe": "",
-    "race": "",
-    "mana": 10,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    }
-  },
-  {
-    "nom": "lmmlm",
-    "classe": "",
-    "race": "",
-    "mana": 10,
-    "hp": 10,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    }
-  },
-  {
     "nom": "test",
     "classe": "",
     "race": "",
@@ -145,5 +80,46 @@
     },
     "bio": "fds",
     "levelup": ""
+  },
+  {
+    "nom": "TEST DE ZINZIN",
+    "classe": "fdsdsf",
+    "race": "sdf",
+    "niveau": 11,
+    "hp": 20,
+    "mana": 20,
+    "stats": {
+      "force": 21,
+      "dexterite": 21,
+      "magie": 21,
+      "constitution": 121,
+      "charisme": 21,
+      "perception": 21,
+      "chance": 21,
+      "intelligence": 21
+    },
+    "equipement": {
+      "sac": "hgf",
+      "ceinture": "",
+      "armes": "hgf",
+      "armure": "gfh",
+      "resistance": "",
+      "durabilite": "hgf",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": 20,
+      "protection_max": 30,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "hgfhgf",
+      "sorts": "hgfhfgfgh",
+      "speciales": "vcbz"
+    },
+    "bio": "fdgfdvc",
+    "levelup": "bvcbfdg"
   }
 ]
