@@ -170,15 +170,38 @@
   </div>
 
   <script>
+        // Attendre que tout le HTML soit chargé
     window.addEventListener('DOMContentLoaded', () => {
+      // Lire les paramètres de l'URL (ex: ?Nom=Alice&Classe=Guerrier)
       const params = new URLSearchParams(window.location.search);
-      params.forEach((value, key) => {
-        const input = Array.from(document.querySelectorAll('input'))
-          .find(el => el.labels && el.labels[0]?.innerText.toLowerCase().includes(key.toLowerCase()));
-        if (input) input.value = value;
+
+      // --- 1. Remplir tous les <input> ---
+      document.querySelectorAll('.field').forEach(field => {
+        const label = field.querySelector('label'); // chercher le label
+        const input = field.querySelector('input'); // chercher l'input lié
+        if (!label || !input) return; // on saute s'il en manque
+
+        const key = label.innerText.trim(); // ex: "Nom", "Force", etc.
+        const value = params.get(key); // récupère la valeur dans l'URL pour cette clé
+        if (value !== null) {
+          input.value = value; // on remplit l'input avec la valeur
+        }
+      });
+
+      // --- 2. Remplir les <textarea> ---
+      document.querySelectorAll('.section').forEach(section => {
+        const titre = section.querySelector('h2')?.innerText.trim(); // titre ex: "Biographie"
+        const textarea = section.querySelector('textarea'); // chercher le textarea dans cette section
+        if (!titre || !textarea) return;
+
+        const value = params.get(titre); // récupère la valeur correspondante dans l'URL
+        if (value !== null) {
+          textarea.value = value; // on remplit la zone de texte
+        }
       });
     });
-  </script>
+    </script>
+    
   
 </body>
 </html>

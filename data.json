@@ -63,5 +63,87 @@
       "chance": null,
       "intelligence": null
     }
+  },
+  {
+    "nom": "test",
+    "classe": "",
+    "race": "",
+    "niveau": null,
+    "hp": null,
+    "mana": null,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "test",
+    "classe": "droguer",
+    "race": "MOI",
+    "niveau": 1,
+    "hp": 20,
+    "mana": 10,
+    "stats": {
+      "force": 70,
+      "dexterite": 50,
+      "magie": 60,
+      "constitution": 45,
+      "charisme": 20,
+      "perception": 10,
+      "chance": 45,
+      "intelligence": 30
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "épée",
+      "armure": "légère",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "tes",
+      "sorts": "fds",
+      "speciales": "sdf"
+    },
+    "bio": "fds",
+    "levelup": ""
   }
 ]
