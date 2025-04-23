@@ -16,7 +16,9 @@
   <h2>Liste des joueurs</h2>
   <div id="joueurs-list"></div>
 
-  <script>
+  <script type="module">
+    import { openFicheJoueur } from './popupjoueur.js';
+
     // Récupérer les joueurs depuis l'API
     fetch('http://localhost:3000/api/joueurs')
       .then(response => response.json())
@@ -68,7 +70,7 @@
             card.addEventListener('click', () => {
               document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
               card.classList.add('selected');
-              alert(`Vous avez sélectionné le joueur: ${joueur.nom}`);
+              openFicheJoueur(joueur); // Redirection vers fiche_perso
             });
 
             // Ajouter la carte à la liste

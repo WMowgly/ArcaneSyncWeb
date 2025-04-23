@@ -18,7 +18,8 @@
   <div id="joueurs-list"></div>
 
   <script src="navbar.js"></script>
-  <script>
+  <script type="module">
+    import { showMJPopup } from './popupmj.js';
     // Récupérer les joueurs depuis l'API
     fetch('http://localhost:3000/api/joueurs')
       .then(response => response.json())
@@ -41,12 +42,11 @@
               <p>Mana: ${joueur.mana}</p>
             `;
 
-            // Gérer la sélection du joueur
             card.addEventListener('click', () => {
               document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
               card.classList.add('selected');
-              alert(`Vous avez sélectionné le joueur: ${joueur.nom}`);
-            });
+              showMJPopup(joueur);
+             });
 
             // Ajouter la carte à la liste
             listContainer.appendChild(card);
