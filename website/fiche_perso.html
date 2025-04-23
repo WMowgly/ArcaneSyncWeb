@@ -169,5 +169,16 @@
     <textarea></textarea>
   </div>
 
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      params.forEach((value, key) => {
+        const input = Array.from(document.querySelectorAll('input'))
+          .find(el => el.labels && el.labels[0]?.innerText.toLowerCase().includes(key.toLowerCase()));
+        if (input) input.value = value;
+      });
+    });
+  </script>
+  
 </body>
 </html>
