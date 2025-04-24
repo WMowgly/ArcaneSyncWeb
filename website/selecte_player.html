@@ -38,8 +38,8 @@
               <h3>${joueur.nom}</h3>
               <p>Race: ${joueur.race}</p>
               <p>Classe: ${joueur.classe}</p>
-              <p>HP: ${joueur.hp}</p>
-              <p>Mana: ${joueur.mana}</p>
+              <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
+              <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
               <button class="delete-btn">Supprimer</button>
             `;
 

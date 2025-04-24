@@ -121,5 +121,279 @@
     },
     "bio": "fdgfdvc",
     "levelup": "bvcbfdg"
+  },
+  {
+    "nom": "gfddfgg",
+    "classe": "hfgh",
+    "race": "ghffh",
+    "niveau": 1,
+    "hp": 10,
+    "mana": 10,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "10",
+      "bonus_vie": 10,
+      "protection": 10,
+      "protection_max": 10,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "hgfhfg",
+    "classe": "mlmkm",
+    "race": "",
+    "niveau": 1,
+    "hp": 10,
+    "mana": null,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "lklj",
+    "classe": "lkj",
+    "race": "",
+    "niveau": null,
+    "hp": 1010,
+    "hp_current": 1010,
+    "mana": 10,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "test",
+    "classe": "current",
+    "race": "max",
+    "niveau": 1,
+    "hp": {
+      "max": 20,
+      "current": null
+    },
+    "mana": {
+      "max": 20,
+      "current": null
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": {
+        "max": 20,
+        "current": null
+      },
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "gj",
+      "speciales": "jhjggg"
+    },
+    "bio": "jhgj",
+    "levelup": "jhgj"
+  },
+  {
+    "nom": "test",
+    "classe": "current",
+    "race": "max",
+    "niveau": 2,
+    "hp": {
+      "max": 30,
+      "current": 30
+    },
+    "mana": {
+      "max": 50,
+      "current": 50
+    },
+    "stats": {
+      "force": 20,
+      "dexterite": 30,
+      "magie": 30,
+      "constitution": 30,
+      "charisme": 50,
+      "perception": 40,
+      "chance": 30,
+      "intelligence": 30
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": 11,
+      "protection": {
+        "max": 60,
+        "current": 60
+      },
+      "protection_max": 70,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "hjgj",
+      "sorts": "kh",
+      "speciales": "hgfhf"
+    },
+    "bio": "gfh",
+    "levelup": "sdfd"
+  },
+  {
+    "nom": "test",
+    "classe": "test",
+    "race": "",
+    "niveau": null,
+    "hp": {
+      "max": 30,
+      "current": 30
+    },
+    "mana": {
+      "max": 40,
+      "current": 40
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": 20,
+      "constitution": null,
+      "charisme": null,
+      "perception": 20,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": {
+        "max": null,
+        "current": null
+      },
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
   }
 ]

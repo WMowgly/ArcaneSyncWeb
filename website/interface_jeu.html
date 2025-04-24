@@ -113,21 +113,21 @@
       <div class="field">
         <label>Vie</label>
         <div class="dual-input">
-          <input type="number" placeholder="Min">
-          <input type="number">
+          <input type="number" id="player_hp_current" placeholder="Min">
+          <input type="number" id="player_hp" readonly>
         </div>
       </div>
 
       <div class="field">
         <label>Vie bonus</label>
-        <input type="number">
+        <input type="number" id="player_vie_bonus">
       </div>
 
       <div class="field">
         <label>Valeur protection</label>
         <div class="dual-input">
-          <input type="number" placeholder="Min">
-          <input type="number">
+          <input type="number" id="player_protection_current" placeholder="Min">
+          <input type="number" id="player_protection" readonly>
         </div>
       </div>
 
@@ -139,8 +139,8 @@
       <div class="field">
         <label>Mana</label>
         <div class="dual-input">
-          <input type="number" placeholder="Min">
-          <input type="number">
+          <input type="number" id="player_mana_current" placeholder="Min">
+          <input type="number" id="player_mana" readonly>
         </div>
       </div>
 
@@ -172,6 +172,16 @@
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
     
+      // Injection des valeurs max et actuelles dans les champs
+      document.getElementById('player_hp').value = params.get("hp");
+      document.getElementById('player_hp_current').value = params.get("hp_current");
+      
+      document.getElementById('player_protection').value = params.get("protection");
+      document.getElementById('player_protection_current').value = params.get("protection_current");
+      
+      document.getElementById('player_mana').value = params.get("mana");
+      document.getElementById('player_mana_current').value = params.get("mana_current");
+
       document.querySelectorAll('input').forEach(input => {
         const placeholder = input.placeholder?.toLowerCase();
         const name = input.previousElementSibling?.innerText?.trim();

@@ -15,6 +15,9 @@ app.use(express.static('website'));
 app.post('/api/joueurs', (req, res) => {
   try {
     const nouveauJoueur = req.body;
+    if (!nouveauJoueur.nom) {
+      return res.status(400).json({ message: "Le nom est requis." });
+    }
     ajouterJoueur(nouveauJoueur);
     res.status(201).json({ message: 'Joueur enregistré avec succès !' });
   } catch (err) {
