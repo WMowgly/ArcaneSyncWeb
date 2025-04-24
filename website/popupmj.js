@@ -9,8 +9,8 @@ export function showMJPopup(joueur) {
     <div class="modal">
       <span class="close-btn">&times;</span>
       <h2>${joueur.nom}</h2>
-      <p><strong>HP:</strong> ${joueur.hp}</p>
-      <p><strong>Mana:</strong> ${joueur.mana}</p>
+      <p><strong>HP:</strong> ${joueur.hp?.current} / ${joueur.hp?.max}</p>
+      <p><strong>Mana:</strong> ${joueur.mana?.current} / ${joueur.mana?.max}</p>
       <button class="fiche-btn">Voir Fiche Complète</button>
     </div>
   `;

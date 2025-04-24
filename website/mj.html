@@ -35,8 +35,8 @@
             // Ajout des informations du joueur dans la carte (Nom, HP, Mana)
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
-              <p>HP: ${joueur.hp}</p>
-              <p>Mana: ${joueur.mana}</p>
+              <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
+              <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
             `;
 
             card.addEventListener('click', () => {
