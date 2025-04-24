@@ -128,7 +128,6 @@
       <div class="field" style="display: none;"><input id="player_hp_current" type="hidden"></div>
       <div class="field"><label>Vie bonus</label><input id="def_bonus_vie" type="number"></div>
       <div class="field"><label>Valeur protection</label><input id="def_protection" type="number"></div>
-      <div class="field" style="display: none;"><input id="def_protection_current" type="hidden"></div>
       <div class="field"><label>Valeur protection max</label><input id="def_protection_max" type="number"></div>
       <div class="field"><label>Mana</label><input id="player_mana" type="number"></div>
       <div class="field" style="display: none;"><input id="player_mana_current" type="hidden"></div>
@@ -151,7 +150,6 @@
       // Copie les valeurs max vers les valeurs "actuelles"
     document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
     document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
-    document.getElementById('def_protection_current').value = document.getElementById('def_protection').value;
 
       const data = {
         nom: document.getElementById('player_name').value,
@@ -188,10 +186,7 @@
         defense: {
           survie: document.getElementById('def_survie').value,
           bonus_vie: parseInt(document.getElementById('def_bonus_vie').value),
-          protection: {
-            max: parseInt(document.getElementById('def_protection').value),
-            current: parseInt(document.getElementById('def_protection_current').value)
-          },
+          protection: parseInt(document.getElementById('def_protection').value),
           protection_max: parseInt(document.getElementById('def_protection_max').value),
           intox: document.getElementById('def_intox').value
         },

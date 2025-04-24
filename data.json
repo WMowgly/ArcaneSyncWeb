@@ -1,253 +1,6 @@
 [
   {
     "nom": "test",
-    "classe": "",
-    "race": "",
-    "niveau": null,
-    "hp": null,
-    "mana": null,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "test",
-    "classe": "droguer",
-    "race": "MOI",
-    "niveau": 1,
-    "hp": 20,
-    "mana": 10,
-    "stats": {
-      "force": 70,
-      "dexterite": 50,
-      "magie": 60,
-      "constitution": 45,
-      "charisme": 20,
-      "perception": 10,
-      "chance": 45,
-      "intelligence": 30
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "épée",
-      "armure": "légère",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "tes",
-      "sorts": "fds",
-      "speciales": "sdf"
-    },
-    "bio": "fds",
-    "levelup": ""
-  },
-  {
-    "nom": "TEST DE ZINZIN",
-    "classe": "fdsdsf",
-    "race": "sdf",
-    "niveau": 11,
-    "hp": 20,
-    "mana": 20,
-    "stats": {
-      "force": 21,
-      "dexterite": 21,
-      "magie": 21,
-      "constitution": 121,
-      "charisme": 21,
-      "perception": 21,
-      "chance": 21,
-      "intelligence": 21
-    },
-    "equipement": {
-      "sac": "hgf",
-      "ceinture": "",
-      "armes": "hgf",
-      "armure": "gfh",
-      "resistance": "",
-      "durabilite": "hgf",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": 20,
-      "protection_max": 30,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "hgfhgf",
-      "sorts": "hgfhfgfgh",
-      "speciales": "vcbz"
-    },
-    "bio": "fdgfdvc",
-    "levelup": "bvcbfdg"
-  },
-  {
-    "nom": "gfddfgg",
-    "classe": "hfgh",
-    "race": "ghffh",
-    "niveau": 1,
-    "hp": 10,
-    "mana": 10,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "10",
-      "bonus_vie": 10,
-      "protection": 10,
-      "protection_max": 10,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "hgfhfg",
-    "classe": "mlmkm",
-    "race": "",
-    "niveau": 1,
-    "hp": 10,
-    "mana": null,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "lklj",
-    "classe": "lkj",
-    "race": "",
-    "niveau": null,
-    "hp": 1010,
-    "hp_current": 1010,
-    "mana": 10,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "test",
     "classe": "current",
     "race": "max",
     "niveau": 1,
@@ -395,5 +148,52 @@
     },
     "bio": "",
     "levelup": ""
+  },
+  {
+    "nom": "Complet",
+    "classe": "Druide",
+    "race": "Humain",
+    "niveau": 1,
+    "hp": {
+      "max": 1,
+      "current": 1
+    },
+    "mana": {
+      "max": 1,
+      "current": 1
+    },
+    "stats": {
+      "force": 1,
+      "dexterite": 1,
+      "magie": 1,
+      "constitution": 1,
+      "charisme": 1,
+      "perception": 1,
+      "chance": 1,
+      "intelligence": 1
+    },
+    "equipement": {
+      "sac": "1",
+      "ceinture": "1",
+      "armes": "1",
+      "armure": "1",
+      "resistance": "1",
+      "durabilite": "1",
+      "degats": "1"
+    },
+    "defense": {
+      "survie": "1",
+      "bonus_vie": 1,
+      "protection": 1,
+      "protection_max": 1,
+      "intox": "1"
+    },
+    "competences": {
+      "classe": "1",
+      "sorts": "1",
+      "speciales": "1"
+    },
+    "bio": "1",
+    "levelup": "1"
   }
 ]
