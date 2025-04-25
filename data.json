@@ -156,7 +156,7 @@
     "niveau": 1,
     "hp": {
       "max": 1,
-      "current": 1
+      "current": 105
     },
     "mana": {
       "max": 1,
@@ -186,7 +186,7 @@
       "bonus_vie": 1,
       "protection": 1,
       "protection_max": 1,
-      "intox": "1"
+      "intox": 10
     },
     "competences": {
       "classe": "1",
