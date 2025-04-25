@@ -47,5 +47,30 @@ function supprimerJoueur(nom) {
   return false;
 }
 
+// Sauvegarder les data de la fiche du joueur
+function sauvegardeData(nom, nouvellesDonnees) {
+  console.log("Tentative de mise à jour du joueur avec le nom :", nom); // Debug
+  const index = joueurs.findIndex(j => j.nom.toLowerCase() === nom.toLowerCase()); // Comparaison insensible à la casse
+  console.log("Index trouvé pour mise à jour :", index); // Debug
+  if (index !== -1) {
+    joueurs[index] = {
+      ...joueurs[index],
+      ...nouvellesDonnees,
+      hp: { ...joueurs[index].hp, ...nouvellesDonnees.hp },
+      mana: { ...joueurs[index].mana, ...nouvellesDonnees.mana },
+      defense: { ...joueurs[index].defense, ...nouvellesDonnees.defense }
+    }; // Fusionner les données existantes avec les nouvelles
+    try {
+      fs.writeFileSync(cheminFichier, JSON.stringify(joueurs, null, 2));
+      console.log("Joueur mis à jour :", joueurs[index]); // Debug
+    } catch (err) {
+      console.error("Erreur lors de la sauvegarde après mise à jour:", err);
+    }
+    return true;
+  }
+  console.log("Aucun joueur trouvé avec le nom :", nom); // Debug
+  return false;
+}
 
-module.exports = { ajouterJoueur, getJoueurs, supprimerJoueur };
+
+module.exports = { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData };

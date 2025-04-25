@@ -3,7 +3,7 @@ const app = express();
 const port = 3000;
 const os = require('os');
 const path = require('path');
-const { ajouterJoueur, getJoueurs, supprimerJoueur } = require('./joueur'); // <-- Import
+const { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData } = require('./joueur'); // <-- Import
 
 // Middleware pour lire du JSON
 app.use(express.json());
@@ -39,6 +39,23 @@ app.delete('/api/joueurs/delete/:nom', (req, res) => {
     res.status(200).send(`Joueur ${nom} supprimé`);
   } else {
     res.status(404).send(`Joueur ${nom} non trouvé`);
+  }
+});
+
+// API pour mettre à jour un joueur
+app.post('/api/joueur', (req, res) => {
+  const { nom, nouvellesDonnees } = req.body;
+
+  if (!nom || !nouvellesDonnees) {
+    return res.status(400).json({ message: "Le nom et les nouvelles données sont requis." });
+  }
+
+  const success = sauvegardeData(nom, nouvellesDonnees);
+
+  if (success) {
+    res.status(200).json({ message: `Les données du joueur ${nom} ont été mises à jour avec succès.` });
+  } else {
+    res.status(404).json({ message: `Joueur ${nom} non trouvé.` });
   }
 });
 

@@ -78,6 +78,10 @@
       width: 50%;
     }
 
+    input[type="text"] {
+      width: 90%;
+    }
+
     @media (max-width: 768px) {
       .grid {
         grid-template-columns: 1fr 1fr;
@@ -107,7 +111,7 @@
       <div class="field"><label>Race</label><input type="text"></div>
       <div class="field">
         <label>Survie</label>
-        <input type="number">
+        <input type="number" placeholder="Survie">
       </div>
 
       <div class="field">
@@ -125,12 +129,12 @@
 
       <div class="field">
         <label>Valeur protection</label>
-        <input type="number">
+        <input type="number" id="player_protection_current">
       </div>
 
       <div class="field">
         <label>Valeur protection max</label>
-        <input type="number">
+        <input type="number" id="player_protection_max">
       </div>
 
       <div class="field">
@@ -144,11 +148,28 @@
       <div class="field">
         <label>Intox.</label>
         <div class="dual-input">
-          <input type="number" placeholder="Intox">
+          <input type="number" id="player_intox" placeholder="Intox">
         </div>
       </div>
-    </div>
-  </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <button id="save-btn" style="
+          background-color: #8b5e3c;
+          color: white;
+          font-family: 'Uncial Antiqua', cursive;
+          padding: 12px 24px;
+          font-size: 18px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          box-shadow: 2px 2px 5px #3b2f1e66;
+          ">
+          Sauvegarder
+        </button>
+      </div>
+
+    </div><!-- fin du grid -->
+  </div><!-- fin de la section h2 -->
   <div style="text-align: center; margin-top: 30px;">
     <button id="fiche-btn" style="
       background-color: #8b5e3c;
@@ -199,6 +220,60 @@
           const currentParams = new URLSearchParams(window.location.search);
           window.location.href = `fiche_perso.html?${currentParams.toString()}`;
         });
+    </script>
+    <script>
+      document.getElementById("save-btn").addEventListener("click", async () => {
+
+        // Clic sur le bouton "Sauvegarder"
+        console.log("Bouton cliqué");
+
+        const params = new URLSearchParams(window.location.search);
+        const nom = params.get("Nom"); // Récupère le nom depuis l'URL
+        
+        if (!nom) {
+          alert('Erreur : nom du joueur non trouvé');
+          return;
+        }
+        
+        // Récupérer les données des champs
+        const hpCurrent = parseInt(document.getElementById('player_hp_current').value, 10);
+        const hpMax = parseInt(document.getElementById('player_hp').value, 10);
+        const manaCurrent = parseInt(document.getElementById('player_mana_current').value, 10);
+        const manaMax = parseInt(document.getElementById('player_mana').value, 10);
+        const protectionMax = parseInt(document.getElementById('player_protection_max').value, 10);
+        const protectionCurrent = parseInt(document.getElementById('player_protection_current').value, 10);
+        const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
+        const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
+        
+        const nouvellesDonnees = {
+          hp: { current: hpCurrent, max: hpMax },
+          mana: { current: manaCurrent, max: manaMax },
+          defense: { bonus_vie: vieBonus, protection: protectionCurrent, protection_max: protectionMax, intox: intoxCurrent }
+        };
+        
+        // Afficher les données dans la console (pour le débogage)
+        console.log("Données à envoyer:", { nom, nouvellesDonnees });
+
+        // Appeler la fonction mettreAJourJoueur via une API ou directement
+        try {
+      const response = await fetch('/api/joueur', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nom, nouvellesDonnees })
+      });
+
+      if (response.ok) {
+        alert('Données sauvegardées avec succès !');
+      } else {
+        alert('Erreur lors de la sauvegarde des données.');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Une erreur est survenue lors de la sauvegarde.');
+    }
+  });
     </script>
 </body>
 </html>
