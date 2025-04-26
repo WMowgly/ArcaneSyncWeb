@@ -106,9 +106,9 @@
   <div class="section">
     <h2>Interface de Jeu</h2>
     <div class="grid">
-      <div class="field"><label>Nom</label><input type="text"></div>
-      <div class="field"><label>Classe</label><input type="text"></div>
-      <div class="field"><label>Race</label><input type="text"></div>
+      <div class="field"><label>Nom</label><input type="text" readonly></div>
+      <div class="field"><label>Classe</label><input type="text" readonly></div>
+      <div class="field"><label>Race</label><input type="text" readonly></div>
       <div class="field">
         <label>Survie</label>
         <input type="number" placeholder="Survie">
@@ -196,6 +196,8 @@
       document.getElementById('player_mana').value = params.get("ManaMax");
       document.getElementById('player_mana_current').value = params.get("ManaCurrent");
 
+      document.getElementById('player_intox').value = params.get("Intox.");
+
       document.querySelectorAll('input').forEach(input => {
         const placeholder = input.placeholder?.toLowerCase();
         const name = input.previousElementSibling?.innerText?.trim();
@@ -265,6 +267,21 @@
       });
 
       if (response.ok) {
+        // Mise à jour de l'URL avec les nouvelles valeurs
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set("VieCurrent", hpCurrent.toString());
+        newParams.set("VieMax", hpMax.toString());
+        newParams.set("ManaCurrent", manaCurrent.toString());
+        newParams.set("ManaMax", manaMax.toString());
+        newParams.set("Intox.", intoxCurrent.toString());
+        newParams.set("Vie bonus", vieBonus.toString());
+        newParams.set("Valeur protection", protectionCurrent.toString());
+        newParams.set("Valeur protection max", protectionMax.toString());
+
+        // Mettre à jour l'URL sans recharger la page
+        window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        
+        console.log('URL mise à jour avec les nouvelles valeurs');
         alert('Données sauvegardées avec succès !');
       } else {
         alert('Erreur lors de la sauvegarde des données.');

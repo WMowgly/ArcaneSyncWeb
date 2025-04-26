@@ -5,12 +5,12 @@
     "race": "max",
     "niveau": 1,
     "hp": {
-      "max": 20,
-      "current": null
+      "max": 30,
+      "current": 41
     },
     "mana": {
-      "max": 20,
-      "current": null
+      "max": 40,
+      "current": 80
     },
     "stats": {
       "force": null,
@@ -34,12 +34,9 @@
     "defense": {
       "survie": "",
       "bonus_vie": null,
-      "protection": {
-        "max": 20,
-        "current": null
-      },
+      "protection": null,
       "protection_max": null,
-      "intox": ""
+      "intox": null
     },
     "competences": {
       "classe": "",
@@ -156,11 +153,11 @@
     "niveau": 1,
     "hp": {
       "max": 1,
-      "current": 105
+      "current": 50
     },
     "mana": {
       "max": 1,
-      "current": 1
+      "current": 67
     },
     "stats": {
       "force": 1,
@@ -183,10 +180,10 @@
     },
     "defense": {
       "survie": "1",
-      "bonus_vie": 1,
+      "bonus_vie": 56,
       "protection": 1,
       "protection_max": 1,
-      "intox": 10
+      "intox": 15
     },
     "competences": {
       "classe": "1",

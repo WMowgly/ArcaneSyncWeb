@@ -10,3 +10,6 @@ Page Création de joueur:
 
 Sélection du joueur
     Lien avec back
+
+Interface jeu : 
+    Il faut mettre a jour les données dynamiquement sur la page du perso
