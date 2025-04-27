@@ -5,12 +5,12 @@
   <title>Liste - ArcaneSync</title>
   <link rel="stylesheet" href="style.css"/> 
   <link rel="icon" type="image/png" href="img/icon.png"/>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
   <h1>Selection du joueur</h1>
 
-  <!-- Zone pour afficher les joueurs -->
   <h2>Liste des joueurs</h2>
   <div id="joueurs-list"></div>
 
@@ -18,22 +18,24 @@
   <script type="module">
     import { openFicheJoueur } from './popupjoueur.js';
 
-    // Récupérer les joueurs depuis l'API
-    fetch('http://localhost:3000/api/joueurs')
-      .then(response => response.json())
-      .then(joueurs => {
-        const listContainer = document.getElementById('joueurs-list');
-        
-        // Si aucun joueur, afficher un message
-        if (joueurs.length === 0) {
-          listContainer.innerHTML = '<p>Aucun joueur enregistré.</p>';
-        } else {
+    // Fonction pour charger et afficher les joueurs
+    function loadAndDisplayPlayers() {
+      fetch('/api/joueurs')
+        .then(response => response.json())
+        .then(joueurs => {
+          const listContainer = document.getElementById('joueurs-list');
+          listContainer.innerHTML = '';
+          
+          if (joueurs.length === 0) {
+            listContainer.innerHTML = '<p>Aucun joueur enregistré.</p>';
+            return;
+          }
+
           joueurs.forEach(joueur => {
             const card = document.createElement('div');
             card.classList.add('card');
             card.setAttribute('data-id', joueur.nom);
 
-            // Ajout des informations du joueur dans la carte
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
               <p>Race: ${joueur.race}</p>
@@ -43,21 +45,17 @@
               <button class="delete-btn">Supprimer</button>
             `;
 
-            // Suppression de personnage
-            const deleteBtn = card.querySelector('.delete-btn'); 
-
+            const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.addEventListener('click', (e) => {
-              e.stopPropagation(); // Évite le déclenchement de la sélection
-
+              e.stopPropagation();
               if (confirm(`Supprimer le joueur ${joueur.nom} ?`)) {
-                fetch(`http://localhost:3000/api/joueurs/delete/${encodeURIComponent(joueur.nom)}`, {
+                fetch(`/api/joueurs/delete/${encodeURIComponent(joueur.nom)}`, {
                   method: 'DELETE'
                 })
                 .then(res => res.text())
                 .then(message => {
                   console.log("Réponse serveur :", message);
-                  // Suppression de la carte du joueur de l'interface
-                  card.remove();  // Cela retire la carte du DOM
+                  card.remove();
                 })
                 .catch(err => {
                   console.error("Erreur suppression:", err);
@@ -66,22 +64,50 @@
               }
             });
 
-            // Gérer la sélection du joueur
             card.addEventListener('click', () => {
               document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
               card.classList.add('selected');
-              openFicheJoueur(joueur); // Redirection vers fiche_perso
+              openFicheJoueur(joueur);
             });
 
-            // Ajouter la carte à la liste
             listContainer.appendChild(card);
           });
-        }
-      })
-      .catch(err => {
-        console.error("Erreur lors de la récupération des joueurs:", err);
-        alert("Erreur lors de la récupération des joueurs.");
-      });
+        })
+        .catch(err => {
+          console.error("Erreur lors de la récupération des joueurs:", err);
+          alert("Erreur lors de la récupération des joueurs.");
+        });
+    }
+
+    // Charger les joueurs initialement
+    loadAndDisplayPlayers();
+
+    // Configurer WebSocket
+    const socket = io({
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity
+    });
+
+    // Ajouter des événements de debug
+    socket.on('connect', () => {
+      console.log('Connecté au serveur WebSocket');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Déconnecté du serveur WebSocket');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Erreur de connexion WebSocket:', error);
+    });
+
+    // Écouter les mises à jour
+    socket.on('playerUpdate', (data) => {
+      console.log('Mise à jour reçue:', data);
+      loadAndDisplayPlayers(); // Recharger la liste des joueurs
+    });
   </script>
 </body>
 </html>
