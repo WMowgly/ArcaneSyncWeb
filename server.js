@@ -74,5 +74,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(3000, () => {
-  console.log(`Serveur en ligne : http://192.168.1.162:3000`);
+  console.log(`Serveur en ligne : http://192.168.254.186:3000`);
 });
