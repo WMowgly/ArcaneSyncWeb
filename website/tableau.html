@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur Collaboratif avec Sauvegarde Automatique</title>
+    <link rel="stylesheet" href="style.css"/> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .editor-container {
+            height: 400px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .users-online {
+            color: #4CAF50;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .username-container {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .autosave-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        }
+        .autosave-toggle input[type="checkbox"] {
+            margin: 0;
+        }
+        .last-saved {
+            margin-left: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Éditeur Collaboratif</h1>
+        
+        <div class="status-bar">
+            <span id="syncStatus">Synchronisé</span>
+            <span id="last-saved">Jamais sauvegardé</span>
+            <div class="autosave-toggle">
+                <input type="checkbox" id="autosave-toggle" checked>
+                <label for="autosave-toggle">Sauvegarde auto</label>
+            </div>
+        </div>
+        
+        <div class="editor-container" id="editor"></div>
+        
+        <div>
+            <button class="button" id="save-btn">Sauvegarder</button>
+        </div>
+    </div>
+
+    <script>
+
+        const socket = io('http://192.168.1.21:3000');
+
+        // Initialisation de l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser l'éditeur Quill
+            const quill = new Quill('#editor', {
+                theme: 'snow',
+                placeholder: 'Commencez à écrire ici...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['clean']
+                    ]
+                }
+            });
+            
+            // Éléments DOM
+            const syncStatusEl = document.getElementById('syncStatus');
+            const saveBtn = document.getElementById('save-btn');
+            const lastSavedEl = document.getElementById('last-saved');
+            const autosaveToggle = document.getElementById('autosave-toggle');
+            let lastChangeTime = Date.now();
+            let saveTimeout = null;
+            
+            // Fonction pour formater la date de dernière sauvegarde
+            function formatLastSaved(dateString) {
+                if (!dateString) return 'Jamais sauvegardé';
+                
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffSeconds = Math.floor((now - date) / 1000);
+                
+                if (diffSeconds < 5) {
+                    return 'À l\'instant';
+                } else if (diffSeconds < 60) {
+                    return `Il y a ${diffSeconds} secondes`;
+                } else if (diffSeconds < 3600) {
+                    const minutes = Math.floor(diffSeconds / 60);
+                    return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+                } else {
+                    return `Le ${date.toLocaleDateString()} à ${date.toLocaleTimeString()}`;
+                }
+            }
+            
+            // Fonction de sauvegarde
+            function saveContent() {
+                socket.emit('saveDocument', {
+                    content: quill.root.innerHTML
+                });
+            }
+
+            // Fonction pour gérer la sauvegarde automatique
+            function handleAutosave() {
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                }
+                
+                if (autosaveToggle.checked) {
+                    saveTimeout = setTimeout(saveContent, 2000); // Sauvegarde 2 secondes après la dernière modification
+                }
+            }
+
+            // Événement de changement dans l'éditeur
+            quill.on('text-change', function(delta, oldDelta, source) {
+                if (source === 'user') {
+                    syncStatusEl.textContent = 'Synchronisation...';
+                    syncStatusEl.style.color = '#FFA500';
+                    lastChangeTime = Date.now();
+                    
+                    socket.emit('contentUpdate', {
+                        content: quill.root.innerHTML,
+                        timestamp: lastChangeTime
+                    });
+                    handleAutosave();
+                }
+            });
+            
+            // Handle server responses
+            socket.on('documentData', (docData) => {
+                if (docData.content && docData.content !== quill.root.innerHTML) {
+                    const currentContent = quill.root.innerHTML;
+                    const selection = quill.getSelection();
+                    
+                    // Vérifier si le contenu distant est plus récent
+                    if (!docData.timestamp || docData.timestamp >= lastChangeTime) {
+                        quill.root.innerHTML = docData.content;
+                        
+                        if (selection) {
+                            quill.setSelection(selection);
+                        }
+                    }
+                    
+                    syncStatusEl.textContent = 'Synchronisé';
+                    syncStatusEl.style.color = '#4CAF50';
+                }
+                
+                if (docData.lastSaved) {
+                    lastSavedEl.textContent = formatLastSaved(docData.lastSaved);
+                }
+            });
+                        
+            // Événement pour sauvegarder le document en JSON
+            saveBtn.addEventListener('click', saveContent);
+            
+            // Load functionality
+            loadBtn.addEventListener('click', function() {
+                if (isJoined) {
+                    socket.emit('loadDocument');
+                }
+            });
+            
+            // Gestion de la déconnexion
+            window.addEventListener('beforeunload', function() {
+                if (isJoined) {
+                    socket.emit('leave', { clientId });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
