@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Fiche de Personnage</title>
+  <link rel="stylesheet" href="style.css"/> 
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <style>
     body {
@@ -258,12 +259,19 @@
       // Gestionnaire d'événement pour le bouton de sauvegarde
       const saveButton = document.getElementById('save-data-btn');
       saveButton.addEventListener('click', async () => {
-        console.log('Bouton cliqué');
+        console.log('Bouton Sauvegarder cliqué');
         if (!nom) {
           alert('Erreur : nom du joueur non trouvé');
           return;
         }
 
+        // Correction ici : on récupère la Biographie manuellement
+        const biographieTextarea = Array.from(document.querySelectorAll('.section'))
+          .find(section => section.querySelector('h2')?.textContent.includes('Biographie'))
+          ?.querySelector('textarea');
+
+        const biographie = biographieTextarea ? biographieTextarea.value : '';
+        
         const nouvellesDonnees = {
           nom: nom,
           classe: getFieldValue('Classe'),
@@ -271,11 +279,11 @@
           niveau: getNumericValue('Niveau'),
           hp: {
             max: getNumericValue('Vie'),
-            current: parseInt(params.get('VieCurrent')) || null
+            current: parseInt(params.get('VieCurrent')) || 0
           },
           mana: {
             max: getNumericValue('Mana'),
-            current: parseInt(params.get('ManaCurrent')) || null
+            current: parseInt(params.get('ManaCurrent')) || 0
           },
           stats: {
             force: getNumericValue('Force'),
@@ -308,7 +316,7 @@
             sorts: getFieldValue('Sorts Mineurs / Attaques Spéciales'),
             speciales: getFieldValue('Compétences spéciales du personnage')
           },
-          bio: document.querySelector('.section:has(h2:contains("Biographie")) textarea').value,
+          bio: biographie,
           levelup: getFieldValue('Choix de level up et Effets permanents')
         };
 
@@ -382,7 +390,7 @@
             throw new Error(error);
           }
         } catch (error) {
-          console.error('Erreur:', error);
+          console.error('Erreur de sauvegarde:', error);
           alert('Une erreur est survenue lors de la sauvegarde: ' + error.message);
         }
       });

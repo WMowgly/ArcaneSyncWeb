@@ -153,7 +153,7 @@
     "niveau": 1,
     "hp": {
       "max": 1,
-      "current": 50
+      "current": 52
     },
     "mana": {
       "max": 1,
@@ -190,7 +190,54 @@
       "sorts": "1",
       "speciales": "1"
     },
-    "bio": "1",
+    "bio": "test de sauvegarde",
     "levelup": "1"
+  },
+  {
+    "nom": "testgfdg",
+    "classe": "gfdgd",
+    "race": "gdfgf",
+    "niveau": 1,
+    "hp": {
+      "max": 30,
+      "current": 30
+    },
+    "mana": {
+      "max": 60,
+      "current": 30
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": null
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
   }
 ]
