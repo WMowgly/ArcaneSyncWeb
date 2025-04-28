@@ -4,12 +4,27 @@ const http = require('http');
 const server = http.createServer(app);
 const io = require('socket.io')(server);
 const path = require('path');
+const fs = require('fs');
 const { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData } = require('./joueur');
 
-// Middleware pour lire du JSON
-app.use(express.json());
+// Configuration pour le tableau
+const JSON_FILE = path.join(__dirname, 'tableau.json');
+let documentData = {
+    content: "",
+    lastSaved: null
+};
 
-// Sert les fichiers statiques dans le dossier "website"
+// Charger les données du tableau
+try {
+  if (fs.existsSync(JSON_FILE)) {
+      documentData = JSON.parse(fs.readFileSync(JSON_FILE));
+  }
+} catch (err) {
+  console.error('Erreur lors du chargement du document:', err);
+}
+
+// Middleware
+app.use(express.json());
 app.use(express.static('website'));
 
 // API pour ajouter un joueur
@@ -68,11 +83,54 @@ app.post('/api/joueur', (req, res) => {
 // Gestionnaire de connexion WebSocket
 io.on('connection', (socket) => {
   console.log('Client connecté');
+
+  // Envoyer immédiatement le contenu actuel
+  socket.emit('documentData', {
+    content: documentData.content,
+    lastSaved: documentData.lastSaved
+  });
+
+  socket.on('contentUpdate', ({ content, timestamp }) => {
+    if (content !== documentData.content) {
+      documentData.content = content;
+      
+      // Diffuser à tous les clients sauf l'émetteur
+      socket.broadcast.emit('documentData', {
+          content: documentData.content,
+          timestamp: timestamp,
+          lastSaved: documentData.lastSaved
+      });
+    }
+  });
+
+  socket.on('saveDocument', ({ content }) => {
+    documentData.content = content;
+    documentData.lastSaved = new Date().toISOString();
+    
+    // Sauvegarder dans le fichier
+    fs.writeFileSync(JSON_FILE, JSON.stringify(documentData, null, 2));
+    
+    // Émettre à tous les clients
+    io.emit('documentData', {
+        content: documentData.content,
+        lastSaved: documentData.lastSaved
+    });
+  });
+
+  socket.on('loadDocument', () => {
+      socket.emit('documentData', documentData);
+  });
+
+  socket.on('leave', ({ clientId }) => {
+      delete documentData.users[clientId];
+      io.emit('usersUpdate', Object.values(documentData.users));
+  });
+
   socket.on('disconnect', () => {
-    console.log('Client déconnecté');
+      console.log('Client déconnecté');
   });
 });
 
 server.listen(3000, () => {
-  console.log(`Serveur en ligne : http://192.168.254.186:3000`);
+  console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://192.168.1.21:3000');
 });
