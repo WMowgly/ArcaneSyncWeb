@@ -11,13 +11,17 @@ const { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData } = require('
 const JSON_FILE = path.join(__dirname, 'tableau.json');
 let documentData = {
     content: "",
-    lastSaved: null
+    lastSaved: null,
+    users: {}
 };
 
 // Charger les données du tableau
 try {
   if (fs.existsSync(JSON_FILE)) {
       documentData = JSON.parse(fs.readFileSync(JSON_FILE));
+      if (!documentData.users) {
+          documentData.users = {};
+      }
   }
 } catch (err) {
   console.error('Erreur lors du chargement du document:', err);
@@ -82,7 +86,7 @@ app.post('/api/joueur', (req, res) => {
 
 // Gestionnaire de connexion WebSocket
 io.on('connection', (socket) => {
-  console.log('Client connecté');
+  console.log('Client connecté', socket.id);
 
   // Envoyer immédiatement le contenu actuel
   socket.emit('documentData', {
@@ -90,7 +94,21 @@ io.on('connection', (socket) => {
     lastSaved: documentData.lastSaved
   });
 
-  socket.on('contentUpdate', ({ content, timestamp }) => {
+  // Gérer l'arrivée d'un participant
+  socket.on('joinDocument', ({ clientId }) => {
+    console.log('Client rejoint le document:', clientId);
+      
+    documentData.users[clientId] = {
+      id: clientId,
+      socketId: socket.id,
+      connectedAt: new Date().toISOString()
+    };
+      
+    io.emit('usersUpdate', documentData.users);
+  });
+
+  // Mise à jour de contenu
+  socket.on('contentUpdate', ({ content, timestamp, clientId }) => {
     if (content !== documentData.content) {
       documentData.content = content;
       
@@ -98,36 +116,63 @@ io.on('connection', (socket) => {
       socket.broadcast.emit('documentData', {
           content: documentData.content,
           timestamp: timestamp,
-          lastSaved: documentData.lastSaved
+          clientId: clientId
       });
     }
   });
 
+  // Mouvement de curseur
+  socket.on('cursorMove', ({ clientId, range }) => {
+    socket.broadcast.emit('cursorUpdate', {
+      clientId: clientId,
+      range: range
+    });
+  });
+
+  // Sauvegarde du document
   socket.on('saveDocument', ({ content }) => {
     documentData.content = content;
     documentData.lastSaved = new Date().toISOString();
-    
+      
     // Sauvegarder dans le fichier
     fs.writeFileSync(JSON_FILE, JSON.stringify(documentData, null, 2));
-    
+      
     // Émettre à tous les clients
     io.emit('documentData', {
         content: documentData.content,
         lastSaved: documentData.lastSaved
     });
+      
+    console.log('Document sauvegardé:', new Date().toISOString());
   });
 
   socket.on('loadDocument', () => {
       socket.emit('documentData', documentData);
   });
 
+  // Quitter le document
   socket.on('leave', ({ clientId }) => {
+    console.log('Client quitte le document:', clientId);
+    
+    if (documentData.users[clientId]) {
       delete documentData.users[clientId];
-      io.emit('usersUpdate', Object.values(documentData.users));
+      io.emit('usersUpdate', documentData.users);
+    }
   });
 
+  // Déconnexion du client
   socket.on('disconnect', () => {
-      console.log('Client déconnecté');
+    console.log('Client déconnecté:', socket.id);
+    
+    // Rechercher et supprimer l'utilisateur avec ce socketId
+    const clientId = Object.keys(documentData.users).find(
+      key => documentData.users[key].socketId === socket.id
+    );
+    
+    if (clientId) {
+      delete documentData.users[clientId];
+      io.emit('usersUpdate', documentData.users);
+    }
   });
 });
 
