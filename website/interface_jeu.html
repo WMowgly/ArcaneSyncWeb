@@ -82,6 +82,11 @@
       width: 90%;
     }
 
+    .error {
+      border-color: #cc0000;
+      background-color: #ffeeee;
+    }
+    
     @media (max-width: 768px) {
       .grid {
         grid-template-columns: 1fr 1fr;
@@ -215,7 +220,53 @@
       if (nom) {
         document.querySelector("h1").innerText = `Interface de Jeu – ${nom}`;
       }
+
+      // Ajout des validateurs pour les champs current ne dépassant pas max
+      setupValidators();
+
     });
+
+
+    // Fonction pour vérifier que current <= max pour vie et mana
+    function setupValidators() {
+      const hpCurrent = document.getElementById('player_hp_current');
+      const hpMax = document.getElementById('player_hp');
+      const manaCurrent = document.getElementById('player_mana_current');
+      const manaMax = document.getElementById('player_mana');
+      const protectionCurrent = document.getElementById('player_protection_current');
+      const protectionMax = document.getElementById('player_protection_max');
+
+      // Validation pour les points de vie
+      hpCurrent.addEventListener('input', () => {
+        const current = parseInt(hpCurrent.value) || 0;
+        const max = parseInt(hpMax.value) || 0;
+        
+        if (current > max) {
+          hpCurrent.classList.add('error');
+        } else {
+          hpCurrent.classList.remove('error');
+        }
+      });
+
+      // Validation pour le mana
+      manaCurrent.addEventListener('input', () => {
+        const current = parseInt(manaCurrent.value) || 0;
+        const max = parseInt(manaMax.value) || 0;
+        
+        if (current > max) {
+          manaCurrent.classList.add('error');
+        } else {
+          manaCurrent.classList.remove('error');
+        }
+      });
+
+      // Exécution initiale des validations
+      setTimeout(() => {
+        hpCurrent.dispatchEvent(new Event('input'));
+        manaCurrent.dispatchEvent(new Event('input'));
+        validateProtection();
+      }, 500);
+    }     
     </script>
     <script>
         document.getElementById("fiche-btn").addEventListener("click", () => {
@@ -247,6 +298,19 @@
         const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
         const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
         
+        // S'assurer que les valeurs current ne dépassent pas les valeurs max
+        if (hpCurrent > hpMax) {
+          hpCurrent = hpMax;
+          document.getElementById('player_hp_current').value = hpMax;
+          document.getElementById('player_hp_current').classList.remove('error');
+        }
+
+        if (manaCurrent > manaMax) {
+          manaCurrent = manaMax;
+          document.getElementById('player_mana_current').value = manaMax;
+          document.getElementById('player_mana_current').classList.remove('error');
+        }
+
         const nouvellesDonnees = {
           hp: { current: hpCurrent, max: hpMax },
           mana: { current: manaCurrent, max: manaMax },
