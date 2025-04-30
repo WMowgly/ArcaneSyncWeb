@@ -55,7 +55,7 @@
       margin-bottom: 5px;
       color: #3b2f1e;
     }
-    input, textarea {
+    input, textarea, select {
       font-family: 'Uncial Antiqua', cursive;
       padding: 6px 10px;
       font-size: 16px;
@@ -87,8 +87,12 @@
     <h2>Informations Générales</h2>
     <div class="grid">
       <div class="field"><label>Nom</label><input id="player_name" type="text"></div>
-      <div class="field"><label>Classe</label><input id="player_class" type="text"></div>
-      <div class="field"><label>Race</label><input id="player_race" type="text"></div>
+      <div class="field"><label>Classe</label>
+        <select id="player_class"></select>
+      </div>
+      <div class="field"><label>Race</label>
+        <select id="player_race"></select>
+      </div>      
       <div class="field"><label>Niveau</label><input id="player_level" type="number" min="1"></div>
     </div>
   </div>
@@ -145,6 +149,30 @@
 
   <script src="navbar.js"></script>
   <script>
+    // Options intégrées directement dans le code
+    const options = {
+      "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
+      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"]
+    };
+    
+    // Remplir la liste déroulante des classes
+    const classSelect = document.getElementById('player_class');
+    options.classes.forEach(className => {
+      const option = document.createElement('option');
+      option.value = className;
+      option.textContent = className;
+      classSelect.appendChild(option);
+    });
+
+    // Remplir la liste déroulante des races
+    const raceSelect = document.getElementById('player_race');
+    options.races.forEach(raceName => {
+      const option = document.createElement('option');
+      option.value = raceName;
+      option.textContent = raceName;
+      raceSelect.appendChild(option);
+    });
+
     document.getElementById('save_player_creation').addEventListener('click', () => {
     
       // Copie les valeurs max vers les valeurs "actuelles"
@@ -199,7 +227,7 @@
         levelup: document.getElementById('levelup').value
       };
 
-      fetch('http://192.168.254.186:3000/api/joueurs', {
+      fetch('/api/joueurs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
