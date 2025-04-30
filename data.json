@@ -239,5 +239,99 @@
     },
     "bio": "",
     "levelup": ""
+  },
+  {
+    "nom": "fdss",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 1,
+    "hp": {
+      "max": null,
+      "current": null
+    },
+    "mana": {
+      "max": null,
+      "current": null
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": 20,
+      "charisme": null,
+      "perception": null,
+      "chance": 20,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "test",
+    "classe": "Aventurier",
+    "race": "Ecorfal",
+    "niveau": 2,
+    "hp": {
+      "max": null,
+      "current": null
+    },
+    "mana": {
+      "max": null,
+      "current": null
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "",
+      "resistance": "",
+      "durabilite": "",
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
   }
 ]
