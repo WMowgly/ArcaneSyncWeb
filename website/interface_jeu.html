@@ -249,6 +249,12 @@
           <input type="number" id="player_intox" placeholder="Intox">
         </div>
       </div>
+
+      <div class="field">
+        <label>État de l'armure</label>
+        <input type="text" id="player_armor" readonly>
+      </div>
+
     </div><!-- fin du grid -->
     <div style="text-align: center; margin-top: 30px;">
       <button id="save-btn" style="
@@ -297,6 +303,8 @@
       document.getElementById('player_protection_current').value = params.get("Valeur protection");
 
       document.getElementById('player_intox').value = params.get("Intox.");
+
+      updateArmorState();
 
 
 
@@ -367,15 +375,44 @@
         } else {
           protectionCurrent.classList.remove('error');
         }
+
+        updateArmorState();
       });
 
       // Exécution initiale des validations
       setTimeout(() => {
         hpCurrent.dispatchEvent(new Event('input'));
         manaCurrent.dispatchEvent(new Event('input'));
-        validateProtection();
+        protectionCurrent.dispatchEvent(new Event('input'));
+        updateArmorState(); 
       }, 500);
-    }     
+    }    
+    
+    function updateArmorState() {
+      const protectionMax = parseInt(document.getElementById('player_protection_max').value) || 0;
+      const protectionCurrent = parseInt(document.getElementById('player_protection_current').value) || 0;
+      const armorStateInput = document.getElementById('player_armor');
+      
+      let etat = '';
+      let couleur = '';
+      
+      if (protectionCurrent === 0) {
+          etat = "Absence d'armure";
+          couleur = '#000000'; // noir
+      } else if (protectionCurrent >= ((protectionMax/3)*2)+1) {
+          etat = 'Armure Neuve';
+          couleur = '#2e7d32'; // vert
+      } else if (protectionCurrent >= (protectionMax/3)+1) {
+          etat = 'Armure Abîmée';
+          couleur = '#ff9800'; // orange
+      } else {
+          etat = 'Armure Très Abîmée';
+          couleur = '#d32f2f'; // rouge
+      }
+      
+      armorStateInput.value = etat;
+      armorStateInput.style.color = couleur;
+    }
     </script>
     <script>
         document.getElementById("fiche-btn").addEventListener("click", () => {
