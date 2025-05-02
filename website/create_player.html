@@ -117,7 +117,9 @@
       <div class="field"><label>Sac</label><input id="eq_sac" type="text"></div>
       <div class="field"><label>Ceinture / Dos</label><input id="eq_ceinture" type="text"></div>
       <div class="field"><label>Armes</label><input id="eq_armes" type="text"></div>
-      <div class="field"><label>Type d'armure</label><input id="eq_armure" type="text"></div>
+      <div class="field"><label>Type d'armure</label>
+        <select id="eq_armure" type="text"></select>
+      </div>
       <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
       <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="text"></div>
       <div class="field"><label>Type Dégâts</label><input id="eq_degats" type="text"></div>
@@ -152,7 +154,8 @@
     // Options intégrées directement dans le code
     const options = {
       "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
-      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"]
+      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"],
+      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"],
     };
     
     // Remplir la liste déroulante des classes
@@ -173,11 +176,21 @@
       raceSelect.appendChild(option);
     });
 
+    // Remplir la liste déroulante des armures
+    const armorSelect = document.getElementById('eq_armure');
+    options.armures.forEach(armorName => {
+      const option = document.createElement('option');
+      option.value = armorName;
+      option.textContent = armorName;
+      armorSelect.appendChild(option);
+    });
+
     document.getElementById('save_player_creation').addEventListener('click', () => {
     
       // Copie les valeurs max vers les valeurs "actuelles"
     document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
     document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
+    document.getElementById('eq_durabilite_current').value = document.getElementById('eq_durabilite').value;
 
       const data = {
         nom: document.getElementById('player_name').value,
@@ -208,7 +221,10 @@
           armes: document.getElementById('eq_armes').value,
           armure: document.getElementById('eq_armure').value,
           resistance: document.getElementById('eq_resistance').value,
-          durabilite: document.getElementById('eq_durabilite').value,
+          durabilite: {
+            max: document.getElementById('eq_durabilite').value,
+            current: document.getElementById('eq_durabilite_current').value,
+          },
           degats: document.getElementById('eq_degats').value
         },
         defense: {

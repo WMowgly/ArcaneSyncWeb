@@ -115,6 +115,45 @@
         grid-template-columns: 1fr;
       }
     }
+
+    select {
+      font-family: 'Uncial Antiqua', cursive;
+      padding: 6px 10px;
+      font-size: 16px;
+      background: #fefae0;
+      border: 2px solid #8b5e3c;
+      border-radius: 6px;
+      box-shadow: inset 0 0 4px #8b5e3c44;
+      box-sizing: border-box;
+      width: 100%;
+      color: #3b2f1e;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b5e3c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      padding-right: 30px;
+    }
+
+    select:hover {
+      border-color: #5c3b21;
+      background-color: #fff8dc;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #5c3b21;
+      box-shadow: 0 0 0 2px #8b5e3c33;
+    }
+
+    select option {
+      background: #fefae0;
+      color: #3b2f1e;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
@@ -125,8 +164,8 @@
     <h2>Informations Générales</h2>
     <div class="grid">
       <div class="field"><label>Nom</label><input type="text" readonly></div>
-      <div class="field"><label>Classe</label><input type="text"></div>
-      <div class="field"><label>Race</label><input type="text"></div>
+      <div class="field"><label>Classe</label><select id="player_class"></select></div>
+      <div class="field"><label>Race</label><select id="player_race"></select></div>
       <div class="field"><label>Niveau</label><input type="number" min="1"></div>
     </div>
   </div>
@@ -163,9 +202,9 @@
       <div class="field"><label>Sac</label><input type="text"></div>
       <div class="field"><label>Ceinture / Dos</label><input type="text"></div>
       <div class="field"><label>Armes</label><input type="text"></div>
-      <div class="field"><label>Type d'armure</label><input type="text"></div>
+      <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
       <div class="field"><label>Résistance</label><input type="text"></div>
-      <div class="field"><label>Durabilité</label><input type="text"></div>
+      <div class="field"><label>Durabilité</label><input type="number"></div>
       <div class="field"><label>Type Dégâts</label><input type="text"></div>
     </div>
   </div>
@@ -207,6 +246,40 @@
 
   <script src="navbar.js"></script>
   <script>
+    const options = {
+      "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
+      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"],
+      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"]
+    };
+
+    // Remplir la liste déroulante des classes
+    const classSelect = document.getElementById('player_class');
+    options.classes.forEach(className => {
+      const option = document.createElement('option');
+      option.value = className;
+      option.textContent = className;
+      classSelect.appendChild(option);
+    });
+
+    // Remplir la liste déroulante des races
+    const raceSelect = document.getElementById('player_race');
+    options.races.forEach(raceName => {
+      const option = document.createElement('option');
+      option.value = raceName;
+      option.textContent = raceName;
+      raceSelect.appendChild(option);
+    });
+
+    // Remplir la liste déroulante des armures
+    const armorSelect = document.getElementById('eq_armure');
+    options.armures.forEach(armorName => {
+      const option = document.createElement('option');
+      option.value = armorName;
+      option.textContent = armorName;
+      armorSelect.appendChild(option);
+    });
+
+
     window.addEventListener('DOMContentLoaded', () => {
 
       console.log('Script chargé');
@@ -218,7 +291,7 @@
         const field = Array.from(document.querySelectorAll('.field')).find(
           f => f.querySelector('label')?.textContent.trim() === labelText
         );
-        return field?.querySelector('input, textarea')?.value || '';
+        return field?.querySelector('input, textarea, select')?.value || '';
       }
 
       // Fonction utilitaire pour récupérer la valeur numérique d'un champ
@@ -241,6 +314,9 @@
         else if (labelText === 'Mana') {
           input.value = params.get('ManaMax') || '';
         }
+        else if (labelText === 'Durabilité') {
+          input.value = params.get('DuraMax') || '';
+        }
         else {
           const value = params.get(labelText);
           if (value !== null) {
@@ -249,10 +325,38 @@
         }
       });
 
+      // Chargement spécifique de la biographie
+      const bioSection = Array.from(document.querySelectorAll('.section'))
+          .find(section => section.querySelector('h2')?.textContent.includes('Biographie'));
+      if (bioSection) {
+          const bioTextarea = bioSection.querySelector('textarea');
+          if (bioTextarea) {
+              const biographie = params.get('Biographie');
+              if (biographie !== null) {
+                  bioTextarea.value = biographie;
+              }
+          }
+      }
+
       // Pour afficher le nom du joueur dans le titre
       const nom = params.get('Nom');
       if (nom) {
         document.querySelector('h1').innerText = `Fiche de ${nom}`;
+      }
+
+      const classeValue = params.get('Classe');
+      if (classeValue) {
+        document.getElementById('player_class').value = classeValue;
+      }
+
+      const raceValue = params.get('Race');
+      if (raceValue) {
+        document.getElementById('player_race').value = raceValue;
+      }
+
+      const armureValue = params.get("Type d'armure");
+      if (armureValue) {
+        document.getElementById('eq_armure').value = armureValue;
       }
 
       // Gestionnaire d'événement pour le bouton de sauvegarde
@@ -273,8 +377,8 @@
         
         const nouvellesDonnees = {
           nom: nom,
-          classe: getFieldValue('Classe'),
-          race: getFieldValue('Race'),
+          classe: document.getElementById('player_class').value,
+          race: document.getElementById('player_race').value,
           niveau: getNumericValue('Niveau'),
           hp: {
             max: getNumericValue('Vie'),
@@ -298,9 +402,12 @@
             sac: getFieldValue('Sac'),
             ceinture: getFieldValue('Ceinture / Dos'),
             armes: getFieldValue('Armes'),
-            armure: getFieldValue("Type d'armure"),
+            armure: document.getElementById('eq_armure').value,
             resistance: getFieldValue('Résistance'),
-            durabilite: getFieldValue('Durabilité'),
+            durabilite: {
+              max: getNumericValue('Durabilité'),
+              current: parseInt(params.get('DuraCurrent')) || 0
+            },
             degats: getFieldValue('Type Dégâts')
           },
           defense: {
@@ -369,7 +476,8 @@
             newParams.set('Armes', nouvellesDonnees.equipement.armes);
             newParams.set("Type d'armure", nouvellesDonnees.equipement.armure);
             newParams.set('Résistance', nouvellesDonnees.equipement.resistance);
-            newParams.set('Durabilité', nouvellesDonnees.equipement.durabilite);
+            newParams.set('DuraMax', nouvellesDonnees.equipement.durabilite?.max);
+            newParams.set('DuraCurrent', nouvellesDonnees.equipement.durabilite?.current);
             newParams.set('Type Dégâts', nouvellesDonnees.equipement.degats);
             
             // Mise à jour des compétences et autres

@@ -120,6 +120,16 @@
       align-items: center;
       font-weight: normal;
     }
+
+    .status-text {
+      font-family: 'Uncial Antiqua', cursive;
+      font-size: 11px;
+      padding: 2px 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -129,60 +139,29 @@
   <div class="section">
     <h2>Interface de Jeu</h2>
     <div class="grid">
-      <div class="field"><label>Nom</label><input type="text" readonly></div>
-      <div class="field"><label>Classe</label><input type="text" readonly></div>
-      <div class="field"><label>Race</label><input type="text" readonly></div>
+      <div class="field"><label>Nom</label><input id="player_name" type="text" readonly></div>
+      <div class="field"><label>Classe</label><input id="player_class" type="text" readonly></div>
+      <div class="field"><label>Race</label><input id="player_race" type="text" readonly></div>
       <div class="field">
         <label>Jets de survie</label>
-        <div style="
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        ">
-          <div style="
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          ">
-            <span>1:</span>
-            <label style="margin: 0;">
-              <input type="radio" name="survie1" value="reussi">
-              Réussi
-            </label>
-            <label style="margin: 0;">
-              <input type="radio" name="survie1" value="rate">
-              Raté
-            </label>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Ligne des "Réussi" -->
+          <div style="display: flex; align-items: center;">
+            <span style="width: 75px;">Réussi</span>
+            <div style="display: flex; gap: 20px;">
+              <input type="checkbox" name="survie1" value="reussi">
+              <input type="checkbox" name="survie2" value="reussi">
+              <input type="checkbox" name="survie3" value="reussi">
+            </div>
           </div>
-          <div style="
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          ">
-            <span>2:</span>
-            <label style="margin: 0;">
-              <input type="radio" name="survie2" value="reussi">
-              Réussi
-            </label>
-            <label style="margin: 0;">
-              <input type="radio" name="survie2" value="rate">
-              Raté
-            </label>
-          </div>
-          <div style="
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          ">
-            <span>3:</span>
-            <label style="margin: 0;">
-              <input type="radio" name="survie3" value="reussi">
-              Réussi
-            </label>
-            <label style="margin: 0;">
-              <input type="radio" name="survie3" value="rate">
-              Raté
-            </label>
+          <!-- Ligne des "Echec" -->
+          <div style="display: flex; align-items: center;">
+            <span style="width: 75px;">Échec</span>
+            <div style="display: flex; gap: 20px;">
+              <input type="checkbox" name="survie1" value="echec">
+              <input type="checkbox" name="survie2" value="echec">
+              <input type="checkbox" name="survie3" value="echec">
+            </div>
           </div>
         </div>
       </div>
@@ -190,7 +169,7 @@
       <div class="field">
         <label>Vie</label>
         <div class="dual-input">
-          <input type="number" id="player_hp_current" placeholder="Min">
+          <input type="number" id="player_hp_current" min="0" placeholder="Min">
           <span style="
             display: flex;
             align-items: center;
@@ -205,31 +184,9 @@
       </div>
 
       <div class="field">
-        <label>Vie bonus</label>
-        <input type="number" id="player_vie_bonus">
-      </div>
-
-      <div class="field">
-        <label>Valeur protection</label>
-        <div class="dual-input">
-          <input type="number" id="player_protection_current">
-          <span style="
-            display: flex;
-            align-items: center;
-            margin: 0 5px;
-            color: #8b5e3c;
-            font-size: 24px;
-            height: 90%;
-            padding-bottom: 3px;
-          ">/</span>
-          <input type="number" id="player_protection_max" placeholder="Max" readonly>
-        </div>
-      </div>
-
-      <div class="field">
         <label>Mana</label>
         <div class="dual-input">
-          <input type="number" id="player_mana_current" placeholder="Min">
+          <input type="number" id="player_mana_current" min="0" placeholder="Min">
           <span style="
             display: flex;
             align-items: center;
@@ -244,15 +201,54 @@
       </div>
 
       <div class="field">
-        <label>Intox.</label>
+        <label>Durabilité</label>
         <div class="dual-input">
-          <input type="number" id="player_intox" placeholder="Intox">
+          <input type="number" id="player_dura_current" min="0" placeholder="0">
+          <span style="
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+            color: #8b5e3c;
+            font-size: 24px;
+            height: 90%;
+            padding-bottom: 3px;
+          ">/</span>
+          <input type="number" id="player_dura_max" placeholder="Max" readonly>
         </div>
       </div>
 
       <div class="field">
         <label>État de l'armure</label>
         <input type="text" id="player_armor" readonly>
+        <div id="armor_effect" class="status-text"></div>
+      </div>
+
+      <div class="field">
+        <label>Valeur de Protection</label>
+        <div class="dual-input">
+          <input type="number" id="player_protection_current" min="0" placeholder="0">
+          <span style="
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+            color: #8b5e3c;
+            font-size: 24px;
+            height: 90%;
+            padding-bottom: 3px;
+          ">/</span>
+          <input type="number" id="player_protection_max" placeholder="Max" readonly>
+        </div>
+      </div>
+
+      <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="display: flex; flex-direction: column;">
+          <label>Vie bonus</label>
+          <input type="number" id="player_vie_bonus" min="0" placeholder="0">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <label>Intox.</label>
+          <input type="number" id="player_intox" placeholder="0" min="0" max="100">
+        </div>
       </div>
 
     </div><!-- fin du grid -->
@@ -289,129 +285,113 @@
   </div>
   <script src="navbar.js"></script>
   <script>
+    let params;
+
     window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-    
-      // Injection des valeurs max et actuelles dans les champs
-      document.getElementById('player_hp').value = params.get("VieMax");
-      document.getElementById('player_hp_current').value = params.get("VieCurrent");
-      
-      document.getElementById('player_mana').value = params.get("ManaMax");
-      document.getElementById('player_mana_current').value = params.get("ManaCurrent");
-
-      document.getElementById('player_protection_max').value = params.get("Valeur protection max");
-      document.getElementById('player_protection_current').value = params.get("Valeur protection");
-
-      document.getElementById('player_intox').value = params.get("Intox.");
-
+      params = new URLSearchParams(window.location.search);
+      initializeFields();
+      setupValidators();
       updateArmorState();
-
-
-
-      document.querySelectorAll('input').forEach(input => {
-        const placeholder = input.placeholder?.toLowerCase();
-        const name = input.previousElementSibling?.innerText?.trim();
-    
-        if (!name) return;
-    
-        const value = params.get(name);
-        if (value !== null) {
-          input.value = value;
-        }
-      });
-    
-      // Pour afficher le nom du joueur dans le titre (optionnel)
+      
+      // Pour afficher le nom du joueur dans le titre
       const nom = params.get("Nom");
       if (nom) {
         document.querySelector("h1").innerText = `Interface de Jeu – ${nom}`;
       }
 
-      // Ajout des validateurs pour les champs current ne dépassant pas max
-      setupValidators();
-
+      const duraCurrent = document.getElementById('player_dura_current');
+      if (duraCurrent) {
+        duraCurrent.addEventListener('input', updateArmorState);
+      }
     });
 
+    function initializeFields() {
+      // Injection des valeurs max et actuelles dans les champs
+      document.getElementById('player_hp').value = params.get("VieMax");
+      document.getElementById('player_hp_current').value = params.get("VieCurrent");
+      document.getElementById('player_mana').value = params.get("ManaMax");
+      document.getElementById('player_mana_current').value = params.get("ManaCurrent");
+      document.getElementById('player_protection_max').value = params.get("Valeur protection max");
+      document.getElementById('player_protection_current').value = params.get("Valeur protection");
+      document.getElementById('player_dura_max').value = params.get("DuraMax");
+      document.getElementById('player_dura_current').value = params.get("DuraCurrent");
+      document.getElementById('player_intox').value = params.get("Intox.");
+      document.getElementById('player_vie_bonus').value = params.get("Vie bonus");
+      document.getElementById('player_name').value = params.get("Nom") || '';
+      document.getElementById('player_class').value = params.get("Classe") || '';
+      document.getElementById('player_race').value = params.get("Race") || '';
 
-    // Fonction pour vérifier que current <= max pour vie et mana
+      // Initialiser les cases à cocher de survie
+      for (let i = 1; i <= 3; i++) {
+        const reussi = params.get(`Survie${i}_reussi`) === 'true';
+        const echec = params.get(`Survie${i}_echec`) === 'true';
+        document.querySelector(`input[name="survie${i}"][value="reussi"]`).checked = reussi;
+        document.querySelector(`input[name="survie${i}"][value="echec"]`).checked = echec;
+      }
+
+      updateArmorState();
+    }
+
     function setupValidators() {
-      const hpCurrent = document.getElementById('player_hp_current');
-      const hpMax = document.getElementById('player_hp');
-      const manaCurrent = document.getElementById('player_mana_current');
-      const manaMax = document.getElementById('player_mana');
-      const protectionCurrent = document.getElementById('player_protection_current');
-      const protectionMax = document.getElementById('player_protection_max');
-
-      // Validation pour les points de vie
-      hpCurrent.addEventListener('input', () => {
-        const current = parseInt(hpCurrent.value) || 0;
-        const max = parseInt(hpMax.value) || 0;
+      const fields = ['hp', 'mana', 'protection', 'dura'];
+      
+      fields.forEach(field => {
+        const current = document.getElementById(`player_${field}_current`);
+        const max = document.getElementById(`player_${field}`);
         
-        if (current > max) {
-          hpCurrent.classList.add('error');
-        } else {
-          hpCurrent.classList.remove('error');
-        }
-      });
-
-      // Validation pour le mana
-      manaCurrent.addEventListener('input', () => {
-        const current = parseInt(manaCurrent.value) || 0;
-        const max = parseInt(manaMax.value) || 0;
+        if (!current || !max) return;
         
-        if (current > max) {
-          manaCurrent.classList.add('error');
-        } else {
-          manaCurrent.classList.remove('error');
-        }
+        current.addEventListener('input', () => {
+          const currentVal = parseInt(current.value) || 0;
+          const maxVal = parseInt(max.value) || 0;
+          
+          if (currentVal > maxVal) {
+            current.classList.add('error');
+          } else {
+            current.classList.remove('error');
+          }
+          
+          updateArmorState();
+        });
       });
+    }
 
-      // Validation pour la protection
-      protectionCurrent.addEventListener('input', () => {
-        const current = parseInt(protectionCurrent.value) || 0;
-        const max = parseInt(protectionMax.value) || 0;
-        
-        if (current > max) {
-          protectionCurrent.classList.add('error');
-        } else {
-          protectionCurrent.classList.remove('error');
-        }
-
-        updateArmorState();
-      });
-
-      // Exécution initiale des validations
-      setTimeout(() => {
-        hpCurrent.dispatchEvent(new Event('input'));
-        manaCurrent.dispatchEvent(new Event('input'));
-        protectionCurrent.dispatchEvent(new Event('input'));
-        updateArmorState(); 
-      }, 500);
-    }    
-    
     function updateArmorState() {
-      const protectionMax = parseInt(document.getElementById('player_protection_max').value) || 0;
-      const protectionCurrent = parseInt(document.getElementById('player_protection_current').value) || 0;
+      const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
+      const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
       const armorStateInput = document.getElementById('player_armor');
+      const armorStateEffect = document.getElementById('armor_effect');
       
       let etat = '';
       let couleur = '';
+      let effect = '';
       
-      if (protectionCurrent === 0) {
-          etat = "Absence d'armure";
-          couleur = '#000000'; // noir
-      } else if (protectionCurrent >= ((protectionMax/3)*2)+1) {
-          etat = 'Armure Neuve';
-          couleur = '#2e7d32'; // vert
-      } else if (protectionCurrent >= (protectionMax/3)+1) {
-          etat = 'Armure Abîmée';
-          couleur = '#ff9800'; // orange
+      if (duraCurrent === 0) {
+        etat = "Absence d'armure";
+        couleur = '#000000';
+        couleurs = '#000000';
+        effect = 'Plus aucune protection';
+      } else if (duraCurrent >= ((duraMax/3)*2)+1) {
+        etat = 'Armure Neuve';
+        couleur = '#2e7d32';
+        couleurs = '#000000';
+        effect = 'Protection maximale';
+      } else if (duraCurrent >= (duraMax/3)+1) {
+        etat = 'Armure Abîmée';
+        couleur = '#ff9800';
+        couleurs = '#000000';
+        effect = 'Bonus fixe supprimé';
       } else {
-          etat = 'Armure Très Abîmée';
-          couleur = '#d32f2f'; // rouge
+        etat = 'Armure Très Abîmée';
+        couleur = '#d32f2f';
+        couleurs = '#000000';
+        effect = 'Résultat du jet réduite de moitié';
       }
       
       armorStateInput.value = etat;
       armorStateInput.style.color = couleur;
+      armorStateEffect.textContent = effect;
+      armorStateEffect.style.color = couleurs;
     }
     </script>
     <script>
@@ -443,11 +423,22 @@
         const protectionCurrent = parseInt(document.getElementById('player_protection_current').value, 10);
         const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
         const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
+        const duraCurrent = parseInt(document.getElementById('player_dura_current').value, 10);
+        const duraMax = parseInt(document.getElementById('player_dura_max').value, 10);
         
         const survie = {
-          jet1: document.querySelector('input[name="survie1"]:checked')?.value || null,
-          jet2: document.querySelector('input[name="survie2"]:checked')?.value || null,
-          jet3: document.querySelector('input[name="survie3"]:checked')?.value || null
+          jet1: {
+            reussi: document.querySelector('input[name="survie1"][value="reussi"]').checked,
+            echec: document.querySelector('input[name="survie1"][value="echec"]').checked
+          },
+          jet2: {
+            reussi: document.querySelector('input[name="survie2"][value="reussi"]').checked,
+            echec: document.querySelector('input[name="survie2"][value="echec"]').checked
+          },
+          jet3: {
+            reussi: document.querySelector('input[name="survie3"][value="reussi"]').checked,
+            echec: document.querySelector('input[name="survie3"][value="echec"]').checked
+          }
         };
 
         // S'assurer que les valeurs current ne dépassent pas les valeurs max
@@ -469,9 +460,16 @@
           document.getElementById('player_protection_current').classList.remove('error');
         }
 
+        if (duraCurrent > duraMax) {
+          duraCurrent = duraMax;
+          document.getElementById('player_dura_current').value = duraMax;
+          document.getElementById('player_dura_current').classList.remove('error');
+        }
+
         const nouvellesDonnees = {
           hp: { current: hpCurrent, max: hpMax },
           mana: { current: manaCurrent, max: manaMax },
+          equipement: {durabilite: { current: duraCurrent, max: duraMax },},
           defense: { bonus_vie: vieBonus, protection: protectionCurrent, protection_max: protectionMax, intox: intoxCurrent, survie: survie }
         };
         
@@ -499,9 +497,14 @@
         newParams.set("Vie bonus", vieBonus.toString());
         newParams.set("Valeur protection", protectionCurrent.toString());
         newParams.set("Valeur protection max", protectionMax.toString());
-        newParams.set("Survie1", survie.jet1 || '');
-        newParams.set("Survie2", survie.jet2 || '');
-        newParams.set("Survie3", survie.jet3 || '');
+        newParams.set("Survie1_reussi", survie.jet1.reussi.toString());
+        newParams.set("Survie1_echec", survie.jet1.echec.toString());
+        newParams.set("Survie2_reussi", survie.jet2.reussi.toString());
+        newParams.set("Survie2_echec", survie.jet2.echec.toString());
+        newParams.set("Survie3_reussi", survie.jet3.reussi.toString());
+        newParams.set("Survie3_echec", survie.jet3.echec.toString());
+        newParams.set("DuraCurrent", duraCurrent.toString());
+        newParams.set("DuraMax", duraMax.toString());
 
         // Mettre à jour l'URL sans recharger la page
         window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);

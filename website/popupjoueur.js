@@ -34,7 +34,8 @@ export function openFicheJoueur(joueur) {
   params.set("Armes", eq.armes);
   params.set("Type d'armure", eq.armure);
   params.set("Résistance", eq.resistance);
-  params.set("Durabilité", eq.durabilite);
+  params.set("DuraMax", eq.durabilite?.max);
+  params.set("DuraCurrent", eq.durabilite?.current);
   params.set("Type Dégâts", eq.degats);
 
   // Textarea — à afficher à part éventuellement plus tard
