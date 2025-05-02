@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/> 
   <style>
     body {
       font-family: 'Uncial Antiqua', cursive;
@@ -102,6 +103,23 @@
         grid-template-columns: 1fr;
       }
     }
+
+    input[type="radio"] {
+      width: auto;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
+    .field label input[type="radio"] + span {
+      font-size: 14px;
+      color: #5c3b21;
+    }
+
+    .field label:has(input[type="radio"]) {
+      display: inline-flex;
+      align-items: center;
+      font-weight: normal;
+    }
   </style>
 </head>
 <body>
@@ -115,14 +133,73 @@
       <div class="field"><label>Classe</label><input type="text" readonly></div>
       <div class="field"><label>Race</label><input type="text" readonly></div>
       <div class="field">
-        <label>Survie</label>
-        <input type="number" placeholder="Survie">
+        <label>Jets de survie</label>
+        <div style="
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        ">
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          ">
+            <span>1:</span>
+            <label style="margin: 0;">
+              <input type="radio" name="survie1" value="reussi">
+              Réussi
+            </label>
+            <label style="margin: 0;">
+              <input type="radio" name="survie1" value="rate">
+              Raté
+            </label>
+          </div>
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          ">
+            <span>2:</span>
+            <label style="margin: 0;">
+              <input type="radio" name="survie2" value="reussi">
+              Réussi
+            </label>
+            <label style="margin: 0;">
+              <input type="radio" name="survie2" value="rate">
+              Raté
+            </label>
+          </div>
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          ">
+            <span>3:</span>
+            <label style="margin: 0;">
+              <input type="radio" name="survie3" value="reussi">
+              Réussi
+            </label>
+            <label style="margin: 0;">
+              <input type="radio" name="survie3" value="rate">
+              Raté
+            </label>
+          </div>
+        </div>
       </div>
 
       <div class="field">
         <label>Vie</label>
         <div class="dual-input">
           <input type="number" id="player_hp_current" placeholder="Min">
+          <span style="
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+            color: #8b5e3c;
+            font-size: 24px;
+            height: 90%;
+            padding-bottom: 3px;
+          ">/</span>
           <input type="number" id="player_hp" readonly>
         </div>
       </div>
@@ -134,18 +211,34 @@
 
       <div class="field">
         <label>Valeur protection</label>
-        <input type="number" id="player_protection_current">
-      </div>
-
-      <div class="field">
-        <label>Valeur protection max</label>
-        <input type="number" id="player_protection_max">
+        <div class="dual-input">
+          <input type="number" id="player_protection_current">
+          <span style="
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+            color: #8b5e3c;
+            font-size: 24px;
+            height: 90%;
+            padding-bottom: 3px;
+          ">/</span>
+          <input type="number" id="player_protection_max" placeholder="Max" readonly>
+        </div>
       </div>
 
       <div class="field">
         <label>Mana</label>
         <div class="dual-input">
           <input type="number" id="player_mana_current" placeholder="Min">
+          <span style="
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+            color: #8b5e3c;
+            font-size: 24px;
+            height: 90%;
+            padding-bottom: 3px;
+          ">/</span>
           <input type="number" id="player_mana" readonly>
         </div>
       </div>
@@ -156,24 +249,22 @@
           <input type="number" id="player_intox" placeholder="Intox">
         </div>
       </div>
-
-      <div style="text-align: center; margin-top: 30px;">
-        <button id="save-btn" style="
-          background-color: #8b5e3c;
-          color: white;
-          font-family: 'Uncial Antiqua', cursive;
-          padding: 12px 24px;
-          font-size: 18px;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          box-shadow: 2px 2px 5px #3b2f1e66;
-          ">
-          Sauvegarder
-        </button>
-      </div>
-
     </div><!-- fin du grid -->
+    <div style="text-align: center; margin-top: 30px;">
+      <button id="save-btn" style="
+        background-color: #8b5e3c;
+        color: white;
+        font-family: 'Uncial Antiqua', cursive;
+        padding: 12px 24px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 2px 2px 5px #3b2f1e66;
+        ">
+        Sauvegarder
+      </button>
+    </div>
   </div><!-- fin de la section h2 -->
   <div style="text-align: center; margin-top: 30px;">
     <button id="fiche-btn" style="
@@ -190,6 +281,7 @@
       Voir Fiche de Perso
     </button>
   </div>
+  <script src="navbar.js"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
@@ -201,7 +293,12 @@
       document.getElementById('player_mana').value = params.get("ManaMax");
       document.getElementById('player_mana_current').value = params.get("ManaCurrent");
 
+      document.getElementById('player_protection_max').value = params.get("Valeur protection max");
+      document.getElementById('player_protection_current').value = params.get("Valeur protection");
+
       document.getElementById('player_intox').value = params.get("Intox.");
+
+
 
       document.querySelectorAll('input').forEach(input => {
         const placeholder = input.placeholder?.toLowerCase();
@@ -260,6 +357,18 @@
         }
       });
 
+      // Validation pour la protection
+      protectionCurrent.addEventListener('input', () => {
+        const current = parseInt(protectionCurrent.value) || 0;
+        const max = parseInt(protectionMax.value) || 0;
+        
+        if (current > max) {
+          protectionCurrent.classList.add('error');
+        } else {
+          protectionCurrent.classList.remove('error');
+        }
+      });
+
       // Exécution initiale des validations
       setTimeout(() => {
         hpCurrent.dispatchEvent(new Event('input'));
@@ -298,6 +407,12 @@
         const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
         const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
         
+        const survie = {
+          jet1: document.querySelector('input[name="survie1"]:checked')?.value || null,
+          jet2: document.querySelector('input[name="survie2"]:checked')?.value || null,
+          jet3: document.querySelector('input[name="survie3"]:checked')?.value || null
+        };
+
         // S'assurer que les valeurs current ne dépassent pas les valeurs max
         if (hpCurrent > hpMax) {
           hpCurrent = hpMax;
@@ -311,10 +426,16 @@
           document.getElementById('player_mana_current').classList.remove('error');
         }
 
+        if (protectionCurrent > protectionMax) {
+          protectionCurrent = protectionMax;
+          document.getElementById('player_protection_current').value = protectionMax;
+          document.getElementById('player_protection_current').classList.remove('error');
+        }
+
         const nouvellesDonnees = {
           hp: { current: hpCurrent, max: hpMax },
           mana: { current: manaCurrent, max: manaMax },
-          defense: { bonus_vie: vieBonus, protection: protectionCurrent, protection_max: protectionMax, intox: intoxCurrent }
+          defense: { bonus_vie: vieBonus, protection: protectionCurrent, protection_max: protectionMax, intox: intoxCurrent, survie: survie }
         };
         
         // Afficher les données dans la console (pour le débogage)
@@ -341,6 +462,9 @@
         newParams.set("Vie bonus", vieBonus.toString());
         newParams.set("Valeur protection", protectionCurrent.toString());
         newParams.set("Valeur protection max", protectionMax.toString());
+        newParams.set("Survie1", survie.jet1 || '');
+        newParams.set("Survie2", survie.jet2 || '');
+        newParams.set("Survie3", survie.jet3 || '');
 
         // Mettre à jour l'URL sans recharger la page
         window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
