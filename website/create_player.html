@@ -122,6 +122,7 @@
       </div>
       <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
       <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="text"></div>
+      <div class="field" style="display: none;"><input id="eq_durabilite_current" type="hidden"></div>
       <div class="field"><label>Type Dégâts</label><input id="eq_degats" type="text"></div>
     </div>
   </div>
@@ -187,6 +188,15 @@
 
     document.getElementById('save_player_creation').addEventListener('click', () => {
     
+          // Validation basique
+    const requiredFields = ['player_name', 'player_class', 'player_race', 'player_level'];
+    for (const fieldId of requiredFields) {
+        if (!document.getElementById(fieldId).value) {
+            alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+    }
+
       // Copie les valeurs max vers les valeurs "actuelles"
     document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
     document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
@@ -248,9 +258,16 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(json => {
+        console.log('Réponse du serveur :', json);
         alert('Joueur enregistré avec succès !');
+        window.location.href = '/selecte_player.html';
       })
       .catch(err => {
         console.error(err);
