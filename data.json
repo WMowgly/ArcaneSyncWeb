@@ -413,5 +413,105 @@
     },
     "bio": "Elarion Rubavol est né au cœur de la Forêt de [Nom de la foret des elfes (ou une partie)], une communauté druidique vieille comme le monde. Au sein de cette forêt mystique, les enfants naissent sans connaître l’identité de leurs parents, car chaque enfant appartient à la forêt elle-même et à la communauté tout entière. Dans cette enclave d'harmonie, l’esprit de la nature dicte les lois, et chaque individu est formé dès son plus jeune âge aux arts druidiques : communiquer avec la nature, maîtriser la magie des plantes, des vents et des formes animales.\n\nLes enfants de [Nom de la foret des elfes (ou une partie)] n'ont pas de nom de famille à leur naissance, car ces derniers ne sont attribués qu'à l'âge de 50 ans, lorsque la magie propre à chaque individu se manifeste pleinement. À ce moment-là, chaque druide reçoit un nom de famille qui reflète ses capacités magiques particulières, une manière de marquer son lien unique avec la nature. Elarion, à ce moment-là, reçut le nom de Rubavol, un nom symbolisant sa maîtrise des ronces et de la métamorphose, des pouvoirs qui, tels des ronces enchevêtrées, forgent et transforment la réalité à sa volonté.\n\nDurant ses jeunes années, Elarion observait souvent un autre élève plus âgé : Faëlin Mornelys. Faëlin était déjà marqué par une magie ancienne, sombre et végétale, et parlait peu, mais chaque mot semblait peser le poids du monde. Le jour même où Elarion reçut son nom, Faëlin quitta la forêt pour accomplir son propre Voyage de l’Indépendance.\n\nLa formation d’Elarion a duré cent ans, une période où il a appris à connaître et à comprendre la nature dans toute sa complexité : des ronces vivantes aux changements de formes, en passant par la métamorphose et la protection de la forêt. En tout cela, il a grandi au sein d'une communauté où chaque adulte veille sur l’enfant des autres, et où chaque individu fait partie d’un tout. La forêt est sa mère, le vent son père, et la magie de la nature son âme.\n\nLe dernier rituel de son apprentissage arrive à l’aube de ses cent ans : le Voyage de l’Indépendance. Chaque druide, après sa formation, doit quitter la forêt et voyager pendant 100 ans, un temps suffisant pour affronter le monde avec les enseignements qu’il a reçus. Elarion, maintenant prêt, a quitté la sécurité de la forêt pour explorer les terres inconnues, où il devra comprendre et appliquer la magie de la nature en dehors des frontières de la communauté.\n\nCe voyage, qui durera un siècle, est un passage incontournable, une quête personnelle pour devenir maître de soi-même tout en restant en lien avec le monde naturel. Elarion devra faire face aux dangers et aux merveilles des contrées lointaines, mais sa connexion avec la forêt et ses mystères le guidera.\n\n",
     "levelup": ""
+  },
+  {
+    "nom": "ds",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 1,
+    "hp": {
+      "max": null,
+      "current": null
+    },
+    "mana": {
+      "max": null,
+      "current": null
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "Armure légère",
+      "resistance": "",
+      "durabilite": {
+        "max": "",
+        "current": ""
+      },
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
+  },
+  {
+    "nom": "Testphone",
+    "classe": "Druide",
+    "race": "Humain",
+    "niveau": 5,
+    "hp": {
+      "max": null,
+      "current": null
+    },
+    "mana": {
+      "max": null,
+      "current": null
+    },
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "equipement": {
+      "sac": "",
+      "ceinture": "",
+      "armes": "",
+      "armure": "Armure légère",
+      "resistance": "",
+      "durabilite": {
+        "max": "",
+        "current": ""
+      },
+      "degats": ""
+    },
+    "defense": {
+      "survie": "",
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": ""
+    },
+    "competences": {
+      "classe": "",
+      "sorts": "",
+      "speciales": ""
+    },
+    "bio": "",
+    "levelup": ""
   }
 ]
