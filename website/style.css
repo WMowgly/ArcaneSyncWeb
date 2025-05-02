@@ -239,6 +239,24 @@ button {
     width: 90%;
     position: relative;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  
+  .modal h2 {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .modal p {
+    text-align: center;
+    margin: 10px 0;
+  }
+  
+  .modal .fiche-btn {
+    display: block;
+    margin: 20px auto;
+    width: fit-content;
+    min-width: 200px;
   }
   
   .close-btn {
@@ -249,7 +267,7 @@ button {
     font-size: 20px;
     color: #888;
   }
-
+  
   @media (max-width: 768px) {
     .grid {
       grid-template-columns: 1fr 1fr;
