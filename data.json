@@ -152,8 +152,8 @@
     "race": "Humain",
     "niveau": 1,
     "hp": {
-      "max": 32,
-      "current": 30
+      "max": 35,
+      "current": 32
     },
     "mana": {
       "max": 65,
@@ -179,14 +179,10 @@
       "degats": "1"
     },
     "defense": {
-      "survie": {
-        "jet1": null,
-        "jet2": null,
-        "jet3": null
-      },
-      "bonus_vie": 0,
-      "protection": 8,
-      "protection_max": 9,
+      "survie": "",
+      "bonus_vie": null,
+      "protection": 21,
+      "protection_max": 21,
       "intox": 1
     },
     "competences": {
@@ -194,7 +190,7 @@
       "sorts": "1",
       "speciales": "1"
     },
-    "bio": "Test",
+    "bio": "",
     "levelup": "1"
   },
   {
