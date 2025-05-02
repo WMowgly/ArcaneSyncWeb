@@ -5,6 +5,7 @@ const server = http.createServer(app);
 const io = require('socket.io')(server);
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData } = require('./joueur');
 
 // Configuration pour le tableau
@@ -176,6 +177,19 @@ io.on('connection', (socket) => {
   });
 });
 
+function getLocalIPAddress() {
+  const interfaces = os.networkInterfaces();
+  for (let name in interfaces) {
+    for (let iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+const ip = getLocalIPAddress();
 server.listen(3000, () => {
-  console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://192.168.1.162:3000');
+  console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://' + ip + ':3000');
 });
