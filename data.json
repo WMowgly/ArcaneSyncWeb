@@ -230,17 +230,27 @@
       "intelligence": null
     },
     "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
-      "resistance": "",
-      "durabilite": "",
-      "degats": ""
+      "durabilite": {
+        "current": null,
+        "max": null
+      }
     },
     "defense": {
-      "survie": "",
-      "bonus_vie": null,
+      "survie": {
+        "jet1": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet2": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet3": {
+          "reussi": false,
+          "echec": false
+        }
+      },
+      "bonus_vie": 0,
       "protection": null,
       "protection_max": null,
       "intox": null
