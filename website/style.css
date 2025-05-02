@@ -1,15 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
 body {
-    font-family: Arial, sans-serif;
-    padding: 2rem;
-    background-color: #767676;
-    text-align: center;
+  font-family: 'Uncial Antiqua', cursive;
+  background-color: #fdf6e3;
+  padding: 40px;
+  color: #3b2f1e;
 }
 
 h1 {
-    width: 100%;
-    color: #1e1025;
-    text-align: center;
-    margin-bottom: 10px;
+  text-align: center;
+  margin-bottom: 40px;
+  text-shadow: 1px 1px 2px #00000050;
+}
+
+.section {
+  background: #fff4d6;
+  border: 4px solid #8b5e3c;
+  border-radius: 12px;
+  padding: 30px 20px 20px 20px;
+  box-shadow: 0 0 10px #3b2f1e99;
+  max-width: 800px;
+  margin: auto;
+  position: relative;
+}
+
+.section h2 {
+  position: absolute;
+  top: -5px;
+  left: 20px;
+  background: #fff4d6;
+  padding: 0 10px;
+  font-size: 20px;
+  border: 2px solid #8b5e3c;
+  border-radius: 8px;
+  color: #5c3b21;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.dual-input {
+  display: flex;
+  gap: 5px;
+}
+
+input {
+  font-family: 'Uncial Antiqua', cursive;
+  font-size: 16px;
+  padding: 6px 10px;
+  background: #fefae0;
+  border: 2px solid #8b5e3c;
+  border-radius: 6px;
+  box-shadow: inset 0 0 4px #8b5e3c44;
+  width: 100%;
+}
+
+input[type="number"] {
+  width: 50%;
+}
+
+input[type="text"] {
+  width: 90%;
+}
+
+.error {
+  border-color: #cc0000;
+  background-color: #ffeeee;
+}
+
+input[type="radio"] {
+  width: auto;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.field label input[type="radio"] + span {
+  font-size: 14px;
+  color: #5c3b21;
+}
+
+.field label:has(input[type="radio"]) {
+  display: inline-flex;
+  align-items: center;
+  font-weight: normal;
+}
+
+.status-text {
+  font-family: 'Uncial Antiqua', cursive;
+  font-size: 11px;
+  padding: 2px 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  font-style: italic;
 }
 
 button {
@@ -18,6 +114,28 @@ button {
     cursor: pointer;
     background-color: #aa8dba;
     font-weight: bold;
+}
+
+.game-button {
+  background-color: #8b5e3c;
+  color: white;
+  font-family: 'Uncial Antiqua', cursive;
+  padding: 12px 24px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px #3b2f1e66;
+}
+
+.divider-span {
+  display: flex;
+  align-items: center;
+  margin: 0 5px;
+  color: #8b5e3c;
+  font-size: 24px;
+  height: 90%;
+  padding-bottom: 3px;
 }
 
 #output {
@@ -73,7 +191,7 @@ button {
   }
   
   .navbar {
-    background-color: #2c003e;
+    background-color: #8b5e3c;
     padding: 1rem;
     display: flex;
     justify-content: center;
@@ -81,17 +199,23 @@ button {
     position: sticky;
     top: 0;
     z-index: 10;
+    box-shadow: 0 2px 5px #3b2f1e66;
+    font-family: 'Uncial Antiqua', cursive;
+    border-radius: 0 0 8px 8px;
   }
   
   .navbar a {
-    color: white;
+    color: #fff4d6;
     text-decoration: none;
     font-weight: bold;
-    transition: color 0.3s;
+    transition: all 0.3s ease;
+    font-size: 16px;
   }
   
   .navbar a:hover {
-    color: #b88cd6;
+    color: #fdf6e3;
+    transform: translateY(-2px);
+    text-shadow: 2px 2px 4px #3b2f1e66;
   }
   
   .modal-overlay {
@@ -126,4 +250,61 @@ button {
     color: #888;
   }
 
+  @media (max-width: 768px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
   
+    input[type="number"] {
+      width: 100%;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+
+  /* Styles spécifiques pour la page index */
+.page-index {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.page-index button {
+  width: 300px;
+  padding: 15px;
+  font-size: 18px;
+  background-color: #8b5e3c;
+  color: white;
+  font-family: 'Uncial Antiqua', cursive;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px #3b2f1e66;
+  transition: all 0.3s ease;
+}
+
+.page-index button:hover {
+  background-color: #5c3b21;
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 6px #3b2f1e88;
+}
+
+.page-index button:active {
+  transform: translateY(0);
+  box-shadow: 1px 1px 3px #3b2f1e44;
+}

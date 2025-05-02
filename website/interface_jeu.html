@@ -5,132 +5,6 @@
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
-  <style>
-    body {
-      font-family: 'Uncial Antiqua', cursive;
-      background-color: #fdf6e3;
-      padding: 40px;
-      color: #3b2f1e;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 40px;
-      text-shadow: 1px 1px 2px #00000050;
-    }
-
-    .section {
-      background: #fff4d6;
-      border: 4px solid #8b5e3c;
-      border-radius: 12px;
-      padding: 30px 20px 20px 20px;
-      box-shadow: 0 0 10px #3b2f1e99;
-      max-width: 800px;
-      margin: auto;
-      position: relative;
-    }
-
-    .section h2 {
-      position: absolute;
-      top: -5px;
-      left: 20px;
-      background: #fff4d6;
-      padding: 0 10px;
-      font-size: 20px;
-      border: 2px solid #8b5e3c;
-      border-radius: 8px;
-      color: #5c3b21;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-top: 30px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-    }
-
-    label {
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .dual-input {
-      display: flex;
-      gap: 5px;
-    }
-
-    input {
-      font-family: 'Uncial Antiqua', cursive;
-      font-size: 16px;
-      padding: 6px 10px;
-      background: #fefae0;
-      border: 2px solid #8b5e3c;
-      border-radius: 6px;
-      box-shadow: inset 0 0 4px #8b5e3c44;
-      width: 100%;
-    }
-
-    input[type="number"] {
-      width: 50%;
-    }
-
-    input[type="text"] {
-      width: 90%;
-    }
-
-    .error {
-      border-color: #cc0000;
-      background-color: #ffeeee;
-    }
-    
-    @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      input[type="number"] {
-        width: 100%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    input[type="radio"] {
-      width: auto;
-      margin-right: 5px;
-      cursor: pointer;
-    }
-
-    .field label input[type="radio"] + span {
-      font-size: 14px;
-      color: #5c3b21;
-    }
-
-    .field label:has(input[type="radio"]) {
-      display: inline-flex;
-      align-items: center;
-      font-weight: normal;
-    }
-
-    .status-text {
-      font-family: 'Uncial Antiqua', cursive;
-      font-size: 11px;
-      padding: 2px 0;
-      margin-top: 2px;
-      display: flex;
-      align-items: center;
-      font-style: italic;
-    }
-  </style>
 </head>
 <body>
 
@@ -147,7 +21,7 @@
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <!-- Ligne des "Réussi" -->
           <div style="display: flex; align-items: center;">
-            <span style="width: 75px;">Réussi</span>
+            <span class="divider-span">Réussi</span>
             <div style="display: flex; gap: 20px;">
               <input type="checkbox" name="survie1" value="reussi">
               <input type="checkbox" name="survie2" value="reussi">
@@ -156,7 +30,7 @@
           </div>
           <!-- Ligne des "Echec" -->
           <div style="display: flex; align-items: center;">
-            <span style="width: 75px;">Échec</span>
+            <span class="divider-span">Échec</span>
             <div style="display: flex; gap: 20px;">
               <input type="checkbox" name="survie1" value="echec">
               <input type="checkbox" name="survie2" value="echec">
@@ -170,15 +44,7 @@
         <label>Vie</label>
         <div class="dual-input">
           <input type="number" id="player_hp_current" min="0" placeholder="Min">
-          <span style="
-            display: flex;
-            align-items: center;
-            margin: 0 5px;
-            color: #8b5e3c;
-            font-size: 24px;
-            height: 90%;
-            padding-bottom: 3px;
-          ">/</span>
+          <span class="divider-span">/</span>
           <input type="number" id="player_hp" readonly>
         </div>
       </div>
@@ -187,15 +53,7 @@
         <label>Mana</label>
         <div class="dual-input">
           <input type="number" id="player_mana_current" min="0" placeholder="Min">
-          <span style="
-            display: flex;
-            align-items: center;
-            margin: 0 5px;
-            color: #8b5e3c;
-            font-size: 24px;
-            height: 90%;
-            padding-bottom: 3px;
-          ">/</span>
+          <span class="divider-span">/</span>
           <input type="number" id="player_mana" readonly>
         </div>
       </div>
@@ -204,15 +62,7 @@
         <label>Durabilité</label>
         <div class="dual-input">
           <input type="number" id="player_dura_current" min="0" placeholder="0">
-          <span style="
-            display: flex;
-            align-items: center;
-            margin: 0 5px;
-            color: #8b5e3c;
-            font-size: 24px;
-            height: 90%;
-            padding-bottom: 3px;
-          ">/</span>
+          <span class="divider-span">/</span>
           <input type="number" id="player_dura_max" placeholder="Max" readonly>
         </div>
       </div>
@@ -227,15 +77,7 @@
         <label>Valeur de Protection</label>
         <div class="dual-input">
           <input type="number" id="player_protection_current" min="0" placeholder="0">
-          <span style="
-            display: flex;
-            align-items: center;
-            margin: 0 5px;
-            color: #8b5e3c;
-            font-size: 24px;
-            height: 90%;
-            padding-bottom: 3px;
-          ">/</span>
+          <span class="divider-span">/</span>
           <input type="number" id="player_protection_max" placeholder="Max" readonly>
         </div>
       </div>
@@ -253,33 +95,13 @@
 
     </div><!-- fin du grid -->
     <div style="text-align: center; margin-top: 30px;">
-      <button id="save-btn" style="
-        background-color: #8b5e3c;
-        color: white;
-        font-family: 'Uncial Antiqua', cursive;
-        padding: 12px 24px;
-        font-size: 18px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        box-shadow: 2px 2px 5px #3b2f1e66;
-        ">
+      <button id="save-btn" class="game-button">
         Sauvegarder
       </button>
     </div>
   </div><!-- fin de la section h2 -->
   <div style="text-align: center; margin-top: 30px;">
-    <button id="fiche-btn" style="
-      background-color: #8b5e3c;
-      color: white;
-      font-family: 'Uncial Antiqua', cursive;
-      padding: 12px 24px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 2px 2px 5px #3b2f1e66;
-    ">
+    <button id="fiche-btn" class="game-button">
       Voir Fiche de Perso
     </button>
   </div>
