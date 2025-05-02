@@ -40,11 +40,10 @@
               <h3>${joueur.nom}</h3>
               <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
               <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
+              <p>Protection: ${joueur.defense?.protection} / ${joueur.defense?.protection_max}</p>
             `;
 
             card.addEventListener('click', () => {
-              document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-              card.classList.add('selected');
               showMJPopup(joueur);
             });
 

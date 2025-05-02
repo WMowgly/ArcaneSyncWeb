@@ -11,6 +11,7 @@ export function showMJPopup(joueur) {
       <h2>${joueur.nom}</h2>
       <p><strong>HP:</strong> ${joueur.hp?.current} / ${joueur.hp?.max}</p>
       <p><strong>Mana:</strong> ${joueur.mana?.current} / ${joueur.mana?.max}</p>
+      <p><strong>Protection:</strong> ${joueur.defense?.protection} / ${joueur.defense?.protection_max}</p>
       <button class="fiche-btn">Voir Fiche Complète</button>
     </div>
   `;
