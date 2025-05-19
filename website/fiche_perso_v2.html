@@ -334,18 +334,59 @@
     </div><!-- fin du grid -->
   </div>
 
-    <div class="section">
-    <h2>Équipement</h2>
-    <div class="grid">
-      <div class="field"><label>Sac</label><input type="text"></div>
-      <div class="field"><label>Ceinture / Dos</label><input type="text"></div>
-      <div class="field"><label>Armes</label><input type="text"></div>
-      <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
-      <div class="field"><label>Résistance</label><input type="text"></div>
-      <div class="field"><label>Durabilité</label><input type="number"></div>
-      <div class="field"><label>Type Dégâts</label><input type="text"></div>
+    <div class="sections-container">
+        <!-- Section Sac -->
+        <div class="section">
+            <h2>Sac</h2>
+            <div class="content-area">
+                <textarea></textarea>
+            </div>
+        </div>
+    
+        <!-- Section Ceinture/dos -->
+        <div class="section">
+            <h2>Ceinture/dos</h2>
+            <div class="content-area">
+                <textarea></textarea>
+            </div>
+        </div>
+    
+        <!-- Section Armes -->
+        <div class="section">
+            <h2>Armes</h2>
+            <table class="weapons-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Dégâts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
+                </tbody>
+            </table>
+        </div>
+    
+        <!-- Section Armure -->
+        <div class="section">
+            <div class="armor-section">
+                <div class="armor-fields">
+                    <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
+                    <div class="field"><label>Résistance</label><input type="text"></div>
+                    <div class="field"><label>Durabilité</label><input type="number"></div>
+                </div>
+                <!-- Silhouette humaine -->
+                <div class="human-silhouette" style="flex-shrink: 0;">
+                    <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
 
     <div class="double-section-container">
         <div class="section">
