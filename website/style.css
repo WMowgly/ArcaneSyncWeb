@@ -326,3 +326,161 @@ button {
   transform: translateY(0);
   box-shadow: 1px 1px 3px #3b2f1e44;
 }
+
+/* Styles responsifs globaux */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .section {
+    padding: 40px 10px 15px;
+    margin-bottom: 20px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .field {
+    margin-bottom: 10px;
+  }
+
+  input, select, textarea {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  /* Style navbar responsive */
+  .navbar {
+    flex-direction: column;
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .navbar a {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #fff4d6;
+  }
+
+  /* Style cards responsive */
+  .card {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  /* Style boutons responsive */
+  .game-button, button {
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* Style dual-input responsive */
+  .dual-input {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .dual-input input {
+    flex: 1;
+  }
+
+  .divider-span {
+    padding: 0 5px;
+  }
+
+  /* Style modal responsive */
+  .modal {
+    width: 95%;
+    margin: 10px;
+    padding: 15px;
+  }
+
+  /* Style tableau blanc responsive */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar select,
+  .toolbar input[type="color"],
+  .toolbar input[type="range"],
+  .toolbar button {
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  /* Style page index responsive */
+  .page-index .button-container {
+    flex-direction: column;
+  }
+
+  .page-index button {
+    width: 100%;
+  }
+}
+
+/* Ajustements spécifiques pour très petits écrans */
+@media (max-width: 320px) {
+  body {
+    padding: 5px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  input, select, textarea {
+    font-size: 12px;
+  }
+
+  .navbar a {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .card h3 {
+    font-size: 16px;
+  }
+
+  .card p {
+    font-size: 12px;
+  }
+}
+
+/* Ajustements pour orientation paysage sur mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .navbar {
+    position: static;
+  }
+
+  body {
+    padding-top: 5px;
+  }
+
+  .section {
+    margin-bottom: 10px;
+  }
+
+  .grid {
+    gap: 5px;
+  }
+}

@@ -152,12 +152,12 @@
     "race": "Humain",
     "niveau": 1,
     "hp": {
-      "max": 35,
-      "current": 35
+      "max": 50,
+      "current": 0
     },
     "mana": {
-      "max": 65,
-      "current": 65
+      "max": 60,
+      "current": 0
     },
     "stats": {
       "force": 1,
@@ -173,26 +173,16 @@
       "sac": "1",
       "ceinture": "1",
       "armes": "1",
-      "armure": "1",
+      "armure": "Armure lourde",
       "resistance": "1",
-      "durabilite": "1",
+      "durabilite": {
+        "max": 21,
+        "current": 0
+      },
       "degats": "1"
     },
     "defense": {
-      "survie": {
-        "jet1": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet2": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet3": {
-          "reussi": false,
-          "echec": false
-        }
-      },
+      "survie": "",
       "bonus_vie": 1,
       "protection": 21,
       "protection_max": 21,
@@ -203,7 +193,7 @@
       "sorts": "1",
       "speciales": "1"
     },
-    "bio": "",
+    "bio": "srjuhtjh",
     "levelup": "1"
   },
   {
@@ -382,7 +372,7 @@
     },
     "equipement": {
       "durabilite": {
-        "current": 10,
+        "current": 12,
         "max": 12
       }
     },
@@ -402,8 +392,8 @@
         }
       },
       "bonus_vie": 0,
-      "protection": 10,
-      "protection_max": 12,
+      "protection": 18,
+      "protection_max": 18,
       "intox": null
     },
     "competences": {

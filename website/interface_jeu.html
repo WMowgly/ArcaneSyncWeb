@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
@@ -63,7 +64,7 @@
         <div class="dual-input">
           <input type="number" id="player_dura_current" min="0" placeholder="0">
           <span class="divider-span">/</span>
-          <input type="number" id="player_dura_max" placeholder="Max" readonly>
+          <input type="number" id="player_dura" placeholder="Max" readonly>
         </div>
       </div>
 
@@ -78,7 +79,7 @@
         <div class="dual-input">
           <input type="number" id="player_protection_current" min="0" placeholder="0">
           <span class="divider-span">/</span>
-          <input type="number" id="player_protection_max" placeholder="Max" readonly>
+          <input type="number" id="player_protection" placeholder="Max" readonly>
         </div>
       </div>
 
@@ -133,9 +134,9 @@
       document.getElementById('player_hp_current').value = params.get("VieCurrent");
       document.getElementById('player_mana').value = params.get("ManaMax");
       document.getElementById('player_mana_current').value = params.get("ManaCurrent");
-      document.getElementById('player_protection_max').value = params.get("Valeur protection max");
+      document.getElementById('player_protection').value = params.get("Valeur protection max");
       document.getElementById('player_protection_current').value = params.get("Valeur protection");
-      document.getElementById('player_dura_max').value = params.get("DuraMax");
+      document.getElementById('player_dura').value = params.get("DuraMax");
       document.getElementById('player_dura_current').value = params.get("DuraCurrent");
       document.getElementById('player_intox').value = params.get("Intox.");
       document.getElementById('player_vie_bonus').value = params.get("Vie bonus");
@@ -179,7 +180,7 @@
     }
 
     function updateArmorState() {
-      const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
+      const duraMax = parseInt(document.getElementById('player_dura').value) || 0;
       const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
       const armorStateInput = document.getElementById('player_armor');
       const armorStateEffect = document.getElementById('armor_effect');
@@ -241,12 +242,12 @@
         const hpMax = parseInt(document.getElementById('player_hp').value, 10);
         const manaCurrent = parseInt(document.getElementById('player_mana_current').value, 10);
         const manaMax = parseInt(document.getElementById('player_mana').value, 10);
-        const protectionMax = parseInt(document.getElementById('player_protection_max').value, 10);
+        const protectionMax = parseInt(document.getElementById('player_protection').value, 10);
         const protectionCurrent = parseInt(document.getElementById('player_protection_current').value, 10);
         const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
         const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
         const duraCurrent = parseInt(document.getElementById('player_dura_current').value, 10);
-        const duraMax = parseInt(document.getElementById('player_dura_max').value, 10);
+        const duraMax = parseInt(document.getElementById('player_dura').value, 10);
         
         const survie = {
           jet1: {

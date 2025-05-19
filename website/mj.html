@@ -2,10 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MJ - ArcaneSync</title>
   <link rel="stylesheet" href="style.css"/> 
   <link rel="icon" type="image/png" href="img/icon.png"/>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket.io/socket.io.js"></script> 
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -19,6 +20,30 @@
     import { showMJPopup } from './popupmj.js';
 
     // Fonction pour charger et afficher les joueurs
+    function getArmorState(duraCurrent, duraMax) {
+      if (duraCurrent === 0) {
+        return {
+          etat: "Absence d'armure",
+          couleur: '#000000'
+        };
+      } else if (duraCurrent >= ((duraMax/3)*2)+1) {
+        return {
+          etat: 'Armure Neuve',
+          couleur: '#2e7d32'
+        };
+      } else if (duraCurrent >= (duraMax/3)+1) {
+        return {
+          etat: 'Armure Abîmée',
+          couleur: '#ff9800'
+        };
+      } else {
+        return {
+          etat: 'Armure Très Abîmée',
+          couleur: '#d32f2f'
+        };
+      }
+    }
+
     function loadAndDisplayPlayers() {
       fetch('/api/joueurs')
         .then(response => response.json())
@@ -36,11 +61,17 @@
             card.classList.add('card');
             card.setAttribute('data-id', joueur.nom);
 
+            // Calcul de l'état de l'armure
+            const duraCurrent = joueur.equipement?.durabilite?.current || 0;
+            const duraMax = joueur.equipement?.durabilite?.max || 0;
+            const armorState = getArmorState(duraCurrent, duraMax);
+
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
               <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
               <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
               <p>Protection: ${joueur.defense?.protection} / ${joueur.defense?.protection_max}</p>
+              <p>État armure: <span style="color: ${armorState.couleur}">${armorState.etat}</span></p>
             `;
 
             card.addEventListener('click', () => {
