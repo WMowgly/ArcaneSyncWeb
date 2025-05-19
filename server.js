@@ -89,39 +89,12 @@ app.post('/api/joueur', (req, res) => {
 io.on('connection', (socket) => {
   console.log('Client connecté', socket.id);
 
-  // Envoyer immédiatement le contenu actuel
-  socket.emit('documentData', {
-    content: documentData.content,
-    lastSaved: documentData.lastSaved
-  });
+  // Événement de dessin
+  socket.on('draw', data => socket.broadcast.emit('draw', data));
 
-  // Gérer l'arrivée d'un participant
-  socket.on('joinDocument', ({ clientId }) => {
-    console.log('Client rejoint le document:', clientId);
-      
-    documentData.users[clientId] = {
-      id: clientId,
-      socketId: socket.id,
-      connectedAt: new Date().toISOString()
-    };
-      
-    io.emit('usersUpdate', documentData.users);
-  });
-
-  // Mise à jour de contenu
-  socket.on('contentUpdate', ({ content, timestamp, clientId }) => {
-    if (content !== documentData.content) {
-      documentData.content = content;
-      
-      // Diffuser à tous les clients sauf l'émetteur
-      socket.broadcast.emit('documentData', {
-          content: documentData.content,
-          timestamp: timestamp,
-          clientId: clientId
-      });
-    }
-  });
-
+  // Événement d'écriture
+  socket.on('text', data => socket.broadcast.emit('text', data));
+  
   // Mouvement de curseur
   socket.on('cursorMove', ({ clientId, range }) => {
     socket.broadcast.emit('cursorUpdate', {

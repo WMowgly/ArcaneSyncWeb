@@ -1,367 +1,201 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éditeur Collaboratif avec Sauvegarde Automatique</title>
-    <link rel="stylesheet" href="style.css"/> 
-    <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Uncial Antiqua', cursive;
-            background-color: #fdf6e3;
-            color: #3b2f1e;
-            margin: 0;
-            padding: 40px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            position: relative;
-            background: rgba(255, 248, 220, 0.9);
-            border: 4px solid #8b5e3c;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 0 10px #3b2f1e99;
-        }
-        h1 {
-            text-align: center;
-            text-shadow: 1px 1px 2px #00000050;
-            color: #5c3b21;
-            margin-bottom: 30px;
-        }
-        .editor-container {
-            height: 400px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 8px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-        }
-        .users-online {
-            color: #4CAF50;
-        }
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .username-container {
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            padding: 8px;
-            width: 200px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .autosave-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .autosave-toggle input[type="checkbox"] {
-            appearance: none;
-            width: 45px;
-            height: 22px;
-            background: #d7c9aa;
-            border: 2px solid #8b5e3c;
-            border-radius: 12px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .autosave-toggle input[type="checkbox"]::before {
-            content: '';
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            background: #5c3b21;
-            border-radius: 50%;
-            top: 0;
-            left: 0;
-            transition: left 0.3s;
-        }
-
-        .autosave-toggle input[type="checkbox"]:checked {
-            background: #a1876e;
-        }
-
-        .autosave-toggle input[type="checkbox"]:checked::before {
-            left: 23px;
-        }
-
-        .autosave-toggle label {
-            font-size: 16px;
-            color: #5c3b21;
-        }
-
-        .last-saved {
-            margin-left: 15px;
-            font-size: 0.9em;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tableau Blanc Collaboratif</title>
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Uncial Antiqua', cursive;
+      background-color: #fdf6e3;
+      color: #3b2f1e;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: rgba(255, 248, 220, 0.9);
+      border: 4px solid #8b5e3c;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 10px #3b2f1e99;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      justify-content: space-between;
+    }
+    .toolbar select,
+    .toolbar input[type="color"],
+    .toolbar input[type="range"],
+    .toolbar button {
+      padding: 8px;
+      font-family: inherit;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #8b5e3c;
+      background-color: #fff6e1;
+      cursor: pointer;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      border: 2px solid #8b5e3c;
+      border-radius: 8px;
+      background-color: white;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-    <div id="navbar-placeholder"></div>
-    <div class="container">
-        <h1>Éditeur Collaboratif</h1>
-        
-        <div class="status-bar">
-            <span id="syncStatus">Synchronisé</span>
-            <span id="last-saved">Jamais sauvegardé</span>
-            <div class="users-online">
-                <span id="online-count">0 utilisateur en ligne</span>
-            </div>
-            <div class="autosave-toggle">
-                <input type="checkbox" id="autosave-toggle" checked>
-                <label for="autosave-toggle">Sauvegarde auto</label>
-            </div>
-        </div>
-        
-        <div class="editor-container" id="editor"></div>
-        
-        <div>
-            <button class="button" id="save-btn">Sauvegarder</button>
-        </div>
+  <div class="container">
+    <h1>Tableau Blanc Collaboratif</h1>
+    <div class="toolbar">
+      <select id="mode">
+        <option value="draw">✏️ Dessin</option>
+        <option value="text">📝 Texte</option>
+        <option value="eraser">🧽 Gomme</option>
+      </select>
+      <input type="color" id="color" value="#000000" />
+      <label>
+        Taille:
+        <input type="range" id="size" min="1" max="50" value="3" />
+      </label>
+      <button id="save">📥 Sauvegarder</button>
     </div>
+    <canvas id="whiteboard"></canvas>
+  </div>
 
-    <script src="navbar.js"></script>
-    <script>
+  <script>
+    const socket = io(`${location.protocol}//${location.hostname}:3000`);
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('color');
+    const sizeSlider = document.getElementById('size');
+    const modeSelector = document.getElementById('mode');
+    const saveButton = document.getElementById('save');
 
-        const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
-        const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
-        let isJoined = false;
-        let activeUsers = {};
-        let editorChangeTimer = null;
-        let syncTimeoutId = null;
+    let drawing = false;
+    let current = { x: 0, y: 0 };
+    let mode = 'draw';
 
-        // Initialisation de l'application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialiser l'éditeur Quill
-            const quill = new Quill('#editor', {
-                theme: 'snow',
-                placeholder: 'Commencez à écrire ici...',
-                modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['clean']
-                    ]
-                }
-            });
-            
-            // Éléments DOM
-            const syncStatusEl = document.getElementById('syncStatus');
-            const saveBtn = document.getElementById('save-btn');
-            const lastSavedEl = document.getElementById('last-saved');
-            const autosaveToggle = document.getElementById('autosave-toggle');
-            const onlineCountEl = document.getElementById('online-count');
-            
-            let lastChangeTime = Date.now();
-            let saveTimeout = null;
-            let lastSyncedContent = '';
-            let isProcessingExternalChange = false;
-            
-            // Fonction pour formater la date de dernière sauvegarde
-            function formatLastSaved(dateString) {
-                if (!dateString) return 'Jamais sauvegardé';
-                
-                const date = new Date(dateString);
-                const now = new Date();
-                const diffSeconds = Math.floor((now - date) / 1000);
-                
-                if (diffSeconds < 5) {
-                    return 'À l\'instant';
-                } else if (diffSeconds < 60) {
-                    return `Il y a ${diffSeconds} secondes`;
-                } else if (diffSeconds < 3600) {
-                    const minutes = Math.floor(diffSeconds / 60);
-                    return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
-                } else {
-                    return `Le ${date.toLocaleDateString()} à ${date.toLocaleTimeString()}`;
-                }
-            }
-            
-            // Fonction de sauvegarde
-            function saveContent() {
-                if (saveTimeout) {
-                    clearTimeout(saveTimeout);
-                    saveTimeout = null;
-                }
-                
-                const content = quill.root.innerHTML;
-                lastSyncedContent = content;
-                
-                socket.emit('saveDocument', { content });
-                
-                syncStatusEl.textContent = 'Sauvegardé';
-                syncStatusEl.style.color = '#4CAF50';
-            }
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = Math.floor(container.clientWidth * 9 / 16);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-            // Fonction pour gérer la sauvegarde automatique
-            function handleAutosave() {
-                if (saveTimeout) {
-                    clearTimeout(saveTimeout);
-                }
-                
-                if (autosaveToggle.checked) {
-                    saveTimeout = setTimeout(saveContent, 2000); // Sauvegarde 2 secondes après la dernière modification
-                }
-            }
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
 
-            // Fonction pour signaler une modification en cours
-            function notifyTyping() {
-                if (syncTimeoutId) {
-                    clearTimeout(syncTimeoutId);
-                }
-                
-                syncStatusEl.textContent = 'Modifications en cours...';
-                syncStatusEl.style.color = '#FFA500';
-                
-                syncTimeoutId = setTimeout(() => {
-                    syncStatusEl.textContent = 'Synchronisé';
-                    syncStatusEl.style.color = '#4CAF50';
-                }, 3000);
-            }
+    function drawLine(x0, y0, x1, y1, color, size, emit) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.closePath();
 
-            // Mise à jour de l'affichage des utilisateurs en ligne
-            function updateOnlineUsersDisplay() {
-                const count = Object.keys(activeUsers).length;
-                onlineCountEl.textContent = `${count} utilisateur${count > 1 ? 's' : ''} en ligne`;
-            }
+      if (emit) {
+        socket.emit('draw', { x0, y0, x1, y1, color, size });
+      }
+    }
 
-            // Événement de changement dans l'éditeur
-            quill.on('text-change', function(delta, oldDelta, source) {
-                if (source === 'user') {
-                    notifyTyping();
-                    
-                    // Éviter les mises à jour trop fréquentes
-                    if (editorChangeTimer) {
-                        clearTimeout(editorChangeTimer);
-                    }
-                    
-                    editorChangeTimer = setTimeout(() => {
-                        lastChangeTime = Date.now();
-                        const content = quill.root.innerHTML;
-                        
-                        // Éviter d'envoyer le même contenu plusieurs fois
-                        if (content !== lastSyncedContent) {
-                            socket.emit('contentUpdate', {
-                                content: content,
-                                timestamp: lastChangeTime,
-                                clientId: clientId
-                            });
-                            lastSyncedContent = content;
-                        }
-                        
-                        handleAutosave();
-                    }, 300); // Debounce de 300ms
-                }
-            });
-            
-            // Sélection de texte - suivi du curseur
-            quill.on('selection-change', function(range, oldRange, source) {
-                if (source === 'user' && range) {
-                    // Envoyer la position du curseur
-                    socket.emit('cursorMove', {
-                        clientId: clientId,
-                        range: range
-                    });
-                }
-            });
-            
-            // Gestion des événements du serveur
-            socket.on('connect', function() {
-                isJoined = true;
-                socket.emit('joinDocument', { clientId: clientId });
-                
-                // Ajouter l'utilisateur actuel à la liste
-                activeUsers[clientId] = { 
-                    id: clientId,
-                    connectedAt: new Date()
-                };
-                
-                updateOnlineUsersDisplay();
-            });
+    function drawText(x, y, text, color, size, emit) {
+      ctx.fillStyle = color;
+      ctx.font = `${size * 5}px Uncial Antiqua`;
+      ctx.fillText(text, x, y);
+      if (emit) {
+        socket.emit('text', { x, y, text, color, size });
+      }
+    }
 
-            // Handle server responses
-            socket.on('documentData', (docData) => {
-                if (isProcessingExternalChange) return;
-                
-                if (docData.content && docData.content !== quill.root.innerHTML) {
-                    isProcessingExternalChange = true;
-                    const selection = quill.getSelection();
-                    
-                    // Vérifier si le contenu distant est plus récent
-                    if (!docData.timestamp || docData.timestamp >= lastChangeTime || docData.clientId !== clientId) {
-                        quill.root.innerHTML = docData.content;
-                        lastSyncedContent = docData.content;
-                        
-                        if (selection) {
-                            quill.setSelection(selection);
-                        }
-                    }
-                    
-                    syncStatusEl.textContent = 'Synchronisé';
-                    syncStatusEl.style.color = '#4CAF50';
-                    isProcessingExternalChange = false;
-                }
-                
-                if (docData.lastSaved) {
-                    lastSavedEl.textContent = formatLastSaved(docData.lastSaved);
-                }
-            });
- 
-            // Mise à jour des utilisateurs connectés
-            socket.on('usersUpdate', (users) => {
-                activeUsers = users;
-                updateOnlineUsersDisplay();
-            });
+    canvas.addEventListener('mousedown', e => {
+      const pos = getPos(e);
+      if (mode === 'draw' || mode === 'eraser') {
+        drawing = true;
+        current = pos;
+      } else if (mode === 'text') {
+        const userText = prompt('Entrez votre texte :');
+        if (userText) {
+          drawText(pos.x, pos.y, userText, colorPicker.value, parseInt(sizeSlider.value), true);
+        }
+      }
+    });
 
-            // Curseurs des autres utilisateurs
-            socket.on('cursorUpdate', (data) => {
-                if (data.clientId === clientId) return;
-                
-                // Vous pourriez implémenter ici un affichage des curseurs des autres utilisateurs
-                // Ce serait une fonctionnalité avancée qui nécessiterait plus de code
-                console.log('Cursor update from user:', data.clientId);
-            });    
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseout', () => drawing = false);
 
-            // Événement pour sauvegarder le document en JSON
-            saveBtn.addEventListener('click', saveContent);
-            
-            // Demande de chargement du document
-            socket.emit('loadDocument');
-            
-            // Gestion de la déconnexion
-            window.addEventListener('beforeunload', function() {
-                if (isJoined) {
-                    socket.emit('leave', { clientId });
-                }
-            });
-        });
-    </script>
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
+      const pos = getPos(e);
+      const color = mode === 'eraser' ? '#ffffff' : colorPicker.value;
+      drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
+      current = pos;
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      const pos = getPos(e);
+      if (mode === 'draw' || mode === 'eraser') {
+        drawing = true;
+        current = pos;
+      } else if (mode === 'text') {
+        const userText = prompt('Entrez votre texte :');
+        if (userText) {
+          drawText(pos.x, pos.y, userText, colorPicker.value, parseInt(sizeSlider.value), true);
+        }
+      }
+    });
+
+    canvas.addEventListener('touchend', () => drawing = false);
+    canvas.addEventListener('touchmove', e => {
+      if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
+      const pos = getPos(e);
+      const color = mode === 'eraser' ? '#ffffff' : colorPicker.value;
+      drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
+      current = pos;
+      e.preventDefault();
+    });
+
+    modeSelector.addEventListener('change', () => {
+      mode = modeSelector.value;
+    });
+
+    saveButton.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'tableau.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+
+    // Socket.io
+    socket.on('draw', data => {
+      drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
+    });
+
+    socket.on('text', data => {
+      drawText(data.x, data.y, data.text, data.color, data.size, false);
+    });
+  </script>
 </body>
 </html>
