@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tableau Blanc Collaboratif</title>
+  <link rel="stylesheet" href="style.css"/> 
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
   <style>
@@ -54,9 +55,28 @@
       background-color: white;
       display: block;
     }
+    #color-palette {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #3b2f1e;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+      outline: none;
+    }
+    .color-swatch.selected {
+      border: 3px solid #ffcc00;
+    }
+
   </style>
 </head>
 <body>
+  <div id="navbar-placeholder"></div>
   <div class="container">
     <h1>Tableau Blanc Collaboratif</h1>
     <div class="toolbar">
@@ -65,9 +85,17 @@
         <option value="text">📝 Texte</option>
         <option value="eraser">🧽 Gomme</option>
       </select>
-      <input type="color" id="color" value="#000000" />
+      <div id="color-palette">
+        <button class="color-swatch" data-color="#000000" style="background:#000000;"></button>
+        <button class="color-swatch" data-color="#ff0000" style="background:#ff0000;"></button>
+        <button class="color-swatch" data-color="#008000" style="background:#008000;"></button>
+        <button class="color-swatch" data-color="#0000ff" style="background:#0000ff;"></button>
+        <button class="color-swatch" data-color="#ffff00" style="background:#ffff00;"></button>
+        <button class="color-swatch" data-color="#ffffff" style="background:#ffffff;"></button>
+      </div>
       <label>
         Taille:
+        <input type="number" id="size-number" min="1" max="50" value="3" style="width: 60px;"/>
         <input type="range" id="size" min="1" max="50" value="3" />
       </label>
       <button id="save">📥 Sauvegarder</button>
@@ -75,18 +103,42 @@
     <canvas id="whiteboard"></canvas>
   </div>
 
+  <script src="navbar.js"></script>
   <script>
     const socket = io(`${location.protocol}//${location.hostname}:3000`);
     const canvas = document.getElementById('whiteboard');
     const ctx = canvas.getContext('2d');
-    const colorPicker = document.getElementById('color');
     const sizeSlider = document.getElementById('size');
+    const sizeNumber = document.getElementById('size-number');
     const modeSelector = document.getElementById('mode');
     const saveButton = document.getElementById('save');
 
+    let selectedColor = '#000000';
     let drawing = false;
     let current = { x: 0, y: 0 };
     let mode = 'draw';
+
+    // Synchronisation entre slider et champ numérique
+    sizeSlider.addEventListener('input', () => {
+      sizeNumber.value = sizeSlider.value;
+    });
+    sizeNumber.addEventListener('input', () => {
+      sizeSlider.value = sizeNumber.value;
+    });
+
+    // Gestion de la palette de couleurs
+    const swatches = document.querySelectorAll('.color-swatch');
+    swatches.forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        swatches.forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        selectedColor = swatch.dataset.color;
+      });
+    });
+    // Sélection initiale
+    swatches[0].classList.add('selected');
+
+
 
     function resizeCanvas() {
       const container = canvas.parentElement;
@@ -138,7 +190,7 @@
       } else if (mode === 'text') {
         const userText = prompt('Entrez votre texte :');
         if (userText) {
-          drawText(pos.x, pos.y, userText, colorPicker.value, parseInt(sizeSlider.value), true);
+          drawText(pos.x, pos.y, userText, selectedColor, parseInt(sizeSlider.value), true);
         }
       }
     });
@@ -149,7 +201,7 @@
     canvas.addEventListener('mousemove', e => {
       if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
       const pos = getPos(e);
-      const color = mode === 'eraser' ? '#ffffff' : colorPicker.value;
+      const color = mode === 'eraser' ? '#ffffff' : selectedColor;
       drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
       current = pos;
     });
@@ -162,7 +214,7 @@
       } else if (mode === 'text') {
         const userText = prompt('Entrez votre texte :');
         if (userText) {
-          drawText(pos.x, pos.y, userText, colorPicker.value, parseInt(sizeSlider.value), true);
+          drawText(pos.x, pos.y, userText, selectedColor, parseInt(sizeSlider.value), true);
         }
       }
     });
@@ -171,7 +223,7 @@
     canvas.addEventListener('touchmove', e => {
       if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
       const pos = getPos(e);
-      const color = mode === 'eraser' ? '#ffffff' : colorPicker.value;
+      const color = mode === 'eraser' ? '#ffffff' : selectedColor;
       drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
       current = pos;
       e.preventDefault();
