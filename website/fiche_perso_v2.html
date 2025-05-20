@@ -277,49 +277,10 @@
           </div>
         </div>
       </div>
-
+        <div class="field"><label>Vie</label><input type="number"></div>
       <div class="field">
-        <label>Vie</label>
-        <div class="dual-input">
-          <input type="number" id="player_hp_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_hp" readonly>
-        </div>
+        <div class="field"><label>Mana</label><input type="number"></div>
       </div>
-
-      <div class="field">
-        <label>Mana</label>
-        <div class="dual-input">
-          <input type="number" id="player_mana_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_mana" readonly>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Durabilité</label>
-        <div class="dual-input">
-          <input type="number" id="player_dura_current" min="0" placeholder="0">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_dura_max" placeholder="Max" readonly>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>État de l'armure</label>
-        <input type="text" id="player_armor" readonly>
-        <div id="armor_effect" class="status-text"></div>
-      </div>
-
-      <div class="field">
-        <label>Valeur de Protection</label>
-        <div class="dual-input">
-          <input type="number" id="player_protection_current" min="0" placeholder="0">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_protection_max" placeholder="Max" readonly>
-        </div>
-      </div>
-
       <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column;">
           <label>Vie bonus</label>
@@ -378,7 +339,14 @@
                     <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
                     <div class="field"><label>Résistance</label><input type="text"></div>
                     <div class="field"><label>Durabilité</label><input type="number"></div>
-                </div>
+      
+                    <div class="field">
+                      <label>État de l'armure</label>
+                      <input type="text" id="player_armor" readonly>
+                      <div id="armor_effect" class="status-text"></div>
+                    </div>
+                    <div class="field"><label>Valeur protection</label><input type="number"></div>
+                  </div>
                 <!-- Silhouette humaine -->
                 <div class="human-silhouette" style="flex-shrink: 0;">
                     <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
@@ -482,7 +450,7 @@
   </div>
 
   <div style="text-align: center;">
-    <button id="save-data-btn" type="button">Sauvegarder</button>
+    <button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
   </div>
 
   <script src="navbar.js"></script>
@@ -522,9 +490,13 @@
 
 
     window.addEventListener('DOMContentLoaded', () => {
+      
       console.log('Script chargé');
       
       const params = new URLSearchParams(window.location.search);
+
+      setupValidators();
+      updateArmorState();
 
       // Fonction utilitaire pour récupérer la valeur d'un champ
       function getFieldValue(labelText) {
@@ -538,13 +510,6 @@
       function getNumericValue(labelText) {
         const value = getFieldValue(labelText);
         return value ? parseInt(value) || null : null;
-      }
-
-      // Remplir le champ nom
-      const nom = params.get('Nom');
-      if (nom) {
-        document.getElementById('nom-field').value = nom;
-        document.querySelector('h1').innerText = `Fiche de ${nom}`;
       }
 
       // Remplir les champs avec les valeurs existantes
@@ -585,6 +550,27 @@
           }
       }
 
+      // Remplir le champ nom
+      const nom = params.get('Nom');
+      if (nom) {
+        document.querySelector('h1').innerText = `Fiche de ${nom}`;
+      }
+
+      const classeValue = params.get('Classe');
+      if (classeValue) {
+        document.getElementById('player_class').value = classeValue;
+      }
+
+      const raceValue = params.get('Race');
+      if (raceValue) {
+        document.getElementById('player_race').value = raceValue;
+      }
+
+      const armureValue = params.get("Type d'armure");
+      if (armureValue) {
+        document.getElementById('eq_armure').value = armureValue;
+      }
+
       // Remplir les compétences spéciales du personnage
       const competencesSpecialesSection = Array.from(document.querySelectorAll('.section'))
           .find(section => section.querySelector('h2')?.textContent.includes('Compétences spéciales'));
@@ -611,29 +597,12 @@
           }
       }
 
-      const classeValue = params.get('Classe');
-      if (classeValue) {
-        document.getElementById('player_class').value = classeValue;
-      }
-
-      const raceValue = params.get('Race');
-      if (raceValue) {
-        document.getElementById('player_race').value = raceValue;
-      }
-
-      const armureValue = params.get("Type d'armure");
-      if (armureValue) {
-        document.getElementById('eq_armure').value = armureValue;
-      }
-
       // Gestionnaire d'événement pour le bouton de sauvegarde
       const saveButton = document.getElementById('save-data-btn');
       saveButton.addEventListener('click', async () => {
         console.log('Bouton Sauvegarder cliqué');
-        
-        const nomJoueur = document.getElementById('nom-field').value;
-        if (!nomJoueur) {
-          alert('Erreur : veuillez entrer un nom de personnage');
+        if (!noms) {
+          alert('Erreur : nom du joueur non trouvé');
           return;
         }
 
@@ -688,7 +657,7 @@
         const levelUp = levelUpTextarea ? levelUpTextarea.value : '';
         
         const nouvellesDonnees = {
-          nom: nomJoueur,
+          nom: nom,
           classe: document.getElementById('player_class').value,
           race: document.getElementById('player_race').value,
           niveau: getNumericValue('Niveau'),
@@ -740,14 +709,14 @@
         };
 
         try {
-          console.log('Données à sauvegarder:', { nom: nomJoueur, nouvellesDonnees });
+          console.log('Données à sauvegarder:', { nom: nom, nouvellesDonnees });
           
           const response = await fetch('/api/joueur', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ nom: nomJoueur, nouvellesDonnees })
+            body: JSON.stringify({ nom: nom, nouvellesDonnees })
           });
 
           if (response.ok) {
@@ -755,7 +724,7 @@
             const newParams = new URLSearchParams();
             
             // Mise à jour des paramètres généraux
-            newParams.set('Nom', nomJoueur);
+            newParams.set('Nom', nom);
             newParams.set('Classe', nouvellesDonnees.classe);
             newParams.set('Race', nouvellesDonnees.race);
             newParams.set('Niveau', nouvellesDonnees.niveau);
@@ -813,6 +782,67 @@
         }
       });
     });
+    function setupValidators() {
+      const fields = ['hp', 'mana', 'protection', 'dura'];
+      
+      fields.forEach(field => {
+        const current = document.getElementById(`player_${field}_current`);
+        const max = document.getElementById(`player_${field}`);
+        
+        if (!current || !max) return;
+        
+        current.addEventListener('input', () => {
+          const currentVal = parseInt(current.value) || 0;
+          const maxVal = parseInt(max.value) || 0;
+          
+          if (currentVal > maxVal) {
+            current.classList.add('error');
+          } else {
+            current.classList.remove('error');
+          }
+          
+          updateArmorState();
+        });
+      });
+    }
+
+    function updateArmorState() {
+      const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
+      const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
+      const armorStateInput = document.getElementById('player_armor');
+      const armorStateEffect = document.getElementById('armor_effect');
+      
+      let etat = '';
+      let couleur = '';
+      let effect = '';
+      
+      if (duraCurrent === 0) {
+        etat = "Absence d'armure";
+        couleur = '#000000';
+        couleurs = '#000000';
+        effect = 'Plus aucune protection';
+      } else if (duraCurrent >= ((duraMax/3)*2)+1) {
+        etat = 'Armure Neuve';
+        couleur = '#2e7d32';
+        couleurs = '#000000';
+        effect = 'Protection maximale';
+      } else if (duraCurrent >= (duraMax/3)+1) {
+        etat = 'Armure Abîmée';
+        couleur = '#ff9800';
+        couleurs = '#000000';
+        effect = 'Bonus fixe supprimé';
+      } else {
+        etat = 'Armure Très Abîmée';
+        couleur = '#d32f2f';
+        couleurs = '#000000';
+        effect = 'Résultat du jet réduite de moitié';
+      }
+      
+      armorStateInput.value = etat;
+      armorStateInput.style.color = couleur;
+      armorStateEffect.textContent = effect;
+      armorStateEffect.style.color = couleurs;
+    }
   </script>
 </body>
 </html>

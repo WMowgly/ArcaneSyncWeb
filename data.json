@@ -513,5 +513,119 @@
     },
     "bio": "",
     "levelup": ""
+  },
+  {
+    "nom": "TESTZINZIN",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 2,
+    "stats": {
+      "force": 70,
+      "dexterite": 10,
+      "magie": 20,
+      "constitution": 30,
+      "charisme": 60,
+      "perception": 20,
+      "chance": 40,
+      "intelligence": 50
+    },
+    "bio": "le test de folie",
+    "sac": "potion soin",
+    "ceinture": "fleche",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "10",
+      "durabilite": 20,
+      "protection": 20
+    },
+    "mana": 30,
+    "vie": 30,
+    "bonus_vie": null,
+    "intox": "0",
+    "spells": [
+      {
+        "nom": "FIREBALL",
+        "degats": "4d8+2",
+        "niveau": 1
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "kjhkj",
+        "degats": "kjhkhj",
+        "niveau": 3
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "fghfdg",
+        "degats": "dgfd"
+      },
+      {
+        "nom": "",
+        "degats": ""
+      }
+    ],
+    "competences": [
+      {
+        "nom": "FRANCAIS",
+        "effet": "charisme",
+        "niveau": 1
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      }
+    ],
+    "skills_speciales": "VIN",
+    "levelup": "je sais pas",
+    "armes": [
+      {
+        "type": "épée",
+        "degats": "1d6+2"
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      }
+    ]
   }
 ]
