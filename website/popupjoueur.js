@@ -10,11 +10,11 @@ export function openFicheJoueur(joueur) {
   params.set("VieCurrent", joueur.hp.current);
   params.set("ManaMax", joueur.mana.max);
   params.set("ManaCurrent", joueur.mana.current);
-  //params.set("Jets de survie", joueur.defense?.survie);
-  params.set("Vie bonus", joueur.defense?.bonus_vie || '0');
-  params.set("Valeur protection", joueur.defense?.protection || '');
-  params.set("Valeur protection max", joueur.defense?.protection_max || '');
-  params.set("Intox.", joueur.defense?.intox || '');
+  //params.set("Jets de survie", joueur.armure?.survie);
+  params.set("Vie bonus", joueur.armure?.bonus_vie || '0');
+  params.set("Valeur protection", joueur.armure?.protection || '');
+  params.set("Valeur protection max", joueur.armure?.protection_max || '');
+  params.set("Intox.", joueur.armure?.intox || '');
 
   // Statistiques
   const stats = joueur.stats || {};
