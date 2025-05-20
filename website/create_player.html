@@ -1,15 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Création de Personnage</title>
-  <link rel="stylesheet" href="style.css"/> 
-  <link rel="icon" type="image/png" href="img/icon.png"/>
+  <title>Création de Personnage v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"/> 
   <style>
     body {
       font-family: 'Uncial Antiqua', cursive;
       background-size: cover;
+      background-color: #fdf6e3;
       color: #3b2f1e;
       margin: 0;
       padding: 40px;
@@ -70,6 +71,21 @@
       resize: vertical;
       height: 100px;
     }
+    button {
+      font-family: 'Uncial Antiqua', cursive;
+      padding: 10px 30px;
+      font-size: 18px;
+      background: #8b5e3c;
+      color: #fefae0;
+      border: 2px solid #5c3b21;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
+    }
+    button:hover {
+      background: #5c3b21;
+    }
     @media (max-width: 768px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -79,24 +95,16 @@
   </style>
 </head>
 <body>
-
-  <div id="navbar-placeholder"></div>
-  <h1>Création de votre Personnage</h1>
-
+  <h1>Création de Personnage v2</h1>
   <div class="section">
     <h2>Informations Générales</h2>
     <div class="grid">
       <div class="field"><label>Nom</label><input id="player_name" type="text"></div>
-      <div class="field"><label>Classe</label>
-        <select id="player_class"></select>
-      </div>
-      <div class="field"><label>Race</label>
-        <select id="player_race"></select>
-      </div>      
+      <div class="field"><label>Classe</label><select id="player_class"></select></div>
+      <div class="field"><label>Race</label><select id="player_race"></select></div>
       <div class="field"><label>Niveau</label><input id="player_level" type="number" min="1"></div>
     </div>
   </div>
-
   <div class="section">
     <h2>Statistiques</h2>
     <div class="grid">
@@ -110,45 +118,177 @@
       <div class="field"><label>Intelligence</label><input id="stat_intelligence" type="number"></div>
     </div>
   </div>
-
-  <div class="section">
-    <h2>Équipement</h2>
-    <div class="grid">
-      <div class="field"><label>Sac</label><input id="eq_sac" type="text"></div>
-      <div class="field"><label>Ceinture / Dos</label><input id="eq_ceinture" type="text"></div>
-      <div class="field"><label>Armes</label><input id="eq_armes" type="text"></div>
-      <div class="field"><label>Type d'armure</label>
-        <select id="eq_armure" type="text"></select>
-      </div>
-      <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
-      <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="text"></div>
-      <div class="field" style="display: none;"><input id="eq_durabilite_current" type="hidden"></div>
-      <div class="field"><label>Type Dégâts</label><input id="eq_degats" type="text"></div>
-    </div>
-  </div>
-
   <div class="section">
     <h2>Survie et Défense</h2>
     <div class="grid">
-      <div class="field"><label>Jets de survie</label><input id="def_survie" type="text"></div>
       <div class="field"><label>Vie</label><input id="player_hp" type="number"></div>
       <div class="field" style="display: none;"><input id="player_hp_current" type="hidden"></div>
-      <div class="field"><label>Vie bonus</label><input id="def_bonus_vie" type="number"></div>
-      <div class="field"><label>Valeur protection</label><input id="def_protection" type="number"></div>
-      <div class="field"><label>Valeur protection max</label><input id="def_protection_max" type="number"></div>
       <div class="field"><label>Mana</label><input id="player_mana" type="number"></div>
       <div class="field" style="display: none;"><input id="player_mana_current" type="hidden"></div>
+      <div class="field"><label>Vie bonus</label><input id="def_bonus_vie" type="number"></div>
       <div class="field"><label>Intox.</label><input id="def_intox" type="text"></div>
+    </div><!-- fin du grid -->
+  </div>
+
+    <div class="sections-container">
+        <!-- Section Sac -->
+        <div class="section">
+            <h2>Sac</h2>
+            <div class="content-area">
+                <textarea id="eq_sac"></textarea>
+            </div>
+        </div>
+    
+        <!-- Section Ceinture/dos -->
+        <div class="section">
+            <h2>Ceinture/dos</h2>
+            <div class="content-area">
+                <textarea id="eq_ceinture"></textarea>
+            </div>
+        </div>
+    
+        <!-- Section Armes -->
+        <div class="section">
+            <h2>Armes</h2>
+            <table class="weapons-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Dégâts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><input id="weapon_type_1" type="text"></td><td><input id="weapon_dmg_1" type="text"></td></tr>
+                    <tr><td><input id="weapon_type_2" type="text"></td><td><input id="weapon_dmg_2" type="text"></td></tr>
+                    <tr><td><input id="weapon_type_3" type="text"></td><td><input id="weapon_dmg_3" type="text"></td></tr>
+                    <tr><td><input id="weapon_type_4" type="text"></td><td><input id="weapon_dmg_4" type="text"></td></tr>
+                    <tr><td><input id="weapon_type_5" type="text"></td><td><input id="weapon_dmg_5" type="text"></td></tr>
+                </tbody>
+            </table>
+        </div>
+    
+        <!-- Section Armure -->
+        <div class="section">
+            <h2>Armures</h2>
+            <div class="armor-section">
+                <div class="armor-fields">
+                  <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
+                    <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
+                    <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="number"></div>
+                    <div class="field" style="display: none;"><input id="eq_durabilite_current" type="hidden"></div>
+      
+                    <div class="field">
+                      <label>État de l'armure</label>
+                      <input type="text" id="player_armor" readonly>
+                      <div id="armor_effect" class="status-text"></div>
+                    </div>
+                    <div class="field"><label>Valeur protection</label><input id="def_protection" type="number"></div>
+                  </div>
+                <!-- Silhouette humaine -->
+                <div class="human-silhouette" style="flex-shrink: 0;">
+                    <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="double-section-container">
+        <div class="section">
+            <h2>Sorts </h2>
+            <div class="grid-3">
+                <div class="field"><label>Nom</label><input id="spell_name_1" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="spell_dmg_1" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="spell_lvl_1" type="number" min="1"></div>
+                <div class="field"><label>Nom</label><input id="spell_name_2" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="spell_dmg_2" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="spell_lvl_2" type="number" min="1"></div>
+                <div class="field"><label>Nom</label><input id="spell_name_3" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="spell_dmg_3" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="spell_lvl_3" type="number" min="1"></div>
+              </div>
+        </div>
+            
+        <div class="section">
+            <h2>Attaques Spéciales</h2>
+            <div class="grid-3">
+                <div class="field"><label>Nom</label><input id="special_name_1" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="special_dmg_1" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="special_lvl_1" type="number" min="1"></div>
+                <div class="field"><label>Nom</label><input id="special_name_2" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="special_dmg_2" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="special_lvl_2" type="number" min="1"></div>
+                <div class="field"><label>Nom</label><input id="special_name_3" type="text"></div>
+                <div class="field"><label>Dégâts</label><input id="special_dmg_3" type="text"></div>
+                <div class="field"><label>Niveau</label><input id="special_lvl_3" type="number" min="1"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Sorts mineurs</h2>
+        <div class="grid-3">
+          <div class="field"><label>Nom</label><input id="minispell_name_1" type="text"></div>
+          <div class="field"><label>Dégâts</label><input id="minispell_dmg_1" type="text"></div>
+          <div class="field"><label>Nom</label><input id="minispell_name_2" type="text"></div>
+          <div class="field"><label>Dégâts</label><input id="minispell_dmg_2" type="text"></div>
+        </div>
+    </div>
+
+  <div class="section">
+    <h2>Compétences de classe et passifs</h2>
+    <table class="competences-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Effets</th>
+          <th>Niveau</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input id="class_skill_name_1" type="text"></td>
+          <td><input id="class_skill_effect_1" type="text"></td>
+          <td><input id="class_skill_lvl_1" type="number" min="1"></td>
+        </tr>
+        <tr>
+          <td><input id="class_skill_name_2" type="text"></td>
+          <td><input id="class_skill_effect_2" type="text"></td>
+          <td><input id="class_skill_lvl_2" type="number" min="1"></td>
+        </tr>
+        <tr>
+          <td><input id="class_skill_name_3" type="text"></td>
+          <td><input id="class_skill_effect_3" type="text"></td>
+          <td><input id="class_skill_lvl_3" type="number" min="1"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Compétences spéciales du personnage</h2>
+    <div class="field">
+      <textarea id="skills_speciales"></textarea>
     </div>
   </div>
 
-  <div class="section"><h2>Compétences de Classe & Passifs</h2><textarea id="skills_classe"></textarea></div>
-  <div class="section"><h2>Sorts Mineurs / Attaques Spéciales</h2><textarea id="skills_sorts"></textarea></div>
-  <div class="section"><h2>Compétences spéciales</h2><textarea id="skills_speciales"></textarea></div>
-  <div class="section"><h2>Biographie</h2><textarea id="bio"></textarea></div>
-  <div class="section"><h2>Choix de level up / Effets permanents</h2><textarea id="levelup"></textarea></div>
+  <div class="section">
+    <h2>Biographie</h2>
+    <div class="field">
+      <textarea id="bio"></textarea>
+    </div>
+  </div>
 
-  <button id="save_player_creation">Enregistrer</button>
+  <div class="section">
+    <h2>Choix de level up et Effets permanents</h2>
+    <div class="field">
+      <textarea id="levelup"></textarea>
+    </div>
+  </div>
+
+  <div style="text-align: center;">
+    <button id="save_player_creation">Sauvegarder</button>
+  </div>
 
   <script src="navbar.js"></script>
   <script>
@@ -156,10 +296,10 @@
     const options = {
       "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
       "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"],
-      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"],
+      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"]
     };
-    
-    // Remplir la liste déroulante des classes
+
+        // Remplir la liste déroulante des classes
     const classSelect = document.getElementById('player_class');
     options.classes.forEach(className => {
       const option = document.createElement('option');
@@ -186,74 +326,151 @@
       armorSelect.appendChild(option);
     });
 
-    document.getElementById('save_player_creation').addEventListener('click', () => {
-    
-          // Validation basique
-    const requiredFields = ['player_name', 'player_class', 'player_race', 'player_level'];
-    for (const fieldId of requiredFields) {
-        if (!document.getElementById(fieldId).value) {
-            alert('Veuillez remplir tous les champs obligatoires');
-            return;
-        }
-    }
 
-      // Copie les valeurs max vers les valeurs "actuelles"
+    document.getElementById('save_player_creation').addEventListener('click', () => {
+
+      // Vérification basique
+      const required = ['player_name', 'player_class', 'player_race', 'player_level'];
+      for (const id of required) {
+        if (!document.getElementById(id).value) {
+          alert('Veuillez remplir tous les champs requis.');
+          return;
+        }
+      }
+
+            // Copie les valeurs max vers les valeurs "actuelles"
     document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
     document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
     document.getElementById('eq_durabilite_current').value = document.getElementById('eq_durabilite').value;
 
-      const data = {
-        nom: document.getElementById('player_name').value,
-        classe: document.getElementById('player_class').value,
-        race: document.getElementById('player_race').value,
-        niveau: parseInt(document.getElementById('player_level').value),
-        hp: {
-          max: parseInt(document.getElementById('player_hp').value),
-          current: parseInt(document.getElementById('player_hp_current').value)
-        },
-        mana: {
-          max: parseInt(document.getElementById('player_mana').value),
-          current: parseInt(document.getElementById('player_mana_current').value)
-        },
-        stats: {
-          force: parseInt(document.getElementById('stat_force').value),
-          dexterite: parseInt(document.getElementById('stat_dexterite').value),
-          magie: parseInt(document.getElementById('stat_magie').value),
-          constitution: parseInt(document.getElementById('stat_constitution').value),
-          charisme: parseInt(document.getElementById('stat_charisme').value),
-          perception: parseInt(document.getElementById('stat_perception').value),
-          chance: parseInt(document.getElementById('stat_chance').value),
-          intelligence: parseInt(document.getElementById('stat_intelligence').value)
-        },
-        equipement: {
-          sac: document.getElementById('eq_sac').value,
-          ceinture: document.getElementById('eq_ceinture').value,
-          armes: document.getElementById('eq_armes').value,
-          armure: document.getElementById('eq_armure').value,
-          resistance: document.getElementById('eq_resistance').value,
-          durabilite: {
+
+    const data = {
+      nom: document.getElementById('player_name').value,
+      classe: document.getElementById('player_class').value,
+      race: document.getElementById('player_race').value,
+      niveau: parseInt(document.getElementById('player_level').value),
+      stats: {
+        force: parseInt(document.getElementById('stat_force').value),
+        dexterite: parseInt(document.getElementById('stat_dexterite').value),
+        magie: parseInt(document.getElementById('stat_magie').value),
+        constitution: parseInt(document.getElementById('stat_constitution').value),
+        charisme: parseInt(document.getElementById('stat_charisme').value),
+        perception: parseInt(document.getElementById('stat_perception').value),
+        chance: parseInt(document.getElementById('stat_chance').value),
+        intelligence: parseInt(document.getElementById('stat_intelligence').value)
+      },
+      bio: document.getElementById('bio').value,
+      sac: document.getElementById('eq_sac').value,
+      ceinture: document.getElementById('eq_ceinture').value,
+      armure: {
+        type: document.getElementById('eq_armure').value,
+        resistance: document.getElementById('eq_resistance').value,
+        durabilite: {
             max: document.getElementById('eq_durabilite').value,
             current: document.getElementById('eq_durabilite_current').value,
           },
-          degats: document.getElementById('eq_degats').value
+        protection: parseInt(document.getElementById('def_protection').value)
+      },
+      hp: {
+          max: parseInt(document.getElementById('player_hp').value),
+          current: parseInt(document.getElementById('player_hp_current').value)
         },
-        defense: {
-          survie: document.getElementById('def_survie').value,
-          bonus_vie: parseInt(document.getElementById('def_bonus_vie').value),
-          protection: parseInt(document.getElementById('def_protection').value),
-          protection_max: parseInt(document.getElementById('def_protection_max').value),
-          intox: document.getElementById('def_intox').value
+      mana: {
+          max: parseInt(document.getElementById('player_mana').value),
+          current: parseInt(document.getElementById('player_mana_current').value)
         },
-        competences: {
-          classe: document.getElementById('skills_classe').value,
-          sorts: document.getElementById('skills_sorts').value,
-          speciales: document.getElementById('skills_speciales').value
+      bonus_vie: parseInt(document.getElementById('def_bonus_vie').value),
+      intox: document.getElementById('def_intox').value,
+      spells: [
+        {
+          nom: document.getElementById('spell_name_1').value,
+          degats: document.getElementById('spell_dmg_1').value,
+          niveau: parseInt(document.getElementById('spell_lvl_1').value)
         },
-        bio: document.getElementById('bio').value,
-        levelup: document.getElementById('levelup').value
-      };
+        {
+          nom: document.getElementById('spell_name_2').value,
+          degats: document.getElementById('spell_dmg_2').value,
+          niveau: parseInt(document.getElementById('spell_lvl_2').value)
+        },
+        {
+          nom: document.getElementById('spell_name_3').value,
+          degats: document.getElementById('spell_dmg_3').value,
+          niveau: parseInt(document.getElementById('spell_lvl_3').value)
+        }
+      ],
+      attaques_speciales: [
+        {
+          nom: document.getElementById('special_name_1').value,
+          degats: document.getElementById('special_dmg_1').value,
+          niveau: parseInt(document.getElementById('special_lvl_1').value)
+        },
+        {
+          nom: document.getElementById('special_name_2').value,
+          degats: document.getElementById('special_dmg_2').value,
+          niveau: parseInt(document.getElementById('special_lvl_2').value)
+        },
+        {
+          nom: document.getElementById('special_name_3').value,
+          degats: document.getElementById('special_dmg_3').value,
+          niveau: parseInt(document.getElementById('special_lvl_3').value)
+        }
+      ],
+      sorts_mineurs: [
+        {
+          nom: document.getElementById('minispell_name_1').value,
+          degats: document.getElementById('minispell_dmg_1').value
+        },
+        {
+          nom: document.getElementById('minispell_name_2').value,
+          degats: document.getElementById('minispell_dmg_2').value
+        }
+      ],
+      competences: [
+        {
+          nom: document.getElementById('class_skill_name_1').value,
+          effet: document.getElementById('class_skill_effect_1').value,
+          niveau: parseInt(document.getElementById('class_skill_lvl_1').value)
+        },
+        {
+          nom: document.getElementById('class_skill_name_2').value,
+          effet: document.getElementById('class_skill_effect_2').value,
+          niveau: parseInt(document.getElementById('class_skill_lvl_2').value)
+        },
+        {
+          nom: document.getElementById('class_skill_name_3').value,
+          effet: document.getElementById('class_skill_effect_3').value,
+          niveau: parseInt(document.getElementById('class_skill_lvl_3').value)
+        }
+      ],
+      skills_speciales: document.getElementById('skills_speciales').value,
+      levelup: document.getElementById('levelup').value,
+      armes: [
+        {
+          type: document.getElementById('weapon_type_1').value,
+          degats: document.getElementById('weapon_dmg_1').value
+        },
+        {
+          type: document.getElementById('weapon_type_2').value,
+          degats: document.getElementById('weapon_dmg_2').value
+        },
+        {
+          type: document.getElementById('weapon_type_3').value,
+          degats: document.getElementById('weapon_dmg_3').value
+        },
+        {
+          type: document.getElementById('weapon_type_4').value,
+          degats: document.getElementById('weapon_dmg_4').value
+        },
+        {
+          type: document.getElementById('weapon_type_5').value,
+          degats: document.getElementById('weapon_dmg_5').value
+        }
+      ]
+    };
 
-      fetch('/api/joueurs', {
+
+
+    fetch('/api/joueurs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Création de Personnage</title>
+  <link rel="stylesheet" href="style.css"/> 
+  <link rel="icon" type="image/png" href="img/icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Uncial Antiqua', cursive;
+      background-size: cover;
+      color: #3b2f1e;
+      margin: 0;
+      padding: 40px;
+    }
+    h1, h2 {
+      text-align: center;
+      text-shadow: 1px 1px 2px #00000050;
+    }
+    .section {
+      position: relative;
+      background: rgba(255, 248, 220, 0.9);
+      border: 4px solid #8b5e3c;
+      border-radius: 12px;
+      padding: 50px 20px 20px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px #3b2f1e99;
+      overflow: hidden;
+    }
+    .section h2 {
+      position: absolute;
+      top: -20px;
+      left: 20px;
+      background: rgba(255, 248, 220, 0.95);
+      padding: 0 10px;
+      font-size: 20px;
+      color: #5c3b21;
+      border: 2px solid #8b5e3c;
+      border-radius: 8px;
+      box-shadow: 2px 2px 4px #00000040;
+      z-index: 2;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #3b2f1e;
+    }
+    input, textarea, select {
+      font-family: 'Uncial Antiqua', cursive;
+      padding: 6px 10px;
+      font-size: 16px;
+      background: #fefae0;
+      border: 2px solid #8b5e3c;
+      border-radius: 6px;
+      box-shadow: inset 0 0 4px #8b5e3c44;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    textarea {
+      resize: vertical;
+      height: 100px;
+    }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+  <h1>Création de votre Personnage</h1>
+
+  <div class="section">
+    <h2>Informations Générales</h2>
+    <div class="grid">
+      <div class="field"><label>Nom</label><input id="player_name" type="text"></div>
+      <div class="field"><label>Classe</label>
+        <select id="player_class"></select>
+      </div>
+      <div class="field"><label>Race</label>
+        <select id="player_race"></select>
+      </div>      
+      <div class="field"><label>Niveau</label><input id="player_level" type="number" min="1"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Statistiques</h2>
+    <div class="grid">
+      <div class="field"><label>Force</label><input id="stat_force" type="number"></div>
+      <div class="field"><label>Dextérité</label><input id="stat_dexterite" type="number"></div>
+      <div class="field"><label>Magie</label><input id="stat_magie" type="number"></div>
+      <div class="field"><label>Constitution</label><input id="stat_constitution" type="number"></div>
+      <div class="field"><label>Charisme</label><input id="stat_charisme" type="number"></div>
+      <div class="field"><label>Perception</label><input id="stat_perception" type="number"></div>
+      <div class="field"><label>Chance</label><input id="stat_chance" type="number"></div>
+      <div class="field"><label>Intelligence</label><input id="stat_intelligence" type="number"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Équipement</h2>
+    <div class="grid">
+      <div class="field"><label>Sac</label><input id="eq_sac" type="text"></div>
+      <div class="field"><label>Ceinture / Dos</label><input id="eq_ceinture" type="text"></div>
+      <div class="field"><label>Armes</label><input id="eq_armes" type="text"></div>
+      <div class="field"><label>Type d'armure</label>
+        <select id="eq_armure" type="text"></select>
+      </div>
+      <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
+      <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="text"></div>
+      <div class="field" style="display: none;"><input id="eq_durabilite_current" type="hidden"></div>
+      <div class="field"><label>Type Dégâts</label><input id="eq_degats" type="text"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Survie et Défense</h2>
+    <div class="grid">
+      <div class="field"><label>Jets de survie</label><input id="def_survie" type="text"></div>
+      <div class="field"><label>Vie</label><input id="player_hp" type="number"></div>
+      <div class="field" style="display: none;"><input id="player_hp_current" type="hidden"></div>
+      <div class="field"><label>Vie bonus</label><input id="def_bonus_vie" type="number"></div>
+      <div class="field"><label>Valeur protection</label><input id="def_protection" type="number"></div>
+      <div class="field"><label>Valeur protection max</label><input id="def_protection_max" type="number"></div>
+      <div class="field"><label>Mana</label><input id="player_mana" type="number"></div>
+      <div class="field" style="display: none;"><input id="player_mana_current" type="hidden"></div>
+      <div class="field"><label>Intox.</label><input id="def_intox" type="text"></div>
+    </div>
+  </div>
+
+  <div class="section"><h2>Compétences de Classe & Passifs</h2><textarea id="skills_classe"></textarea></div>
+  <div class="section"><h2>Sorts Mineurs / Attaques Spéciales</h2><textarea id="skills_sorts"></textarea></div>
+  <div class="section"><h2>Compétences spéciales</h2><textarea id="skills_speciales"></textarea></div>
+  <div class="section"><h2>Biographie</h2><textarea id="bio"></textarea></div>
+  <div class="section"><h2>Choix de level up / Effets permanents</h2><textarea id="levelup"></textarea></div>
+
+  <button id="save_player_creation">Enregistrer</button>
+
+  <script src="navbar.js"></script>
+  <script>
+    // Options intégrées directement dans le code
+    const options = {
+      "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
+      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"],
+      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"],
+    };
+    
+    // Remplir la liste déroulante des classes
+    const classSelect = document.getElementById('player_class');
+    options.classes.forEach(className => {
+      const option = document.createElement('option');
+      option.value = className;
+      option.textContent = className;
+      classSelect.appendChild(option);
+    });
+
+    // Remplir la liste déroulante des races
+    const raceSelect = document.getElementById('player_race');
+    options.races.forEach(raceName => {
+      const option = document.createElement('option');
+      option.value = raceName;
+      option.textContent = raceName;
+      raceSelect.appendChild(option);
+    });
+
+    // Remplir la liste déroulante des armures
+    const armorSelect = document.getElementById('eq_armure');
+    options.armures.forEach(armorName => {
+      const option = document.createElement('option');
+      option.value = armorName;
+      option.textContent = armorName;
+      armorSelect.appendChild(option);
+    });
+
+    document.getElementById('save_player_creation').addEventListener('click', () => {
+    
+          // Validation basique
+    const requiredFields = ['player_name', 'player_class', 'player_race', 'player_level'];
+    for (const fieldId of requiredFields) {
+        if (!document.getElementById(fieldId).value) {
+            alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+    }
+
+      // Copie les valeurs max vers les valeurs "actuelles"
+    document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
+    document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
+    document.getElementById('eq_durabilite_current').value = document.getElementById('eq_durabilite').value;
+
+      const data = {
+        nom: document.getElementById('player_name').value,
+        classe: document.getElementById('player_class').value,
+        race: document.getElementById('player_race').value,
+        niveau: parseInt(document.getElementById('player_level').value),
+        hp: {
+          max: parseInt(document.getElementById('player_hp').value),
+          current: parseInt(document.getElementById('player_hp_current').value)
+        },
+        mana: {
+          max: parseInt(document.getElementById('player_mana').value),
+          current: parseInt(document.getElementById('player_mana_current').value)
+        },
+        stats: {
+          force: parseInt(document.getElementById('stat_force').value),
+          dexterite: parseInt(document.getElementById('stat_dexterite').value),
+          magie: parseInt(document.getElementById('stat_magie').value),
+          constitution: parseInt(document.getElementById('stat_constitution').value),
+          charisme: parseInt(document.getElementById('stat_charisme').value),
+          perception: parseInt(document.getElementById('stat_perception').value),
+          chance: parseInt(document.getElementById('stat_chance').value),
+          intelligence: parseInt(document.getElementById('stat_intelligence').value)
+        },
+        equipement: {
+          sac: document.getElementById('eq_sac').value,
+          ceinture: document.getElementById('eq_ceinture').value,
+          armes: document.getElementById('eq_armes').value,
+          armure: document.getElementById('eq_armure').value,
+          resistance: document.getElementById('eq_resistance').value,
+          durabilite: {
+            max: document.getElementById('eq_durabilite').value,
+            current: document.getElementById('eq_durabilite_current').value,
+          },
+          degats: document.getElementById('eq_degats').value
+        },
+        defense: {
+          survie: document.getElementById('def_survie').value,
+          bonus_vie: parseInt(document.getElementById('def_bonus_vie').value),
+          protection: parseInt(document.getElementById('def_protection').value),
+          protection_max: parseInt(document.getElementById('def_protection_max').value),
+          intox: document.getElementById('def_intox').value
+        },
+        competences: {
+          classe: document.getElementById('skills_classe').value,
+          sorts: document.getElementById('skills_sorts').value,
+          speciales: document.getElementById('skills_speciales').value
+        },
+        bio: document.getElementById('bio').value,
+        levelup: document.getElementById('levelup').value
+      };
+
+      fetch('/api/joueurs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(json => {
+        console.log('Réponse du serveur :', json);
+        alert('Joueur enregistré avec succès !');
+        window.location.href = '/selecte_player.html';
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Erreur lors de l'enregistrement du joueur.");
+      });
+    });
+  </script>
+</body>
+</html>

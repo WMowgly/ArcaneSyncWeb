@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Fiche de Personnage</title>
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Uncial Antiqua', cursive;
@@ -48,12 +48,6 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
       gap: 15px;
     }
 
@@ -110,51 +104,14 @@
       box-shadow: 1px 1px 3px #3b2f1e44;
     }
 
-    .competences-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-
-    .competences-table th, .competences-table td {
-      border: 1px solid #8b5e3c;
-      padding: 8px;
-      text-align: left;
-    }
-
-    .competences-table th {
-      background-color: rgba(139, 94, 60, 0.2);
-    }
-
-    .spells-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-    }
-
-    .spell-item {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 5px;
-      margin-bottom: 10px;
-    }
-
-    .spell-item label {
-      grid-column: 1 / -1;
-      margin-bottom: 0;
-    }
-
     @media (max-width: 768px) {
-      .grid, .grid-3 {
+      .grid {
         grid-template-columns: repeat(2, 1fr);
-      }
-      .spells-grid {
-        grid-template-columns: 1fr;
       }
     }
 
     @media (max-width: 480px) {
-      .grid, .grid-3 {
+      .grid {
         grid-template-columns: 1fr;
       }
     }
@@ -197,35 +154,11 @@
       color: #3b2f1e;
       padding: 8px;
     }
-
-    .header-fields {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .niveau-race {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 10px;
-    }
-
-    .double-section-container {
-        display: flex;
-        gap: 30px;
-        margin-bottom: 30px;
-    }
-
-    .double-section-container .section {
-        flex: 1;
-    }
-
   </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
-  <h1>Fiche de Personnage v2</h1>
+  <h1>Fiche de Personnage</h1>
 
   <div class="section">
     <h2>Informations Générales</h2>
@@ -254,183 +187,40 @@
   <div class="section">
     <h2>Survie et Défense</h2>
     <div class="grid">
-      <div class="field">
-        <label>Jets de survie</label>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Ligne des "Réussi" -->
-          <div style="display: flex; align-items: center;">
-            <span class="divider-span">Réussi</span>
-            <div style="display: flex; gap: 20px;">
-              <input type="checkbox" name="survie1" value="reussi">
-              <input type="checkbox" name="survie2" value="reussi">
-              <input type="checkbox" name="survie3" value="reussi">
-            </div>
-          </div>
-          <!-- Ligne des "Echec" -->
-          <div style="display: flex; align-items: center;">
-            <span class="divider-span">Échec</span>
-            <div style="display: flex; gap: 20px;">
-              <input type="checkbox" name="survie1" value="echec">
-              <input type="checkbox" name="survie2" value="echec">
-              <input type="checkbox" name="survie3" value="echec">
-            </div>
-          </div>
-        </div>
-      </div>
-        <div class="field"><label>Vie</label><input type="number"></div>
-      <div class="field">
-        <div class="field"><label>Mana</label><input type="number"></div>
-      </div>
-      <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div style="display: flex; flex-direction: column;">
-          <label>Vie bonus</label>
-          <input type="number" id="player_vie_bonus" min="0" placeholder="0">
-        </div>
-        <div style="display: flex; flex-direction: column;">
-          <label>Intox.</label>
-          <input type="number" id="player_intox" placeholder="0" min="0" max="100">
-        </div>
-      </div>
-
-    </div><!-- fin du grid -->
-  </div>
-
-    <div class="sections-container">
-        <!-- Section Sac -->
-        <div class="section">
-            <h2>Sac</h2>
-            <div class="content-area">
-                <textarea></textarea>
-            </div>
-        </div>
-    
-        <!-- Section Ceinture/dos -->
-        <div class="section">
-            <h2>Ceinture/dos</h2>
-            <div class="content-area">
-                <textarea></textarea>
-            </div>
-        </div>
-    
-        <!-- Section Armes -->
-        <div class="section">
-            <h2>Armes</h2>
-            <table class="weapons-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Dégâts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
-                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
-                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
-                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
-                    <tr><td><input type="text"></td><td><input type="text"></td></tr>
-                </tbody>
-            </table>
-        </div>
-    
-        <!-- Section Armure -->
-        <div class="section">
-            <div class="armor-section">
-                <div class="armor-fields">
-                    <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
-                    <div class="field"><label>Résistance</label><input type="text"></div>
-                    <div class="field"><label>Durabilité</label><input type="number"></div>
-      
-                    <div class="field">
-                      <label>État de l'armure</label>
-                      <input type="text" id="player_armor" readonly>
-                      <div id="armor_effect" class="status-text"></div>
-                    </div>
-                    <div class="field"><label>Valeur protection</label><input type="number"></div>
-                  </div>
-                <!-- Silhouette humaine -->
-                <div class="human-silhouette" style="flex-shrink: 0;">
-                    <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
-                </div>
-            </div>
-        </div>
+      <div class="field"><label>Vie</label><input type="number"></div>
+      <div class="field"><label>Vie bonus</label><input type="number"></div>
+      <div class="field"><label>Valeur protection</label><input type="number"></div>
+      <div class="field"><label>Valeur protection max</label><input type="number"></div>
+      <div class="field"><label>Mana</label><input type="number"></div>
+      <div class="field"><label>Intox.</label><input type="number"></div>
     </div>
-
-
-    <div class="double-section-container">
-        <div class="section">
-            <h2>Sorts </h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-            </div>
-        </div>
-            
-        <div class="section">
-            <h2>Attaques Spéciales</h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Sorts mineurs</h2>
-        <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-        </div>
-    </div>
-
-  <div class="section">
-    <h2>Compétences de classe et passifs</h2>
-    <table class="competences-table">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Effets</th>
-          <th>Niveau</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 
   <div class="section">
-    <h2>Compétences spéciales du personnage</h2>
+    <h2>Équipement</h2>
+    <div class="grid">
+      <div class="field"><label>Sac</label><input type="text"></div>
+      <div class="field"><label>Ceinture / Dos</label><input type="text"></div>
+      <div class="field"><label>Armes</label><input type="text"></div>
+      <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
+      <div class="field"><label>Résistance</label><input type="text"></div>
+      <div class="field"><label>Durabilité</label><input type="number"></div>
+      <div class="field"><label>Type Dégâts</label><input type="text"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Compétences et Capacités</h2>
     <div class="field">
+      <label>Compétences de Classe & Passifs</label>
+      <textarea></textarea>
+    </div>
+    <div class="field">
+      <label>Sorts Mineurs / Attaques Spéciales</label>
+      <textarea></textarea>
+    </div>
+    <div class="field">
+      <label>Compétences spéciales du personnage</label>
       <textarea></textarea>
     </div>
   </div>
@@ -443,8 +233,9 @@
   </div>
 
   <div class="section">
-    <h2>Choix de level up et Effets permanents</h2>
+    <h2>Progression</h2>
     <div class="field">
+      <label>Choix de level up et Effets permanents</label>
       <textarea></textarea>
     </div>
   </div>
@@ -490,13 +281,10 @@
 
 
     window.addEventListener('DOMContentLoaded', () => {
-      
+
       console.log('Script chargé');
       
       const params = new URLSearchParams(window.location.search);
-
-      setupValidators();
-      updateArmorState();
 
       // Fonction utilitaire pour récupérer la valeur d'un champ
       function getFieldValue(labelText) {
@@ -550,7 +338,7 @@
           }
       }
 
-      // Remplir le champ nom
+      // Pour afficher le nom du joueur dans le titre
       const nom = params.get('Nom');
       if (nom) {
         document.querySelector('h1').innerText = `Fiche de ${nom}`;
@@ -571,90 +359,21 @@
         document.getElementById('eq_armure').value = armureValue;
       }
 
-      // Remplir les compétences spéciales du personnage
-      const competencesSpecialesSection = Array.from(document.querySelectorAll('.section'))
-          .find(section => section.querySelector('h2')?.textContent.includes('Compétences spéciales'));
-      if (competencesSpecialesSection) {
-          const textarea = competencesSpecialesSection.querySelector('textarea');
-          if (textarea) {
-              const competencesSpeciales = params.get('Compétences spéciales du personnage');
-              if (competencesSpeciales !== null) {
-                  textarea.value = competencesSpeciales;
-              }
-          }
-      }
-
-      // Remplir les choix de level up
-      const levelUpSection = Array.from(document.querySelectorAll('.section'))
-          .find(section => section.querySelector('h2')?.textContent.includes('Choix de level up'));
-      if (levelUpSection) {
-          const textarea = levelUpSection.querySelector('textarea');
-          if (textarea) {
-              const levelUp = params.get('Choix de level up et Effets permanents');
-              if (levelUp !== null) {
-                  textarea.value = levelUp;
-              }
-          }
-      }
-
       // Gestionnaire d'événement pour le bouton de sauvegarde
       const saveButton = document.getElementById('save-data-btn');
       saveButton.addEventListener('click', async () => {
         console.log('Bouton Sauvegarder cliqué');
-        if (!noms) {
+        if (!nom) {
           alert('Erreur : nom du joueur non trouvé');
           return;
         }
 
-        // Récupérer les valeurs des tableaux et champs spéciaux
-        const competencesClasse = Array.from(document.querySelectorAll('.competences-table tbody tr')).map(row => {
-          const inputs = row.querySelectorAll('input');
-          return {
-            nom: inputs[0].value,
-            effets: inputs[1].value,
-            niveau: inputs[2].value
-          };
-        }).filter(comp => comp.nom || comp.effets);
+        // Correction ici : on récupère la Biographie manuellement
+        const biographieTextarea = Array.from(document.querySelectorAll('.section'))
+          .find(section => section.querySelector('h2')?.textContent.includes('Biographie'))
+          ?.querySelector('textarea');
 
-        const sortsMineurs = [];
-        document.querySelectorAll('.spells-grid .spell-item').forEach(item => {
-          const inputs = item.querySelectorAll('input');
-          if (inputs[0].value) {
-            sortsMineurs.push({
-              nom: inputs[0].value,
-              degats: inputs[1].value
-            });
-          }
-        });
-
-        const attaquesSpeciales = [];
-        const attaquesSection = Array.from(document.querySelectorAll('.section'))
-          .find(section => section.querySelector('h2')?.textContent.includes('Sorts Attaques Spéciales'));
-        
-        if (attaquesSection) {
-          for (let i = 0; i < attaquesSection.querySelectorAll('.field').length; i += 3) {
-            const nom = attaquesSection.querySelectorAll('.field input')[i].value;
-            if (nom) {
-              attaquesSpeciales.push({
-                nom: nom,
-                degats: attaquesSection.querySelectorAll('.field input')[i+1].value,
-                niveau: attaquesSection.querySelectorAll('.field input')[i+2].value
-              });
-            }
-          }
-        }
-
-        // Récupérer la biographie
-        const biographieTextarea = document.querySelector('.section:nth-of-type(8) textarea');
         const biographie = biographieTextarea ? biographieTextarea.value : '';
-        
-        // Récupérer les compétences spéciales
-        const competencesSpecialesTextarea = document.querySelector('.section:nth-of-type(7) textarea');
-        const competencesSpeciales = competencesSpecialesTextarea ? competencesSpecialesTextarea.value : '';
-        
-        // Récupérer les choix de level up
-        const levelUpTextarea = document.querySelector('.section:nth-of-type(9) textarea');
-        const levelUp = levelUpTextarea ? levelUpTextarea.value : '';
         
         const nouvellesDonnees = {
           nom: nom,
@@ -699,29 +418,28 @@
             intox: getNumericValue('Intox.')
           },
           competences: {
-            classe: competencesClasse,
-            sorts_mineurs: sortsMineurs,
-            attaques_speciales: attaquesSpeciales,
-            speciales: competencesSpeciales
+            classe: getFieldValue('Compétences de Classe & Passifs'),
+            sorts: getFieldValue('Sorts Mineurs / Attaques Spéciales'),
+            speciales: getFieldValue('Compétences spéciales du personnage')
           },
           bio: biographie,
-          levelup: levelUp
+          levelup: getFieldValue('Choix de level up et Effets permanents')
         };
 
         try {
-          console.log('Données à sauvegarder:', { nom: nom, nouvellesDonnees });
+          console.log('Données à sauvegarder:', { nom, nouvellesDonnees });
           
           const response = await fetch('/api/joueur', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ nom: nom, nouvellesDonnees })
+            body: JSON.stringify({ nom, nouvellesDonnees })
           });
 
           if (response.ok) {
             // Mettre à jour l'URL avec les nouvelles valeurs
-            const newParams = new URLSearchParams();
+            const newParams = new URLSearchParams(window.location.search);
             
             // Mise à jour des paramètres généraux
             newParams.set('Nom', nom);
@@ -763,6 +481,8 @@
             newParams.set('Type Dégâts', nouvellesDonnees.equipement.degats);
             
             // Mise à jour des compétences et autres
+            newParams.set('Compétences de Classe & Passifs', nouvellesDonnees.competences.classe);
+            newParams.set('Sorts Mineurs / Attaques Spéciales', nouvellesDonnees.competences.sorts);
             newParams.set('Compétences spéciales du personnage', nouvellesDonnees.competences.speciales);
             newParams.set('Biographie', nouvellesDonnees.bio);
             newParams.set('Choix de level up et Effets permanents', nouvellesDonnees.levelup);
@@ -782,67 +502,6 @@
         }
       });
     });
-    function setupValidators() {
-      const fields = ['hp', 'mana', 'protection', 'dura'];
-      
-      fields.forEach(field => {
-        const current = document.getElementById(`player_${field}_current`);
-        const max = document.getElementById(`player_${field}`);
-        
-        if (!current || !max) return;
-        
-        current.addEventListener('input', () => {
-          const currentVal = parseInt(current.value) || 0;
-          const maxVal = parseInt(max.value) || 0;
-          
-          if (currentVal > maxVal) {
-            current.classList.add('error');
-          } else {
-            current.classList.remove('error');
-          }
-          
-          updateArmorState();
-        });
-      });
-    }
-
-    function updateArmorState() {
-      const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
-      const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
-      const armorStateInput = document.getElementById('player_armor');
-      const armorStateEffect = document.getElementById('armor_effect');
-      
-      let etat = '';
-      let couleur = '';
-      let effect = '';
-      
-      if (duraCurrent === 0) {
-        etat = "Absence d'armure";
-        couleur = '#000000';
-        couleurs = '#000000';
-        effect = 'Plus aucune protection';
-      } else if (duraCurrent >= ((duraMax/3)*2)+1) {
-        etat = 'Armure Neuve';
-        couleur = '#2e7d32';
-        couleurs = '#000000';
-        effect = 'Protection maximale';
-      } else if (duraCurrent >= (duraMax/3)+1) {
-        etat = 'Armure Abîmée';
-        couleur = '#ff9800';
-        couleurs = '#000000';
-        effect = 'Bonus fixe supprimé';
-      } else {
-        etat = 'Armure Très Abîmée';
-        couleur = '#d32f2f';
-        couleurs = '#000000';
-        effect = 'Résultat du jet réduite de moitié';
-      }
-      
-      armorStateInput.value = etat;
-      armorStateInput.style.color = couleur;
-      armorStateEffect.textContent = effect;
-      armorStateEffect.style.color = couleurs;
-    }
   </script>
 </body>
 </html>

@@ -627,5 +627,242 @@
         "degats": ""
       }
     ]
+  },
+  {
+    "nom": "test",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": 10,
+      "dexterite": 10,
+      "magie": 10,
+      "constitution": 0,
+      "charisme": 50,
+      "perception": 540,
+      "chance": 5,
+      "intelligence": 110
+    },
+    "bio": "kjhhk",
+    "sac": "1212",
+    "ceinture": "lkjlkj",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "20",
+      "durabilite": 20,
+      "protection": 20
+    },
+    "mana": 50,
+    "vie": 10,
+    "bonus_vie": 20,
+    "intox": "10",
+    "spells": [
+      {
+        "nom": "kjh",
+        "degats": "10",
+        "niveau": 1
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": 1
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "hgfhgf",
+        "degats": "hfgh",
+        "niveau": 1
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "hgffgh",
+        "degats": ""
+      },
+      {
+        "nom": "",
+        "degats": "hgfhgf"
+      }
+    ],
+    "competences": [
+      {
+        "nom": "hgfhf",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "hgfhfg",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "kjhkhj",
+    "levelup": "kjhkh",
+    "armes": [
+      {
+        "type": "lkj",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "kjll",
+        "degats": ""
+      },
+      {
+        "type": "lkj",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      }
+    ]
+  },
+  {
+    "nom": "testxx",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": 20,
+      "dexterite": 20,
+      "magie": 20,
+      "constitution": 20,
+      "charisme": 30,
+      "perception": 80,
+      "chance": 40,
+      "intelligence": 30
+    },
+    "bio": "fdsfsdf",
+    "sac": "gfdg",
+    "ceinture": "gdfgdf",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "10",
+      "durabilite": {
+        "max": "10",
+        "current": "10"
+      },
+      "protection": 10
+    },
+    "hp": {
+      "max": 20,
+      "current": 20
+    },
+    "mana": {
+      "max": 30,
+      "current": 30
+    },
+    "bonus_vie": 10,
+    "intox": "2",
+    "spells": [
+      {
+        "nom": "kjgh",
+        "degats": "jhg",
+        "niveau": 1
+      },
+      {
+        "nom": "",
+        "degats": "hgf",
+        "niveau": 1
+      },
+      {
+        "nom": "hgf",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "hgf",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "gf",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "hgf",
+        "niveau": null
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "hfg",
+        "degats": ""
+      },
+      {
+        "nom": "gf",
+        "degats": "hfg"
+      }
+    ],
+    "competences": [
+      {
+        "nom": "hgf",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "hgf",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "hgf",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "fdsfds",
+    "levelup": "dsffds",
+    "armes": [
+      {
+        "type": "gdfgdf",
+        "degats": "gfd"
+      },
+      {
+        "type": "",
+        "degats": "gdf"
+      },
+      {
+        "type": "gfd",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": "gfd"
+      },
+      {
+        "type": "gfd",
+        "degats": "gfd"
+      }
+    ]
   }
 ]
