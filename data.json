@@ -863,6 +863,278 @@
         "type": "gfd",
         "degats": "gfd"
       }
+    ],
+    "equipement": {
+      "durabilite": {
+        "current": 30,
+        "max": null
+      }
+    },
+    "defense": {
+      "bonus_vie": 0,
+      "protection": 10,
+      "protection_max": null,
+      "intox": null,
+      "survie": {
+        "jet1": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet2": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet3": {
+          "reussi": false,
+          "echec": false
+        }
+      }
+    }
+  },
+  {
+    "nom": "bob",
+    "classe": "Druide",
+    "race": "Ecorfal",
+    "niveau": 1,
+    "stats": {
+      "force": 10,
+      "dexterite": 10,
+      "magie": 10,
+      "constitution": 50,
+      "charisme": 40,
+      "perception": 10,
+      "chance": 50,
+      "intelligence": 302
+    },
+    "bio": "456fdg456fdg",
+    "sac": "fdsffd s3232",
+    "ceinture": "fdsfdsf dsf ds fds32",
+    "armure": {
+      "type": "Armure lourde",
+      "resistance": "4",
+      "durabilite": {
+        "max": "30",
+        "current": "30"
+      },
+      "protection": 20
+    },
+    "hp": {
+      "max": 50,
+      "current": 50
+    },
+    "mana": {
+      "max": 20,
+      "current": 20
+    },
+    "bonus_vie": 20,
+    "intox": "10",
+    "spells": [
+      {
+        "nom": "gfd",
+        "degats": "gfd",
+        "niveau": null
+      },
+      {
+        "nom": "gfd",
+        "degats": "",
+        "niveau": 1
+      },
+      {
+        "nom": "fgd",
+        "degats": "gfd",
+        "niveau": 2
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "gfd",
+        "degats": "gfd",
+        "niveau": 23
+      },
+      {
+        "nom": "gfd",
+        "degats": "gfd",
+        "niveau": 32
+      },
+      {
+        "nom": "hgf",
+        "degats": "",
+        "niveau": 1
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "aerzae",
+        "degats": "dsqd"
+      },
+      {
+        "nom": "fjhgjh",
+        "degats": "nb,nb"
+      }
+    ],
+    "competences": [
+      {
+        "nom": "qsd",
+        "effet": "sdd",
+        "niveau": 1
+      },
+      {
+        "nom": "aaadz",
+        "effet": "sq",
+        "niveau": 2
+      },
+      {
+        "nom": "z",
+        "effet": "eze",
+        "niveau": 3
+      }
+    ],
+    "skills_speciales": "oiljhjdfghgf46465",
+    "levelup": "dfs645465fds",
+    "armes": [
+      {
+        "type": "fdsfds",
+        "degats": "fds"
+      },
+      {
+        "type": "fd",
+        "degats": ""
+      },
+      {
+        "type": "fds",
+        "degats": "fds"
+      },
+      {
+        "type": "",
+        "degats": "fds"
+      },
+      {
+        "type": "fds",
+        "degats": ""
+      }
+    ]
+  },
+  {
+    "nom": "kjhk",
+    "classe": "Guerrier",
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": null,
+      "dexterite": null,
+      "magie": null,
+      "constitution": null,
+      "charisme": null,
+      "perception": null,
+      "chance": null,
+      "intelligence": null
+    },
+    "bio": "",
+    "sac": "dsq",
+    "ceinture": "",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "",
+      "durabilite": {
+        "max": "20",
+        "current": "20"
+      },
+      "protection": 30
+    },
+    "hp": {
+      "max": 30,
+      "current": 30
+    },
+    "mana": {
+      "max": 40,
+      "current": 40
+    },
+    "bonus_vie": null,
+    "intox": "",
+    "spells": [
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "",
+        "degats": "dsq",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "",
+        "degats": ""
+      },
+      {
+        "nom": "",
+        "degats": ""
+      }
+    ],
+    "competences": [
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      }
+    ],
+    "skills_speciales": "",
+    "levelup": "",
+    "armes": [
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      },
+      {
+        "type": "",
+        "degats": ""
+      }
     ]
   }
 ]
