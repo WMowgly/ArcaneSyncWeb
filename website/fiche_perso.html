@@ -256,24 +256,24 @@
   <div class="section">
     <h2>Informations Générales</h2>
     <div class="grid">
-      <div class="field"><label>Nom</label><input type="text" readonly></div>
+      <div class="field"><label>Nom</label><input type="text" id="player_name" readonly></div>
       <div class="field"><label>Classe</label><select id="player_class"></select></div>
       <div class="field"><label>Race</label><select id="player_race"></select></div>
-      <div class="field"><label>Niveau</label><input type="number" min="1"></div>
+      <div class="field"><label>Niveau</label><input type="number" id="player_level" min="1"></div>
     </div>
   </div>
 
   <div class="section">
     <h2>Statistiques</h2>
     <div class="grid">
-      <div class="field"><label>Force</label><input type="number"></div>
-      <div class="field"><label>Dextérité</label><input type="number"></div>
-      <div class="field"><label>Magie</label><input type="number"></div>
-      <div class="field"><label>Constitution</label><input type="number"></div>
-      <div class="field"><label>Charisme</label><input type="number"></div>
-      <div class="field"><label>Perception</label><input type="number"></div>
-      <div class="field"><label>Chance</label><input type="number"></div>
-      <div class="field"><label>Intelligence</label><input type="number"></div>
+      <div class="field"><label>Force</label><input type="number" id="stat_force"></div>
+      <div class="field"><label>Dexterite</label><input type="number" id="stat_dexterite"></div>
+      <div class="field"><label>Magie</label><input type="number" id="stat_magie"></div>
+      <div class="field"><label>Constitution</label><input type="number" id="stat_constitution"></div>
+      <div class="field"><label>Charisme</label><input type="number" id="stat_charisme"></div>
+      <div class="field"><label>Perception</label><input type="number" id="stat_perception"></div>
+      <div class="field"><label>Chance</label><input type="number" id="stat_chance"></div>
+      <div class="field"><label>Intelligence</label><input type="number" id="stat_intelligence"></div>
     </div>
   </div>
 
@@ -303,10 +303,24 @@
           </div>
         </div>
       </div>
-        <div class="field"><label>Vie</label><input type="number"></div>
-      <div class="field">
-        <div class="field"><label>Mana</label><input type="number"></div>
+        <div class="field">
+        <label>Vie</label>
+        <div class="dual-input">
+          <input type="number" id="player_hp_current" min="0" placeholder="Min">
+          <span class="divider-span">/</span>
+          <input type="number" id="player_hp" readonly>
+        </div>
       </div>
+
+      <div class="field">
+        <label>Mana</label>
+        <div class="dual-input">
+          <input type="number" id="player_mana_current" min="0" placeholder="Min">
+          <span class="divider-span">/</span>
+          <input type="number" id="player_mana" readonly>
+        </div>
+      </div>
+
       <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column;">
           <label>Vie bonus</label>
@@ -360,23 +374,34 @@
     
         <!-- Section Armure -->
         <div class="section">
+            <h2>Armure</h2>
             <div class="armor-section">
                 <div class="armor-fields">
                     <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
                     <div class="field"><label>Résistance</label><input type="text"></div>
-                    <div class="field"><label>Durabilité</label><input type="number"></div>
+                    <div class="field">
+                      <label>Durabilité</label>
+                      <div class="dual-input">
+                        <input type="number" id="player_dura_current" min="0" placeholder="0">
+                        <span class="divider-span">/</span>
+                        <input type="number" id="player_dura_max" placeholder="Max" readonly>
+                      </div>
+                    </div>
       
                     <div class="field">
                       <label>État de l'armure</label>
                       <input type="text" id="player_armor" readonly>
                       <div id="armor_effect" class="status-text"></div>
                     </div>
-                    <div class="field"><label>Valeur protection</label><input type="number"></div>
+                    <div class="field">
+                      <label>Valeur de Protection</label>
+                      <div class="dual-input">
+                        <input type="number" id="def_protection" min="0" placeholder="0">
+                        <span class="divider-span">/</span>
+                        <input type="number" id="def_protection_max" placeholder="Max" readonly>
+                      </div>
+                    </div>
                   </div>
-                <!-- Silhouette humaine -->
-                <div class="human-silhouette" style="flex-shrink: 0;">
-                    <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
-                </div>
             </div>
         </div>
     </div>
@@ -472,6 +497,15 @@
 
   <script src="navbar.js"></script>
   <script>
+    function getFieldValue(selector, defaultValue = '') {
+      const element = document.querySelector(selector);
+      return element ? element.value || defaultValue : defaultValue;
+    }
+
+    function getNumericValue(selector, defaultValue = 0) {
+      const value = getFieldValue(selector);
+      return parseInt(value) || defaultValue;
+    }
     // Options de sélection
       const options = {
         "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
@@ -507,523 +541,186 @@
       });
 
       window.addEventListener('DOMContentLoaded', () => {
-        console.log('Script chargé');
-        
-        const params = new URLSearchParams(window.location.search);
-        const nom = params.get('Nom');
+  const params = new URLSearchParams(window.location.search);
+  
+  // Fonction utilitaire pour récupérer les valeurs des paramètres
+  function getParamValue(key, defaultValue = '') {
+    const value = params.get(key);
+    return value !== 'null' && value !== 'undefined' ? value : defaultValue;
+  }
 
-        // Fonction utilitaire pour récupérer la valeur d'un champ
-        function getFieldValue(labelText) {
-          const field = Array.from(document.querySelectorAll('.field')).find(
-            f => f.querySelector('label')?.textContent.trim() === labelText
-          );
-          return field?.querySelector('input, textarea, select')?.value || '';
-        }
+  // Fonction pour remplir un champ avec une valeur
+  function fillField(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.value = value;
+  }
 
-        // Fonction utilitaire pour récupérer la valeur numérique d'un champ
-        function getNumericValue(labelText) {
-          const value = getFieldValue(labelText);
-          return value ? parseInt(value) || null : null;
-        }
+  // Remplir les champs avec les valeurs de l'URL
+  fillField('player_name', getParamValue('Nom'));
+  fillField('player_class', getParamValue('Classe'));
+  fillField('player_race', getParamValue('Race'));
+  fillField('player_level', getParamValue('Niveau', '1'));
+  
+  // Stats vitales
+  fillField('player_hp', getParamValue('VieMax', '0'));
+  fillField('player_hp_current', getParamValue('VieCurrent', '0'));
+  fillField('player_mana', getParamValue('ManaMax', '0'));
+  fillField('player_mana_current', getParamValue('ManaCurrent', '0'));
+  
+  // Stats de base
+  const stats = ['Force', 'Dextérité', 'Magie', 'Constitution', 'Charisme', 'Perception', 'Chance', 'Intelligence'];
+  stats.forEach(stat => {
+    fillField(`stat_${stat.toLowerCase()}`, getParamValue(stat, '0'));
+  });
+  
+  // Équipement et protection
+  fillField('player_vie_bonus', getParamValue('Vie bonus', '0'));
+  fillField('def_protection_max', getParamValue('Valeur protection', '0'));
+  fillField('player_intox', getParamValue('Intox.', '0'));
+  fillField('eq_armure', getParamValue("Type d'armure"));
+  fillField('eq_resistance', getParamValue('Résistance'));
+  fillField('player_dura_max', getParamValue('DuraMax', '0'));
+  fillField('player_dura_current', getParamValue('DuraCurrent', '0'));
 
-        // Remplir les champs avec les valeurs existantes
-        document.querySelectorAll('.field').forEach(field => {
-          const label = field.querySelector('label');
-          const input = field.querySelector('input, textarea, select');
-          if (!label || !input) return;
+  // Gestionnaire de sauvegarde
+  document.getElementById('save-data-btn').addEventListener('click', async () => {
+    
+    try {
+    // Construire l'objet de données
+    const donnees = {
+      nom: document.getElementById('player_name').value,
+      classe: document.getElementById('player_class').value,
+      race: document.getElementById('player_race').value,
+      niveau: parseInt(document.getElementById('player_level').value) || 1,
+      stats: {
+        force: parseInt(document.getElementById('stat_force').value) || 0,
+        dexterite: parseInt(document.getElementById('stat_dexterite').value) || 0,
+        magie: parseInt(document.getElementById('stat_magie').value) || 0,
+        constitution: parseInt(document.getElementById('stat_constitution').value) || 0,
+        charisme: parseInt(document.getElementById('stat_charisme').value) || 0,
+        perception: parseInt(document.getElementById('stat_perception').value) || 0,
+        chance: parseInt(document.getElementById('stat_chance').value) || 0,
+        intelligence: parseInt(document.getElementById('stat_intelligence').value) || 0
+      },
+      bio: document.getElementById('bio').value || '',
+      sac: document.getElementById('eq_sac').value || '',
+      ceinture: document.getElementById('eq_ceinture').value || '',
+      armure: {
+        type: document.getElementById('eq_armure').value,
+        resistance: document.getElementById('eq_resistance').value,
+        durabilite: {
+          max: parseInt(document.getElementById('eq_durabilite').value) || 0,
+          current: parseInt(document.getElementById('eq_durabilite_current').value) || 0
+        },
+        protection: {
+          max: parseInt(document.getElementById('def_protection_max').value) || 0,
+          current: parseInt(document.getElementById('def_protection').value) || 0
+        },
+      },
+      hp: {
+        max: parseInt(document.getElementById('player_hp').value) || 0,
+        current: parseInt(document.getElementById('player_hp_current').value) || 0
+      },
+      mana: {
+        max: parseInt(document.getElementById('player_mana').value) || 0,
+        current: parseInt(document.getElementById('player_mana_current').value) || 0
+      },
+      bonus_vie: parseInt(document.getElementById('def_bonus_vie').value) || 0,
+      intox: document.getElementById('def_intox').value || '0',
+      spells: getSpells(),
+      sorts_mineurs: getSortsMineurs(),
+      competences: getCompetences(),
+      skills_speciales: document.getElementById('skills_speciales').value || '',
+      levelup: document.getElementById('levelup').value || '',
+      armes: getArmes()
+    };
 
-          const labelText = label.innerText.trim();
-          
-          if (labelText === 'Vie') {
-            input.value = params.get('VieMax') || '';
-          } 
-          else if (labelText === 'Mana') {
-            input.value = params.get('ManaMax') || '';
-          }
-          else if (labelText === 'Durabilité') {
-            input.value = params.get('DuraMax') || '';
-          }
-          else if (labelText === 'Valeur protection') {
-            input.value = params.get('ProtectionMax') || '';
-          }
-          else {
-            const value = params.get(labelText);
-            if (value !== null) {
-              input.value = value;
-            }
-          }
-        });
-
-        // Mettre à jour le titre de la page avec le nom du personnage
-        if (nom) {
-          document.querySelector('h1').innerText = `Fiche de ${nom}`;
-        }
-
-        // Remplir les valeurs des listes déroulantes
-        const classeValue = params.get('Classe');
-        if (classeValue) {
-          document.getElementById('player_class').value = classeValue;
-        }
-
-        const raceValue = params.get('Race');
-        if (raceValue) {
-          document.getElementById('player_race').value = raceValue;
-        }
-
-        const armureValue = params.get("Type d'armure");
-        if (armureValue) {
-          document.getElementById('eq_armure').value = armureValue;
-        }
-
-        // Remplir la biographie
-        const bioSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.includes('Biographie'));
-        if (bioSection) {
-            const bioTextarea = bioSection.querySelector('textarea');
-            if (bioTextarea) {
-                const biographie = params.get('Biographie');
-                if (biographie !== null) {
-                    bioTextarea.value = biographie;
-                }
-            }
-        }
-
-        // Remplir le sac et la ceinture/dos
-        const sacSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent === 'Sac');
-        if (sacSection) {
-            const textarea = sacSection.querySelector('textarea');
-            if (textarea) {
-                const sac = params.get('Sac');
-                if (sac !== null) {
-                    textarea.value = sac;
-                }
-            }
-        }
-
-        const ceintureSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent === 'Ceinture/dos');
-        if (ceintureSection) {
-            const textarea = ceintureSection.querySelector('textarea');
-            if (textarea) {
-                const ceinture = params.get('Ceinture/dos');
-                if (ceinture !== null) {
-                    textarea.value = ceinture;
-                }
-            }
-        }
-
-        // Remplir les armes
-        const armesSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent === 'Armes');
-        if (armesSection) {
-            // Récupérer les armes depuis les paramètres d'URL si disponibles
-            // Cette partie devrait être adaptée en fonction de comment les armes sont stockées dans l'URL
-        }
-
-        // Remplir les sorts
-        const sortsSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.trim() === 'Sorts');
-        if (sortsSection) {
-            const inputs = sortsSection.querySelectorAll('input');
-            // Cette partie devrait être adaptée en fonction de comment les sorts sont stockées dans l'URL
-        }
-
-        // Remplir les attaques spéciales
-        const attaquesSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.trim() === 'Attaques Spéciales');
-        if (attaquesSection) {
-            const inputs = attaquesSection.querySelectorAll('input');
-            // Cette partie devrait être adaptée en fonction de comment les attaques spéciales sont stockées dans l'URL
-        }
-
-        // Remplir les sorts mineurs
-        const sortsMineurs = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.trim() === 'Sorts mineurs');
-        if (sortsMineurs) {
-            const inputs = sortsMineurs.querySelectorAll('input');
-            // Cette partie devrait être adaptée en fonction de comment les sorts mineurs sont stockées dans l'URL
-        }
-
-        // Remplir les compétences de classe
-        const competencesClasseSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.includes('Compétences de classe'));
-        if (competencesClasseSection) {
-            const rows = competencesClasseSection.querySelectorAll('tbody tr');
-            // Cette partie devrait être adaptée en fonction de comment les compétences sont stockées dans l'URL
-        }
-
-        // Remplir les compétences spéciales du personnage
-        const competencesSpecialesSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.includes('Compétences spéciales'));
-        if (competencesSpecialesSection) {
-            const textarea = competencesSpecialesSection.querySelector('textarea');
-            if (textarea) {
-                const competencesSpeciales = params.get('Compétences spéciales du personnage');
-                if (competencesSpeciales !== null) {
-                    textarea.value = competencesSpeciales;
-                }
-            }
-        }
-
-        // Remplir les choix de level up
-        const levelUpSection = Array.from(document.querySelectorAll('.section'))
-            .find(section => section.querySelector('h2')?.textContent.includes('Choix de level up'));
-        if (levelUpSection) {
-            const textarea = levelUpSection.querySelector('textarea');
-            if (textarea) {
-                const levelUp = params.get('Choix de level up et Effets permanents');
-                if (levelUp !== null) {
-                    textarea.value = levelUp;
-                }
-            }
-        }
-
-        // Gestionnaire d'événement pour le bouton de sauvegarde
-        const saveButton = document.getElementById('save-data-btn');
-        saveButton.addEventListener('click', async () => {
-          console.log('Bouton Sauvegarder cliqué');
-          if (!nom) {
-            alert('Erreur : nom du joueur non trouvé');
-            return;
-          }
-
-          // Récupérer les valeurs des tableaux de compétences de classe
-          const competencesClasse = Array.from(document.querySelectorAll('.competences-table tbody tr')).map(row => {
-            const inputs = row.querySelectorAll('input');
-            return {
-              nom: inputs[0].value,
-              effets: inputs[1].value,
-              niveau: inputs[2].value
-            };
-          }).filter(comp => comp.nom || comp.effets);
-
-          // Récupérer les armes
-          const armes = [];
-          const armesTable = document.querySelector('.weapons-table tbody');
-          if (armesTable) {
-            const rows = armesTable.querySelectorAll('tr');
-            rows.forEach(row => {
-              const inputs = row.querySelectorAll('input');
-              if (inputs[0].value) {
-                armes.push({
-                  type: inputs[0].value,
-                  degats: inputs[1].value
-                });
-              }
-            });
-          }
-
-          // Récupérer les sorts
-          const sorts = [];
-          const sortsSection = document.querySelector('.section h2[innerText="Sorts"]')?.closest('.section');
-          if (sortsSection) {
-            const fields = sortsSection.querySelectorAll('.field');
-            for (let i = 0; i < fields.length; i += 3) {
-              const nom = fields[i].querySelector('input')?.value;
-              if (nom) {
-                sorts.push({
-                  nom: nom,
-                  degats: fields[i+1].querySelector('input')?.value || '',
-                  niveau: fields[i+2].querySelector('input')?.value || ''
-                });
-              }
-            }
-          }
-
-          // Récupérer les sorts mineurs
-          const sortsMineurs = [];
-          const sortsMinSection = document.querySelector('.section h2[innerText="Sorts mineurs"]')?.closest('.section');
-          if (sortsMinSection) {
-            const fields = sortsMinSection.querySelectorAll('.field');
-            for (let i = 0; i < fields.length; i += 2) {
-              const nom = fields[i].querySelector('input')?.value;
-              if (nom) {
-                sortsMineurs.push({
-                  nom: nom,
-                  degats: fields[i+1].querySelector('input')?.value || ''
-                });
-              }
-            }
-          }
-
-          // Récupérer les attaques spéciales
-          const attaquesSpeciales = [];
-          const attaquesSection = document.querySelector('.section h2[innerText="Attaques Spéciales"]')?.closest('.section');
-          if (attaquesSection) {
-            const fields = attaquesSection.querySelectorAll('.field');
-            for (let i = 0; i < fields.length; i += 3) {
-              const nom = fields[i].querySelector('input')?.value;
-              if (nom) {
-                attaquesSpeciales.push({
-                  nom: nom,
-                  degats: fields[i+1].querySelector('input')?.value || '',
-                  niveau: fields[i+2].querySelector('input')?.value || ''
-                });
-              }
-            }
-          }
-
-          // Récupérer la biographie
-          const biographieSection = document.querySelector('.section h2[innerText="Biographie"]')?.closest('.section');
-          const biographie = biographieSection?.querySelector('textarea')?.value || '';
-
-          // Récupérer les compétences spéciales
-          const competencesSpecialesSection = document.querySelector('.section h2[innerText="Compétences spéciales du personnage"]')?.closest('.section');
-          const competencesSpeciales = competencesSpecialesSection?.querySelector('textarea')?.value || '';
-
-          // Récupérer les choix de level up
-          const levelUpSection = document.querySelector('.section h2[innerText="Choix de level up et Effets permanents"]')?.closest('.section');
-          const levelUp = levelUpSection?.querySelector('textarea')?.value || '';
-
-          // Récupérer le contenu du sac et de la ceinture/dos
-          const sacSection = document.querySelector('.section h2[innerText="Sac"]')?.closest('.section');
-          const sac = sacSection?.querySelector('textarea')?.value || '';
-
-          const ceintureSection = document.querySelector('.section h2[innerText="Ceinture/dos"]')?.closest('.section');
-          const ceinture = ceintureSection?.querySelector('textarea')?.value || '';
-
-          // Construire l'objet de données à sauvegarder
-          const nouvellesDonnees = {
-            nom: nom,
-            classe: document.getElementById('player_class').value,
-            race: document.getElementById('player_race').value,
-            niveau: getNumericValue('Niveau'),
-            hp: {
-              max: getNumericValue('Vie'),
-              current: parseInt(params.get('VieCurrent')) || 0
-            },
-            mana: {
-              max: getNumericValue('Mana'),
-              current: parseInt(params.get('ManaCurrent')) || 0
-            },
-            stats: {
-              force: getNumericValue('Force'),
-              dexterite: getNumericValue('Dextérité'),
-              magie: getNumericValue('Magie'),
-              constitution: getNumericValue('Constitution'),
-              charisme: getNumericValue('Charisme'),
-              perception: getNumericValue('Perception'),
-              chance: getNumericValue('Chance'),
-              intelligence: getNumericValue('Intelligence')
-            },
-            equipement: {
-              sac: sac,
-              ceinture: ceinture,
-              armes: armes,
-              armure: document.getElementById('eq_armure').value,
-              resistance: getFieldValue('Résistance'),
-              durabilite: {
-                max: getNumericValue('Durabilité'),
-                current: parseInt(params.get('DuraCurrent')) || 0
-              }
-            },
-            defense: {
-              survie: getFieldValue('Jets de survie'),
-              bonus_vie: getNumericValue('Vie bonus'),
-              protection: {
-                max: parseInt(document.getElementById('Valeur protection').value),
-                current: parseInt(document.getElementById('ProtectionCurrent').value)
-              },
-              intox: getNumericValue('Intox.')
-            },
-            competences: {
-              classe: competencesClasse,
-              sorts: sorts,
-              sorts_mineurs: sortsMineurs,
-              attaques_speciales: attaquesSpeciales,
-              speciales: competencesSpeciales
-            },
-            bio: biographie,
-            levelup: levelUp
-          };
-
-          try {
-            console.log('Données à sauvegarder:', { nom: nom, nouvellesDonnees });
-            const response = await fetch('/api/joueur', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ nom: nom, nouvellesDonnees })
-            });
-
-            if (response.ok) {
-              // Mettre à jour l'URL avec les nouvelles valeurs
-              const newParams = new URLSearchParams();
-              
-              // Mise à jour des paramètres généraux
-              newParams.set('Nom', nom);
-              newParams.set('Classe', nouvellesDonnees.classe);
-              newParams.set('Race', nouvellesDonnees.race);
-              newParams.set('Niveau', nouvellesDonnees.niveau);
-              
-              // Mise à jour HP/Mana
-              newParams.set('VieMax', nouvellesDonnees.hp.max);
-              newParams.set('VieCurrent', nouvellesDonnees.hp.current);
-              newParams.set('ManaMax', nouvellesDonnees.mana.max);
-              newParams.set('ManaCurrent', nouvellesDonnees.mana.current);
-              
-              // Mise à jour des stats
-              newParams.set('Force', nouvellesDonnees.stats.force);
-              newParams.set('Dextérité', nouvellesDonnees.stats.dexterite);
-              newParams.set('Magie', nouvellesDonnees.stats.magie);
-              newParams.set('Constitution', nouvellesDonnees.stats.constitution);
-              newParams.set('Charisme', nouvellesDonnees.stats.charisme);
-              newParams.set('Perception', nouvellesDonnees.stats.perception);
-              newParams.set('Chance', nouvellesDonnees.stats.chance);
-              newParams.set('Intelligence', nouvellesDonnees.stats.intelligence);
-              
-              // Mise à jour de la défense
-              newParams.set('Jets de survie', nouvellesDonnees.defense.survie);
-              newParams.set('Vie bonus', nouvellesDonnees.defense.bonus_vie);
-              newParams.set('ProtectionMax', nouvellesDonnees.defense.protection);
-              newParams.set('ProtectionCurrent', nouvellesDonnees.defense.protection);
-              newParams.set('Intox.', nouvellesDonnees.defense.intox);
-              
-              // Mise à jour de l'équipement
-              newParams.set('Sac', nouvellesDonnees.equipement.sac);
-              newParams.set('Ceinture/dos', nouvellesDonnees.equipement.ceinture);
-              newParams.set("Type d'armure", nouvellesDonnees.equipement.armure);
-              newParams.set('Résistance', nouvellesDonnees.equipement.resistance);
-              newParams.set('DuraMax', nouvellesDonnees.equipement.durabilite?.max);
-              newParams.set('DuraCurrent', nouvellesDonnees.equipement.durabilite?.current);
-              
-              // Mise à jour des compétences et autres
-              newParams.set('Compétences spéciales du personnage', nouvellesDonnees.competences.speciales);
-              newParams.set('Biographie', nouvellesDonnees.bio);
-              newParams.set('Choix de level up et Effets permanents', nouvellesDonnees.levelup);
-              
-              // Mettre à jour l'URL sans recharger la page
-              window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-              console.log('URL mise à jour avec les nouvelles valeurs');
-              alert('Données sauvegardées avec succès !');
-            } else {
-              const error = await response.text();
-              throw new Error(error);
-            }
-          } catch (error) {
-            console.error('Erreur de sauvegarde:', error);
-            alert('Une erreur est survenue lors de la sauvegarde: ' + error.message);
-          }   
-        });   
-      });     
-
-      // Fonction pour mettre à jour l'état de l'armure
-      function updateArmorState() {
-        const durabilite = document.querySelector('.field input[type="number"][label="Durabilité"]')?.value || 0;
-        const armorStateInput = document.getElementById('player_armor');
-        const armorStateEffect = document.getElementById('armor_effect');
-
-        if (!armorStateInput || !armorStateEffect) return;
-
-        const duraMax = parseInt(durabilite) || 0;
-        const duraCurrent = parseInt(document.querySelector('.field input[name="durabilite_current"]')?.value) || 0;
-
-        let etat = '';
-        let couleur = '';
-        let effect = '';
-
-        if (duraCurrent === 0) {
-          etat = "Absence d'armure";
-          couleur = '#000000';
-          effect = 'Plus aucune protection';
-        } else if (duraCurrent >= ((duraMax/3)*2)+1) {
-          etat = 'Armure Neuve';
-          couleur = '#2e7d32';
-          effect = 'Protection maximale';
-        } else if (duraCurrent >= (duraMax/3)+1) {
-          etat = 'Armure Abîmée';
-          couleur = '#ff9800';
-          effect = 'Bonus fixe supprimé';
-        } else {
-          etat = 'Armure Très Abîmée';
-          couleur = '#d32f2f';
-          effect = 'Résultat du jet réduite de moitié';
-        }
-        
-        armorStateInput.value = etat;
-        armorStateInput.style.color = couleur;
-        armorStateEffect.textContent = effect;
-        armorStateEffect.style.color = couleur;
-      }
-
-      // Après le chargement de la page
-      document.addEventListener('DOMContentLoaded', async () => {
-          // Fonction pour créer une nouvelle ligne de sort
-          async function createSortRow(isMajeur = true) {
-              try {
-                  const response = await fetch('/api/game-database');
-                  if (!response.ok) throw new Error('Erreur de chargement des sorts');
-                  const gameData = await response.json();
-                  
-                  const sortRow = document.createElement('div');
-                  sortRow.className = 'sort-row';
-                  
-                  // Select pour le nom du sort
-                  const selectSort = document.createElement('select');
-                  selectSort.className = 'sort-select';
-                  
-                  // Récupérer la liste des sorts depuis la base de données
-                  const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
-                  
-                  // Option par défaut
-                  selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
-                  
-                  // Ajouter les options de sorts
-                  sorts.forEach(sort => {
-                      const option = document.createElement('option');
-                      option.value = sort.id;
-                      option.textContent = sort.nom;
-                      option.dataset.degats = sort.degats;
-                      option.dataset.niveau = sort.niveau;
-                      selectSort.appendChild(option);
-                  });
-
-                  // Champs pour les dégâts et le niveau
-                  const degatsInput = document.createElement('input');
-                  degatsInput.type = 'text';
-                  degatsInput.readOnly = true;
-                  
-                  const niveauInput = document.createElement('input');
-                  niveauInput.type = 'number';
-                  niveauInput.readOnly = true;
-
-                  // Événement de changement du sort
-                  selectSort.addEventListener('change', (e) => {
-                      const selectedOption = e.target.options[e.target.selectedIndex];
-                      degatsInput.value = selectedOption.dataset.degats || '';
-                      niveauInput.value = selectedOption.dataset.niveau || '';
-                  });
-
-                  // Ajouter les éléments à la ligne
-                  sortRow.appendChild(selectSort);
-                  sortRow.appendChild(degatsInput);
-                  if (isMajeur) {
-                      sortRow.appendChild(niveauInput);
-                  }
-
-                  return sortRow;
-              } catch (error) {
-                  console.error('Erreur:', error);
-                  alert('Erreur lors du chargement des sorts');
-              }
-          }
-
-          // Gestionnaire pour le bouton d'ajout de sort majeur
-          document.getElementById('add-sort-btn').addEventListener('click', async () => {
-              const container = document.getElementById('sorts-container');
-              const sortRow = await createSortRow(true);
-              container.appendChild(sortRow);
-          });
-
-          // Gestionnaire pour le bouton d'ajout de sort mineur
-          document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
-              const container = document.getElementById('sorts-mineurs-container');
-              const sortRow = await createSortRow(false);
-              container.appendChild(sortRow);
-          });
+      const response = await fetch('/api/joueur/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donnees)
       });
+
+      if (!response.ok) throw new Error('Erreur de sauvegarde');
+
+      alert('Sauvegarde réussie !');
+
+      // Mise à jour de l'URL avec les nouvelles valeurs
+      const newParams = new URLSearchParams();
+      Object.entries(donnees).forEach(([key, value]) => {
+        if (typeof value !== 'object') {
+          newParams.set(key, value);
+        }
+      });
+      
+      window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+      alert('Sauvegarde réussie !');
+
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la sauvegarde');
+    }
+  });
+});
+
+// Ajouter ces fonctions utilitaires
+function getSpells() {
+  const spells = [];
+  for (let i = 1; i <= 3; i++) {
+    const nom = document.getElementById(`spell_name_${i}`)?.value;
+    if (nom) {
+      spells.push({
+        nom: nom,
+        degats: document.getElementById(`spell_dmg_${i}`)?.value || '',
+        niveau: parseInt(document.getElementById(`spell_lvl_${i}`)?.value) || 1
+      });
+    }
+  }
+  return spells;
+}
+
+function getSortsMineurs() {
+  const sortsMineurs = [];
+  for (let i = 1; i <= 2; i++) {
+    const nom = document.getElementById(`minispell_name_${i}`)?.value;
+    if (nom) {
+      sortsMineurs.push({
+        nom: nom,
+        degats: document.getElementById(`minispell_dmg_${i}`)?.value || ''
+      });
+    }
+  }
+  return sortsMineurs;
+}
+
+function getCompetences() {
+  const competences = [];
+  for (let i = 1; i <= 3; i++) {
+    const nom = document.getElementById(`class_skill_name_${i}`)?.value;
+    if (nom) {
+      competences.push({
+        nom: nom,
+        effet: document.getElementById(`class_skill_effect_${i}`)?.value || '',
+        niveau: parseInt(document.getElementById(`class_skill_lvl_${i}`)?.value) || 1
+      });
+    }
+  }
+  return competences;
+}
+
+function getArmes() {
+  const armes = [];
+  for (let i = 1; i <= 5; i++) {
+    const type = document.getElementById(`weapon_type_${i}`)?.value;
+    if (type) {
+      armes.push({
+        type: type,
+        degats: document.getElementById(`weapon_dmg_${i}`)?.value || ''
+      });
+    }
+  }
+  return armes;
+}
   </script>
 </body>
 </html>

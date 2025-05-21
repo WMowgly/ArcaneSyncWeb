@@ -204,12 +204,9 @@
                       <input type="text" id="player_armor" readonly>
                       <div id="armor_effect" class="status-text"></div>
                     </div>
-                    <div class="field"><label>Valeur protection</label><input id="def_protection" type="number"></div>
+                    <div class="field" style="display: none;"><input id="def_protection" type="hidden"></div>
+                    <div class="field"><label>Valeur protection</label><input id="def_protection_max" type="number"></div>
                   </div>
-                <!-- Silhouette humaine -->
-                <div class="human-silhouette" style="flex-shrink: 0;">
-                    <img src="img/silhouette-homme.jpg" alt="Silhouette humaine" style="max-width: 100px; height: auto;">
-                </div>
             </div>
         </div>
     </div>
@@ -305,7 +302,6 @@
 
   <script src="navbar.js"></script>
   <script>
-    // Remplacer le code existant des options par:
     async function loadGameData() {
       try {
         const response = await fetch('/api/game-database');
@@ -350,247 +346,228 @@
     // Appeler la fonction au chargement de la page
     document.addEventListener('DOMContentLoaded', loadGameData);
 
-    document.getElementById('save_player_creation').addEventListener('click', () => {
-
+    document.getElementById('save_player_creation').addEventListener('click', async () => {
       // Vérification basique
-      const required = ['player_name', 'player_class', 'player_race', 'player_level'];
-      for (const id of required) {
-        if (!document.getElementById(id).value) {
-          alert('Veuillez remplir tous les champs requis.');
-          return;
-        }
+    const required = ['player_name', 'player_class', 'player_race', 'player_level'];
+    for (const id of required) {
+      if (!document.getElementById(id).value) {
+        alert('Veuillez remplir tous les champs requis.');
+        return;
       }
+    }
 
-            // Copie les valeurs max vers les valeurs "actuelles"
+    try {
+    // Copie des valeurs actuelles
     document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
     document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
     document.getElementById('eq_durabilite_current').value = document.getElementById('eq_durabilite').value;
+    document.getElementById('def_protection').value = document.getElementById('def_protection_max').value;
 
+    // Collecte des sorts
+    const sortsMajeurs = [];
+    document.querySelectorAll('#sorts-container .sort-row').forEach(row => {
+      const select = row.querySelector('select');
+      const degats = row.querySelector('input[type="text"]');
+      const niveau = row.querySelector('input[type="number"]');
+      if (select.value) {
+        sortsMajeurs.push({
+          nom: select.options[select.selectedIndex].text,
+          degats: degats.value,
+          niveau: parseInt(niveau.value) || 1
+        });
+      }
+    });
+
+    // Collecte des sorts mineurs
+    const sortsMineurs = [];
+    document.querySelectorAll('#sorts-mineurs-container .sort-row').forEach(row => {
+      const select = row.querySelector('select');
+      const degats = row.querySelector('input[type="text"]');
+      if (select.value) {
+        sortsMineurs.push({
+          nom: select.options[select.selectedIndex].text,
+          degats: degats.value
+        });
+      }
+    });
 
     const data = {
       nom: document.getElementById('player_name').value,
       classe: document.getElementById('player_class').value,
       race: document.getElementById('player_race').value,
-      niveau: parseInt(document.getElementById('player_level').value),
+      niveau: parseInt(document.getElementById('player_level').value) || 1,
       stats: {
-        force: parseInt(document.getElementById('stat_force').value),
-        dexterite: parseInt(document.getElementById('stat_dexterite').value),
-        magie: parseInt(document.getElementById('stat_magie').value),
-        constitution: parseInt(document.getElementById('stat_constitution').value),
-        charisme: parseInt(document.getElementById('stat_charisme').value),
-        perception: parseInt(document.getElementById('stat_perception').value),
-        chance: parseInt(document.getElementById('stat_chance').value),
-        intelligence: parseInt(document.getElementById('stat_intelligence').value)
+        force: parseInt(document.getElementById('stat_force').value) || 0,
+        dexterite: parseInt(document.getElementById('stat_dexterite').value) || 0,
+        magie: parseInt(document.getElementById('stat_magie').value) || 0,
+        constitution: parseInt(document.getElementById('stat_constitution').value) || 0,
+        charisme: parseInt(document.getElementById('stat_charisme').value) || 0,
+        perception: parseInt(document.getElementById('stat_perception').value) || 0,
+        chance: parseInt(document.getElementById('stat_chance').value) || 0,
+        intelligence: parseInt(document.getElementById('stat_intelligence').value) || 0
       },
-      bio: document.getElementById('bio').value,
-      sac: document.getElementById('eq_sac').value,
-      ceinture: document.getElementById('eq_ceinture').value,
+      bio: document.getElementById('bio').value || '',
+      sac: document.getElementById('eq_sac').value || '',
+      ceinture: document.getElementById('eq_ceinture').value || '',
       armure: {
-        type: document.getElementById('eq_armure').value,
-        resistance: document.getElementById('eq_resistance').value,
+        type: document.getElementById('eq_armure').value || '',
+        resistance: document.getElementById('eq_resistance').value || '',
         durabilite: {
-            max: document.getElementById('eq_durabilite').value,
-            current: document.getElementById('eq_durabilite_current').value,
-          },
-        protection: parseInt(document.getElementById('def_protection').value)
+          max: parseInt(document.getElementById('eq_durabilite').value) || 0,
+          current: parseInt(document.getElementById('eq_durabilite_current').value) || 0
+        },
+        protection: {
+          max: parseInt(document.getElementById('def_protection_max').value) || 0,
+          current: parseInt(document.getElementById('def_protection').value) || 0
+        }
       },
       hp: {
-          max: parseInt(document.getElementById('player_hp').value),
-          current: parseInt(document.getElementById('player_hp_current').value)
-        },
+        max: parseInt(document.getElementById('player_hp').value) || 0,
+        current: parseInt(document.getElementById('player_hp_current').value) || 0
+      },
       mana: {
-          max: parseInt(document.getElementById('player_mana').value),
-          current: parseInt(document.getElementById('player_mana_current').value)
-        },
-      bonus_vie: parseInt(document.getElementById('def_bonus_vie').value),
-      intox: document.getElementById('def_intox').value,
-      spells: [
-        {
-          nom: document.getElementById('spell_name_1').value,
-          degats: document.getElementById('spell_dmg_1').value,
-          niveau: parseInt(document.getElementById('spell_lvl_1').value)
-        },
-        {
-          nom: document.getElementById('spell_name_2').value,
-          degats: document.getElementById('spell_dmg_2').value,
-          niveau: parseInt(document.getElementById('spell_lvl_2').value)
-        },
-        {
-          nom: document.getElementById('spell_name_3').value,
-          degats: document.getElementById('spell_dmg_3').value,
-          niveau: parseInt(document.getElementById('spell_lvl_3').value)
-        }
-      ],
-      attaques_speciales: [
-        {
-          nom: document.getElementById('special_name_1').value,
-          degats: document.getElementById('special_dmg_1').value,
-          niveau: parseInt(document.getElementById('special_lvl_1').value)
-        },
-        {
-          nom: document.getElementById('special_name_2').value,
-          degats: document.getElementById('special_dmg_2').value,
-          niveau: parseInt(document.getElementById('special_lvl_2').value)
-        },
-        {
-          nom: document.getElementById('special_name_3').value,
-          degats: document.getElementById('special_dmg_3').value,
-          niveau: parseInt(document.getElementById('special_lvl_3').value)
-        }
-      ],
-      sorts_mineurs: [
-        {
-          nom: document.getElementById('minispell_name_1').value,
-          degats: document.getElementById('minispell_dmg_1').value
-        },
-        {
-          nom: document.getElementById('minispell_name_2').value,
-          degats: document.getElementById('minispell_dmg_2').value
-        }
-      ],
-      competences: [
-        {
-          nom: document.getElementById('class_skill_name_1').value,
-          effet: document.getElementById('class_skill_effect_1').value,
-          niveau: parseInt(document.getElementById('class_skill_lvl_1').value)
-        },
-        {
-          nom: document.getElementById('class_skill_name_2').value,
-          effet: document.getElementById('class_skill_effect_2').value,
-          niveau: parseInt(document.getElementById('class_skill_lvl_2').value)
-        },
-        {
-          nom: document.getElementById('class_skill_name_3').value,
-          effet: document.getElementById('class_skill_effect_3').value,
-          niveau: parseInt(document.getElementById('class_skill_lvl_3').value)
-        }
-      ],
-      skills_speciales: document.getElementById('skills_speciales').value,
-      levelup: document.getElementById('levelup').value,
-      armes: [
-        {
-          type: document.getElementById('weapon_type_1').value,
-          degats: document.getElementById('weapon_dmg_1').value
-        },
-        {
-          type: document.getElementById('weapon_type_2').value,
-          degats: document.getElementById('weapon_dmg_2').value
-        },
-        {
-          type: document.getElementById('weapon_type_3').value,
-          degats: document.getElementById('weapon_dmg_3').value
-        },
-        {
-          type: document.getElementById('weapon_type_4').value,
-          degats: document.getElementById('weapon_dmg_4').value
-        },
-        {
-          type: document.getElementById('weapon_type_5').value,
-          degats: document.getElementById('weapon_dmg_5').value
-        }
-      ]
+        max: parseInt(document.getElementById('player_mana').value) || 0,
+        current: parseInt(document.getElementById('player_mana_current').value) || 0
+      },
+      bonus_vie: parseInt(document.getElementById('def_bonus_vie').value) || 0,
+      intox: document.getElementById('def_intox').value || '0',
+      spells: sortsMajeurs,
+      sorts_mineurs: sortsMineurs,
+      competences: getCompetences(),
+      skills_speciales: document.getElementById('skills_speciales').value || '',
+      levelup: document.getElementById('levelup').value || '',
+      armes: getArmes()
     };
 
+    console.log('Données à envoyer:', data);
 
+    const response = await fetch('/api/joueurs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
 
-    fetch('/api/joueurs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      .then(res => {
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(json => {
-        console.log('Réponse du serveur :', json);
-        alert('Joueur enregistré avec succès !');
-        window.location.href = '/selecte_player.html';
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Erreur lors de l'enregistrement du joueur.");
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Réponse du serveur:', result);
+    alert('Joueur enregistré avec succès !');
+    window.location.href = '/selecte_player.html';
+
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde:', error);
+    alert(`Erreur lors de la sauvegarde: ${error.message}`);
+  }
+});
+
+// Fonctions utilitaires à ajouter
+function getCompetences() {
+  const competences = [];
+  for (let i = 1; i <= 3; i++) {
+    const nom = document.getElementById(`class_skill_name_${i}`).value;
+    if (nom) {
+      competences.push({
+        nom: nom,
+        effet: document.getElementById(`class_skill_effect_${i}`).value || '',
+        niveau: parseInt(document.getElementById(`class_skill_lvl_${i}`).value) || 1
       });
-    });
+    }
+  }
+  return competences;
+}
 
-    // Après le chargement de la page
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Fonction pour créer une nouvelle ligne de sort
-        async function createSortRow(isMajeur = true) {
-            try {
-                const response = await fetch('/api/game-database');
-                if (!response.ok) throw new Error('Erreur de chargement des sorts');
-                const gameData = await response.json();
-                
-                const sortRow = document.createElement('div');
-                sortRow.className = 'sort-row';
-                
-                // Select pour le nom du sort
-                const selectSort = document.createElement('select');
-                selectSort.className = 'sort-select';
-                
-                // Récupérer la liste des sorts depuis la base de données
-                const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
-                
-                // Option par défaut
-                selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
-                
-                // Ajouter les options de sorts
-                sorts.forEach(sort => {
-                    const option = document.createElement('option');
-                    option.value = sort.id;
-                    option.textContent = sort.nom;
-                    option.dataset.degats = sort.degats;
-                    option.dataset.niveau = sort.niveau;
-                    selectSort.appendChild(option);
-                });
+function getArmes() {
+  const armes = [];
+  for (let i = 1; i <= 5; i++) {
+    const type = document.getElementById(`weapon_type_${i}`).value;
+    if (type) {
+      armes.push({
+        type: type,
+        degats: document.getElementById(`weapon_dmg_${i}`).value || ''
+      });
+    }
+  }
+  return armes;
+}
 
-                // Champs pour les dégâts et le niveau
-                const degatsInput = document.createElement('input');
-                degatsInput.type = 'text';
-                degatsInput.readOnly = true;
-                
-                const niveauInput = document.createElement('input');
-                niveauInput.type = 'number';
-                niveauInput.readOnly = true;
+// Après le chargement de la page
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fonction pour créer une nouvelle ligne de sort
+    async function createSortRow(isMajeur = true) {
+        try {
+            const response = await fetch('/api/game-database');
+            if (!response.ok) throw new Error('Erreur de chargement des sorts');
+            const gameData = await response.json();
+            
+            const sortRow = document.createElement('div');
+            sortRow.className = 'sort-row';
+            
+            // Select pour le nom du sort
+            const selectSort = document.createElement('select');
+            selectSort.className = 'sort-select';
+            
+            // Récupérer la liste des sorts depuis la base de données
+            const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
+            
+            // Option par défaut
+            selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
+            
+            // Ajouter les options de sorts
+            sorts.forEach(sort => {
+                const option = document.createElement('option');
+                option.value = sort.id;
+                option.textContent = sort.nom;
+                option.dataset.degats = sort.degats;
+                option.dataset.niveau = sort.niveau;
+                selectSort.appendChild(option);
+            });
 
-                // Événement de changement du sort
-                selectSort.addEventListener('change', (e) => {
-                    const selectedOption = e.target.options[e.target.selectedIndex];
-                    degatsInput.value = selectedOption.dataset.degats || '';
-                    niveauInput.value = selectedOption.dataset.niveau || '';
-                });
+            // Champs pour les dégâts et le niveau
+            const degatsInput = document.createElement('input');
+            degatsInput.type = 'text';
+            degatsInput.readOnly = true;
+            
+            const niveauInput = document.createElement('input');
+            niveauInput.type = 'number';
+            niveauInput.readOnly = true;
 
-                // Ajouter les éléments à la ligne
-                sortRow.appendChild(selectSort);
-                sortRow.appendChild(degatsInput);
-                if (isMajeur) {
-                    sortRow.appendChild(niveauInput);
-                }
+            // Événement de changement du sort
+            selectSort.addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                degatsInput.value = selectedOption.dataset.degats || '';
+                niveauInput.value = selectedOption.dataset.niveau || '';
+            });
 
-                return sortRow;
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur lors du chargement des sorts');
+            // Ajouter les éléments à la ligne
+            sortRow.appendChild(selectSort);
+            sortRow.appendChild(degatsInput);
+            if (isMajeur) {
+                sortRow.appendChild(niveauInput);
             }
+
+            return sortRow;
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des sorts');
         }
+    }
 
-        // Gestionnaire pour le bouton d'ajout de sort majeur
-        document.getElementById('add-sort-btn').addEventListener('click', async () => {
-            const container = document.getElementById('sorts-container');
-            const sortRow = await createSortRow(true);
-            container.appendChild(sortRow);
-        });
-
-        // Gestionnaire pour le bouton d'ajout de sort mineur
-        document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
-            const container = document.getElementById('sorts-mineurs-container');
-            const sortRow = await createSortRow(false);
-            container.appendChild(sortRow);
-        });
+    // Gestionnaire pour le bouton d'ajout de sort majeur
+    document.getElementById('add-sort-btn').addEventListener('click', async () => {
+        const container = document.getElementById('sorts-container');
+        const sortRow = await createSortRow(true);
+        container.appendChild(sortRow);
     });
+
+    // Gestionnaire pour le bouton d'ajout de sort mineur
+    document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
+        const container = document.getElementById('sorts-mineurs-container');
+        const sortRow = await createSortRow(false);
+        container.appendChild(sortRow);
+    });
+  });
   </script>
 </body>
 </html>
