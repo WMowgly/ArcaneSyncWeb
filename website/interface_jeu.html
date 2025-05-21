@@ -133,12 +133,12 @@
       document.getElementById('player_hp_current').value = params.get("VieCurrent");
       document.getElementById('player_mana').value = params.get("ManaMax");
       document.getElementById('player_mana_current').value = params.get("ManaCurrent");
-      document.getElementById('player_protection_max').value = params.get("Valeur protection max");
-      document.getElementById('player_protection_current').value = params.get("Valeur protection");
-      document.getElementById('player_dura_max').value = params.get("DuraMax");
-      document.getElementById('player_dura_current').value = params.get("DuraCurrent");
-      document.getElementById('player_intox').value = params.get("Intox.");
-      document.getElementById('player_vie_bonus').value = params.get("Vie bonus");
+      document.getElementById('player_protection_max').value = params.get("Valeur protection max") || '0';
+      document.getElementById('player_protection_current').value = params.get("Valeur protection") || '0';
+      document.getElementById('player_dura_max').value = params.get("DuraMax") || '0';
+      document.getElementById('player_dura_current').value = params.get("DuraCurrent") || '0';
+      document.getElementById('player_intox').value = params.get("Intox.") || '0';
+      document.getElementById('player_vie_bonus').value = params.get("Vie bonus") || '0';
       document.getElementById('player_name').value = params.get("Nom") || '';
       document.getElementById('player_class').value = params.get("Classe") || '';
       document.getElementById('player_race').value = params.get("Race") || '';
@@ -289,10 +289,35 @@
         }
 
         const nouvellesDonnees = {
-          hp: { current: hpCurrent, max: hpMax },
-          mana: { current: manaCurrent, max: manaMax },
-          equipement: {durabilite: { current: duraCurrent, max: duraMax },},
-          defense: { bonus_vie: vieBonus, protection: protectionCurrent, protection_max: protectionMax, intox: intoxCurrent, survie: survie }
+          nom: nom,
+          classe: document.getElementById('player_class').value,
+          race: document.getElementById('player_race').value,
+          hp: {
+            max: parseInt(document.getElementById('player_hp').value) || 0,
+            current: parseInt(document.getElementById('player_hp_current').value) || 0
+          },
+          mana: {
+            max: parseInt(document.getElementById('player_mana').value) || 0,
+            current: parseInt(document.getElementById('player_mana_current').value) || 0
+          },
+          armure: {
+            durabilite: {
+              max: parseInt(document.getElementById('player_dura_max').value) || 0,
+              current: parseInt(document.getElementById('player_dura_current').value) || 0
+            },
+            protection: {
+              max: parseInt(document.getElementById('player_protection_max').value) || 0,
+              current: parseInt(document.getElementById('player_protection_current').value) || 0
+            }
+          },
+          bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
+          intox: document.getElementById('player_intox').value || '0',
+          // On garde les autres données inchangées
+          stats: params.get('stats') ? JSON.parse(params.get('stats')) : {},
+          spells: params.get('spells') ? JSON.parse(params.get('spells')) : [],
+          sorts_mineurs: params.get('sorts_mineurs') ? JSON.parse(params.get('sorts_mineurs')) : [],
+          competences: params.get('competences') ? JSON.parse(params.get('competences')) : [],
+          armes: params.get('armes') ? JSON.parse(params.get('armes')) : []
         };
         
         // Afficher les données dans la console (pour le débogage)
@@ -300,41 +325,33 @@
 
         // Appeler la fonction mettreAJourJoueur via une API ou directement
         try {
-      const response = await fetch('/api/joueur', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ nom, nouvellesDonnees })
-      });
+        const response = await fetch('/api/joueur/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(nouvellesDonnees)
+        });
 
       if (response.ok) {
         // Mise à jour de l'URL avec les nouvelles valeurs
         const newParams = new URLSearchParams(window.location.search);
-        newParams.set("VieCurrent", hpCurrent.toString());
-        newParams.set("VieMax", hpMax.toString());
-        newParams.set("ManaCurrent", manaCurrent.toString());
-        newParams.set("ManaMax", manaMax.toString());
-        newParams.set("Intox.", intoxCurrent.toString());
-        newParams.set("Vie bonus", vieBonus.toString());
-        newParams.set("Valeur protection", protectionCurrent.toString());
-        newParams.set("Valeur protection max", protectionMax.toString());
-        newParams.set("Survie1_reussi", survie.jet1.reussi.toString());
-        newParams.set("Survie1_echec", survie.jet1.echec.toString());
-        newParams.set("Survie2_reussi", survie.jet2.reussi.toString());
-        newParams.set("Survie2_echec", survie.jet2.echec.toString());
-        newParams.set("Survie3_reussi", survie.jet3.reussi.toString());
-        newParams.set("Survie3_echec", survie.jet3.echec.toString());
-        newParams.set("DuraCurrent", duraCurrent.toString());
-        newParams.set("DuraMax", duraMax.toString());
+        newParams.set("VieCurrent", nouvellesDonnees.hp.current.toString());
+        newParams.set("VieMax", nouvellesDonnees.hp.max.toString());
+        newParams.set("ManaCurrent", nouvellesDonnees.mana.current.toString());
+        newParams.set("ManaMax", nouvellesDonnees.mana.max.toString());
+        newParams.set("Intox.", nouvellesDonnees.intox);
+        newParams.set("Vie bonus", nouvellesDonnees.bonus_vie.toString());
+        newParams.set("Valeur protection", nouvellesDonnees.armure.protection.current.toString());
+        newParams.set("Valeur protection max", nouvellesDonnees.armure.protection.max.toString());
+        newParams.set("DuraMax", nouvellesDonnees.armure.durabilite.max.toString());
+        newParams.set("DuraCurrent", nouvellesDonnees.armure.durabilite.current.toString());
 
-        // Mettre à jour l'URL sans recharger la page
         window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-        
-        console.log('URL mise à jour avec les nouvelles valeurs');
+        console.log('Données sauvegardées:', nouvellesDonnees);
         alert('Données sauvegardées avec succès !');
       } else {
-        alert('Erreur lors de la sauvegarde des données.');
+        throw new Error('Erreur lors de la sauvegarde');
       }
     } catch (error) {
       console.error('Erreur:', error);

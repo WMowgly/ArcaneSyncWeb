@@ -1285,5 +1285,149 @@
         "degats": ""
       }
     ]
+  },
+  {
+    "nom": "testXXXX",
+    "classe": "Druide",
+    "race": "Humain",
+    "niveau": 20,
+    "stats": {
+      "force": 30,
+      "dexterite": 40,
+      "magie": 50,
+      "constitution": 20,
+      "charisme": 60,
+      "perception": 50,
+      "chance": 30,
+      "intelligence": 10
+    },
+    "bio": "jhgjhg",
+    "sac": "hgfdgf",
+    "ceinture": "gfdgdfg",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "20",
+      "durabilite": {
+        "max": 30,
+        "current": 30
+      },
+      "protection": {
+        "max": 30,
+        "current": 30
+      }
+    },
+    "hp": {
+      "max": 20,
+      "current": 20
+    },
+    "mana": {
+      "max": 30,
+      "current": 30
+    },
+    "bonus_vie": 40,
+    "intox": "10",
+    "spells": [],
+    "sorts_mineurs": [],
+    "competences": [
+      {
+        "nom": "kjhk",
+        "effet": "",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "jhgjhg",
+    "levelup": "jhgjhg",
+    "armes": [
+      {
+        "type": "gfdg",
+        "degats": ""
+      },
+      {
+        "type": "fdg",
+        "degats": ""
+      }
+    ]
+  },
+  {
+    "nom": "bobv10000",
+    "classe": "Druide",
+    "race": "Humain",
+    "niveau": 2,
+    "stats": {
+      "force": 10,
+      "dexterite": 10,
+      "magie": 10,
+      "constitution": 10,
+      "charisme": 40,
+      "perception": 30,
+      "chance": 20,
+      "intelligence": 10
+    },
+    "bio": "fdsdsf24",
+    "sac": "dsqdsqdqs",
+    "ceinture": "dsqdsqd",
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "dsqqds",
+      "durabilite": {
+        "max": 30,
+        "current": 30
+      },
+      "protection": {
+        "max": 20,
+        "current": 20
+      }
+    },
+    "hp": {
+      "max": 20,
+      "current": 20
+    },
+    "mana": {
+      "max": 30,
+      "current": 30
+    },
+    "bonus_vie": 40,
+    "intox": "10",
+    "spells": [
+      {
+        "nom": "Boule de feu",
+        "degats": "3d6",
+        "niveau": 3
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "Étincelle",
+        "degats": "1d4"
+      }
+    ],
+    "competences": [
+      {
+        "nom": "gfd",
+        "effet": "",
+        "niveau": 1
+      },
+      {
+        "nom": "gfd",
+        "effet": "",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "gfdgfd",
+    "levelup": "gf45gfgf",
+    "armes": [
+      {
+        "type": "dsqdsq",
+        "degats": ""
+      },
+      {
+        "type": "dsq",
+        "degats": ""
+      },
+      {
+        "type": "sqd",
+        "degats": ""
+      }
+    ]
   }
 ]

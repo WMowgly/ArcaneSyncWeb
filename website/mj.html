@@ -40,7 +40,7 @@
               <h3>${joueur.nom}</h3>
               <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
               <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
-              <p>Protection: ${joueur.defense?.protection} / ${joueur.defense?.protection_max}</p>
+              <p>Protection: ${joueur.armure?.protection?.current || 0} / ${joueur.armure?.protection?.max || 0}</p>
             `;
 
             card.addEventListener('click', () => {
