@@ -1043,7 +1043,7 @@
     },
     "hp": {
       "max": 30,
-      "current": 30
+      "current": 20
     },
     "mana": {
       "max": 40,
@@ -1135,6 +1135,32 @@
         "type": "",
         "degats": ""
       }
-    ]
+    ],
+    "equipement": {
+      "durabilite": {
+        "current": null,
+        "max": null
+      }
+    },
+    "defense": {
+      "bonus_vie": null,
+      "protection": null,
+      "protection_max": null,
+      "intox": null,
+      "survie": {
+        "jet1": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet2": {
+          "reussi": false,
+          "echec": false
+        },
+        "jet3": {
+          "reussi": false,
+          "echec": false
+        }
+      }
+    }
   }
 ]
