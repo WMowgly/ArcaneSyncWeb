@@ -221,6 +221,32 @@
         flex: 1;
     }
 
+    .sort-row {
+      background: rgba(139, 94, 60, 0.1);
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .add-btn {
+      font-family: 'Uncial Antiqua', cursive;
+      background: #8b5e3c;
+      color: #fefae0;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .add-btn:hover {
+      background: #5c3b21;
+    }
+
   </style>
 </head>
 <body>
@@ -358,18 +384,11 @@
 
     <div class="double-section-container">
         <div class="section">
-            <h2>Sorts </h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
+            <h2>Sorts</h2>
+            <div id="sorts-container">
+                <!-- Les sorts seront ajoutés ici dynamiquement -->
             </div>
+            <button type="button" class="add-btn" id="add-sort-btn">Ajouter un sort</button>
         </div>
             
         <div class="section">
@@ -390,12 +409,10 @@
 
     <div class="section">
         <h2>Sorts mineurs</h2>
-        <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
+        <div id="sorts-mineurs-container">
+            <!-- Les sorts mineurs seront ajoutés ici dynamiquement -->
         </div>
+        <button type="button" class="add-btn" id="add-sort-mineur-btn">Ajouter un sort mineur</button>
     </div>
 
   <div class="section">
@@ -609,7 +626,7 @@
             .find(section => section.querySelector('h2')?.textContent.trim() === 'Sorts');
         if (sortsSection) {
             const inputs = sortsSection.querySelectorAll('input');
-            // Cette partie devrait être adaptée en fonction de comment les sorts sont stockés dans l'URL
+            // Cette partie devrait être adaptée en fonction de comment les sorts sont stockées dans l'URL
         }
 
         // Remplir les attaques spéciales
@@ -625,7 +642,7 @@
             .find(section => section.querySelector('h2')?.textContent.trim() === 'Sorts mineurs');
         if (sortsMineurs) {
             const inputs = sortsMineurs.querySelectorAll('input');
-            // Cette partie devrait être adaptée en fonction de comment les sorts mineurs sont stockés dans l'URL
+            // Cette partie devrait être adaptée en fonction de comment les sorts mineurs sont stockées dans l'URL
         }
 
         // Remplir les compétences de classe
@@ -714,6 +731,22 @@
             }
           }
 
+          // Récupérer les sorts mineurs
+          const sortsMineurs = [];
+          const sortsMinSection = document.querySelector('.section h2[innerText="Sorts mineurs"]')?.closest('.section');
+          if (sortsMinSection) {
+            const fields = sortsMinSection.querySelectorAll('.field');
+            for (let i = 0; i < fields.length; i += 2) {
+              const nom = fields[i].querySelector('input')?.value;
+              if (nom) {
+                sortsMineurs.push({
+                  nom: nom,
+                  degats: fields[i+1].querySelector('input')?.value || ''
+                });
+              }
+            }
+          }
+
           // Récupérer les attaques spéciales
           const attaquesSpeciales = [];
           const attaquesSection = document.querySelector('.section h2[innerText="Attaques Spéciales"]')?.closest('.section');
@@ -731,41 +764,25 @@
             }
           }
 
-          // Récupérer les sorts mineurs
-          const sortsMineurs = [];
-          const sortsMinSection = document.querySelector('.section h2[innerText="Sorts mineurs"]')?.closest('.section');
-          if (sortsMinSection) {
-            const fields = sortsMinSection.querySelectorAll('.field');
-            for (let i = 0; i < fields.length; i += 2) {
-              const nom = fields[i].querySelector('input')?.value;
-              if (nom) {
-                sortsMineurs.push({
-                  nom: nom,
-                  degats: fields[i+1].querySelector('input')?.value || ''
-                });
-              }
-            }
-          }
-
           // Récupérer la biographie
           const biographieSection = document.querySelector('.section h2[innerText="Biographie"]')?.closest('.section');
           const biographie = biographieSection?.querySelector('textarea')?.value || '';
-          
+
           // Récupérer les compétences spéciales
           const competencesSpecialesSection = document.querySelector('.section h2[innerText="Compétences spéciales du personnage"]')?.closest('.section');
           const competencesSpeciales = competencesSpecialesSection?.querySelector('textarea')?.value || '';
-          
+
           // Récupérer les choix de level up
           const levelUpSection = document.querySelector('.section h2[innerText="Choix de level up et Effets permanents"]')?.closest('.section');
           const levelUp = levelUpSection?.querySelector('textarea')?.value || '';
-          
+
           // Récupérer le contenu du sac et de la ceinture/dos
           const sacSection = document.querySelector('.section h2[innerText="Sac"]')?.closest('.section');
           const sac = sacSection?.querySelector('textarea')?.value || '';
-          
+
           const ceintureSection = document.querySelector('.section h2[innerText="Ceinture/dos"]')?.closest('.section');
           const ceinture = ceintureSection?.querySelector('textarea')?.value || '';
-          
+
           // Construire l'objet de données à sauvegarder
           const nouvellesDonnees = {
             nom: nom,
@@ -823,7 +840,6 @@
 
           try {
             console.log('Données à sauvegarder:', { nom: nom, nouvellesDonnees });
-            
             const response = await fetch('/api/joueur', {
               method: 'POST',
               headers: {
@@ -880,7 +896,6 @@
               
               // Mettre à jour l'URL sans recharger la page
               window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-              
               console.log('URL mise à jour avec les nouvelles valeurs');
               alert('Données sauvegardées avec succès !');
             } else {
@@ -890,25 +905,25 @@
           } catch (error) {
             console.error('Erreur de sauvegarde:', error);
             alert('Une erreur est survenue lors de la sauvegarde: ' + error.message);
-          }
-        });
-      });
-      
+          }   
+        });   
+      });     
+
       // Fonction pour mettre à jour l'état de l'armure
       function updateArmorState() {
         const durabilite = document.querySelector('.field input[type="number"][label="Durabilité"]')?.value || 0;
         const armorStateInput = document.getElementById('player_armor');
         const armorStateEffect = document.getElementById('armor_effect');
-        
+
         if (!armorStateInput || !armorStateEffect) return;
-        
+
         const duraMax = parseInt(durabilite) || 0;
         const duraCurrent = parseInt(document.querySelector('.field input[name="durabilite_current"]')?.value) || 0;
-        
+
         let etat = '';
         let couleur = '';
         let effect = '';
-        
+
         if (duraCurrent === 0) {
           etat = "Absence d'armure";
           couleur = '#000000';
@@ -932,6 +947,83 @@
         armorStateEffect.textContent = effect;
         armorStateEffect.style.color = couleur;
       }
+
+      // Après le chargement de la page
+      document.addEventListener('DOMContentLoaded', async () => {
+          // Fonction pour créer une nouvelle ligne de sort
+          async function createSortRow(isMajeur = true) {
+              try {
+                  const response = await fetch('/api/game-database');
+                  if (!response.ok) throw new Error('Erreur de chargement des sorts');
+                  const gameData = await response.json();
+                  
+                  const sortRow = document.createElement('div');
+                  sortRow.className = 'sort-row';
+                  
+                  // Select pour le nom du sort
+                  const selectSort = document.createElement('select');
+                  selectSort.className = 'sort-select';
+                  
+                  // Récupérer la liste des sorts depuis la base de données
+                  const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
+                  
+                  // Option par défaut
+                  selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
+                  
+                  // Ajouter les options de sorts
+                  sorts.forEach(sort => {
+                      const option = document.createElement('option');
+                      option.value = sort.id;
+                      option.textContent = sort.nom;
+                      option.dataset.degats = sort.degats;
+                      option.dataset.niveau = sort.niveau;
+                      selectSort.appendChild(option);
+                  });
+
+                  // Champs pour les dégâts et le niveau
+                  const degatsInput = document.createElement('input');
+                  degatsInput.type = 'text';
+                  degatsInput.readOnly = true;
+                  
+                  const niveauInput = document.createElement('input');
+                  niveauInput.type = 'number';
+                  niveauInput.readOnly = true;
+
+                  // Événement de changement du sort
+                  selectSort.addEventListener('change', (e) => {
+                      const selectedOption = e.target.options[e.target.selectedIndex];
+                      degatsInput.value = selectedOption.dataset.degats || '';
+                      niveauInput.value = selectedOption.dataset.niveau || '';
+                  });
+
+                  // Ajouter les éléments à la ligne
+                  sortRow.appendChild(selectSort);
+                  sortRow.appendChild(degatsInput);
+                  if (isMajeur) {
+                      sortRow.appendChild(niveauInput);
+                  }
+
+                  return sortRow;
+              } catch (error) {
+                  console.error('Erreur:', error);
+                  alert('Erreur lors du chargement des sorts');
+              }
+          }
+
+          // Gestionnaire pour le bouton d'ajout de sort majeur
+          document.getElementById('add-sort-btn').addEventListener('click', async () => {
+              const container = document.getElementById('sorts-container');
+              const sortRow = await createSortRow(true);
+              container.appendChild(sortRow);
+          });
+
+          // Gestionnaire pour le bouton d'ajout de sort mineur
+          document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
+              const container = document.getElementById('sorts-mineurs-container');
+              const sortRow = await createSortRow(false);
+              container.appendChild(sortRow);
+          });
+      });
   </script>
 </body>
 </html>

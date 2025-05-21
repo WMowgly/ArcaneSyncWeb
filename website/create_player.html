@@ -91,6 +91,29 @@
     @media (max-width: 480px) {
       .grid { grid-template-columns: 1fr; }
     }
+    .sort-row {
+      background: rgba(139, 94, 60, 0.1);
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .add-btn {
+      font-family: 'Uncial Antiqua', cursive;
+      background: #8b5e3c;
+      color: #fefae0;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .add-btn:hover {
+      background: #5c3b21;
+    }
   </style>
 </head>
 <body>
@@ -194,18 +217,11 @@
 
     <div class="double-section-container">
         <div class="section">
-            <h2>Sorts </h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input id="spell_name_1" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="spell_dmg_1" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="spell_lvl_1" type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input id="spell_name_2" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="spell_dmg_2" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="spell_lvl_2" type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input id="spell_name_3" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="spell_dmg_3" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="spell_lvl_3" type="number" min="1"></div>
-              </div>
+            <h2>Sorts</h2>
+            <div id="sorts-container">
+                <!-- Les sorts seront ajoutés ici dynamiquement -->
+            </div>
+            <button type="button" class="add-btn" id="add-sort-btn">Ajouter un sort</button>
         </div>
             
         <div class="section">
@@ -226,12 +242,10 @@
 
     <div class="section">
         <h2>Sorts mineurs</h2>
-        <div class="grid-3">
-          <div class="field"><label>Nom</label><input id="minispell_name_1" type="text"></div>
-          <div class="field"><label>Dégâts</label><input id="minispell_dmg_1" type="text"></div>
-          <div class="field"><label>Nom</label><input id="minispell_name_2" type="text"></div>
-          <div class="field"><label>Dégâts</label><input id="minispell_dmg_2" type="text"></div>
+        <div id="sorts-mineurs-container">
+            <!-- Les sorts mineurs seront ajoutés ici dynamiquement -->
         </div>
+        <button type="button" class="add-btn" id="add-sort-mineur-btn">Ajouter un sort mineur</button>
     </div>
 
   <div class="section">
@@ -500,7 +514,83 @@
         alert("Erreur lors de l'enregistrement du joueur.");
       });
     });
+
+    // Après le chargement de la page
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Fonction pour créer une nouvelle ligne de sort
+        async function createSortRow(isMajeur = true) {
+            try {
+                const response = await fetch('/api/game-database');
+                if (!response.ok) throw new Error('Erreur de chargement des sorts');
+                const gameData = await response.json();
+                
+                const sortRow = document.createElement('div');
+                sortRow.className = 'sort-row';
+                
+                // Select pour le nom du sort
+                const selectSort = document.createElement('select');
+                selectSort.className = 'sort-select';
+                
+                // Récupérer la liste des sorts depuis la base de données
+                const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
+                
+                // Option par défaut
+                selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
+                
+                // Ajouter les options de sorts
+                sorts.forEach(sort => {
+                    const option = document.createElement('option');
+                    option.value = sort.id;
+                    option.textContent = sort.nom;
+                    option.dataset.degats = sort.degats;
+                    option.dataset.niveau = sort.niveau;
+                    selectSort.appendChild(option);
+                });
+
+                // Champs pour les dégâts et le niveau
+                const degatsInput = document.createElement('input');
+                degatsInput.type = 'text';
+                degatsInput.readOnly = true;
+                
+                const niveauInput = document.createElement('input');
+                niveauInput.type = 'number';
+                niveauInput.readOnly = true;
+
+                // Événement de changement du sort
+                selectSort.addEventListener('change', (e) => {
+                    const selectedOption = e.target.options[e.target.selectedIndex];
+                    degatsInput.value = selectedOption.dataset.degats || '';
+                    niveauInput.value = selectedOption.dataset.niveau || '';
+                });
+
+                // Ajouter les éléments à la ligne
+                sortRow.appendChild(selectSort);
+                sortRow.appendChild(degatsInput);
+                if (isMajeur) {
+                    sortRow.appendChild(niveauInput);
+                }
+
+                return sortRow;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des sorts');
+            }
+        }
+
+        // Gestionnaire pour le bouton d'ajout de sort majeur
+        document.getElementById('add-sort-btn').addEventListener('click', async () => {
+            const container = document.getElementById('sorts-container');
+            const sortRow = await createSortRow(true);
+            container.appendChild(sortRow);
+        });
+
+        // Gestionnaire pour le bouton d'ajout de sort mineur
+        document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
+            const container = document.getElementById('sorts-mineurs-container');
+            const sortRow = await createSortRow(false);
+            container.appendChild(sortRow);
+        });
+    });
   </script>
 </body>
 </html>
-``` 

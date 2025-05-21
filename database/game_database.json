@@ -87,6 +87,13 @@
       "description": "Lance une puissante boule de feu",
       "degats": "3d6",
       "niveau": 3
+    },
+    {
+      "id": 1,
+      "nom": "Boule d'eau'",
+      "description": "Lance une puissante boule de feu",
+      "degats": "3d8",
+      "niveau": 2
     }
   ],
   

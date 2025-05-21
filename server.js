@@ -90,14 +90,25 @@ app.post('/api/joueur', (req, res) => {
 });
 
 // Ajouter cette route pour accéder à la base de données
-app.get('/api/game-database', async (req, res) => {
+app.get('/api/game-database', (req, res) => {
   try {
     const databasePath = path.join(__dirname, 'database', 'game_database.json');
-    const data = await fs.readFile(databasePath, 'utf8');
-    res.json(JSON.parse(data));
+    fs.readFile(databasePath, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Erreur lors de la lecture de la base de données:', err);
+        return res.status(500).json({ error: 'Erreur lors de la lecture de la base de données' });
+      }
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (parseError) {
+        console.error('Erreur lors du parsing JSON:', parseError);
+        res.status(500).json({ error: 'Erreur lors du parsing des données' });
+      }
+    });
   } catch (error) {
-    console.error('Erreur lors de la lecture de la base de données:', error);
-    res.status(500).json({ error: 'Erreur lors de la lecture de la base de données' });
+    console.error('Erreur lors de l\'accès au fichier:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'accès au fichier' });
   }
 });
 
