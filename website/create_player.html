@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -292,40 +291,41 @@
 
   <script src="navbar.js"></script>
   <script>
-    // Options intégrées directement dans le code
-    const options = {
-      "classes": ["Guerrier", "Paladin", "Mage", "Marchand", "Ranger", "Druide", "Aventurier", "Sorceleur"],
-      "races": ["Humain", "Nain", "Elfe", "Draconnir", "Demi-Elfe", "Humnigar", "Ecorfal"],
-      "armures": ["Armure légère", "Armure moyenne", "Armure lourde"]
-    };
+    // Remplacer le code existant des options par:
+    async function loadGameData() {
+      try {
+        const response = await fetch('/api/game-database');
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des données');
+        }
+        const gameData = await response.json();
 
-        // Remplir la liste déroulante des classes
-    const classSelect = document.getElementById('player_class');
-    options.classes.forEach(className => {
-      const option = document.createElement('option');
-      option.value = className;
-      option.textContent = className;
-      classSelect.appendChild(option);
-    });
+        // Remplir la liste des classes
+        const classSelect = document.getElementById('player_class');
+        gameData.classes.forEach(classData => {
+          const option = document.createElement('option');
+          option.value = classData.classe;
+          option.textContent = classData.classe;
+          classSelect.appendChild(option);
+        });
 
-    // Remplir la liste déroulante des races
-    const raceSelect = document.getElementById('player_race');
-    options.races.forEach(raceName => {
-      const option = document.createElement('option');
-      option.value = raceName;
-      option.textContent = raceName;
-      raceSelect.appendChild(option);
-    });
+        // Remplir la liste des races
+        const raceSelect = document.getElementById('player_race');
+        gameData.races.forEach(raceData => {
+          const option = document.createElement('option');
+          option.value = raceData.race;
+          option.textContent = raceData.race;
+          raceSelect.appendChild(option);
+        });
 
-    // Remplir la liste déroulante des armures
-    const armorSelect = document.getElementById('eq_armure');
-    options.armures.forEach(armorName => {
-      const option = document.createElement('option');
-      option.value = armorName;
-      option.textContent = armorName;
-      armorSelect.appendChild(option);
-    });
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors du chargement des données du jeu');
+      }
+    }
 
+    // Appeler la fonction au chargement de la page
+    document.addEventListener('DOMContentLoaded', loadGameData);
 
     document.getElementById('save_player_creation').addEventListener('click', () => {
 
@@ -494,3 +494,4 @@
   </script>
 </body>
 </html>
+``` 

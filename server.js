@@ -5,6 +5,7 @@ const server = http.createServer(app);
 const io = require('socket.io')(server);
 const path = require('path');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const os = require('os');
 const { ajouterJoueur, getJoueurs, supprimerJoueur, sauvegardeData } = require('./joueur');
 
@@ -17,15 +18,18 @@ let documentData = {
 };
 
 // Charger les données du tableau
-try {
-  if (fs.existsSync(JSON_FILE)) {
-      documentData = JSON.parse(fs.readFileSync(JSON_FILE));
+async function initializeDocumentData() {
+  try {
+    if (fs.existsSync(JSON_FILE)) {
+      const fileContent = await fsPromises.readFile(JSON_FILE, 'utf8');
+      documentData = JSON.parse(fileContent);
       if (!documentData.users) {
-          documentData.users = {};
+        documentData.users = {};
       }
+    }
+  } catch (err) {
+    console.error('Erreur lors du chargement du document:', err);
   }
-} catch (err) {
-  console.error('Erreur lors du chargement du document:', err);
 }
 
 // Middleware
@@ -85,6 +89,18 @@ app.post('/api/joueur', (req, res) => {
   }
 });
 
+// Ajouter cette route
+app.get('/api/game-database', async (req, res) => {
+  try {
+    const databasePath = path.join(__dirname, 'database', 'game_database.json');
+    const data = await fsPromises.readFile(databasePath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Erreur lors de la lecture de la base de données:', error);
+    res.status(500).json({ error: 'Erreur lors de la lecture de la base de données' });
+  }
+});
+
 // Gestionnaire de connexion WebSocket
 io.on('connection', (socket) => {
   console.log('Client connecté', socket.id);
@@ -104,20 +120,20 @@ io.on('connection', (socket) => {
   });
 
   // Sauvegarde du document
-  socket.on('saveDocument', ({ content }) => {
+  socket.on('saveDocument', async ({ content }) => {
     documentData.content = content;
     documentData.lastSaved = new Date().toISOString();
       
-    // Sauvegarder dans le fichier
-    fs.writeFileSync(JSON_FILE, JSON.stringify(documentData, null, 2));
-      
-    // Émettre à tous les clients
-    io.emit('documentData', {
+    try {
+      await fsPromises.writeFile(JSON_FILE, JSON.stringify(documentData, null, 2));
+      io.emit('documentData', {
         content: documentData.content,
         lastSaved: documentData.lastSaved
-    });
-      
-    console.log('Document sauvegardé:', new Date().toISOString());
+      });
+      console.log('Document sauvegardé:', new Date().toISOString());
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+    }
   });
 
   socket.on('loadDocument', () => {
@@ -162,7 +178,9 @@ function getLocalIPAddress() {
   return 'localhost';
 }
 
-const ip = getLocalIPAddress();
-server.listen(3000, () => {
-  console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://' + ip + ':3000');
+initializeDocumentData().then(() => {
+  const ip = getLocalIPAddress();
+  server.listen(3000, () => {
+    console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://' + ip + ':3000');
+  });
 });
