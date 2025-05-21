@@ -1371,7 +1371,7 @@
       "resistance": "dsqqds",
       "durabilite": {
         "max": 30,
-        "current": 20
+        "current": 10
       },
       "protection": {
         "max": 20,
