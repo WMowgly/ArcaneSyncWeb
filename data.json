@@ -1371,23 +1371,23 @@
       "resistance": "dsqqds",
       "durabilite": {
         "max": 30,
-        "current": 30
+        "current": 20
       },
       "protection": {
         "max": 20,
-        "current": 20
+        "current": 10
       }
     },
     "hp": {
       "max": 20,
-      "current": 20
+      "current": 5
     },
     "mana": {
       "max": 30,
-      "current": 30
+      "current": 20
     },
-    "bonus_vie": 40,
-    "intox": "10",
+    "bonus_vie": 20,
+    "intox": "5",
     "spells": [
       {
         "nom": "Boule de feu",

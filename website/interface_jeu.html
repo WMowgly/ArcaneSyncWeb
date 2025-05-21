@@ -224,140 +224,120 @@
     </script>
     <script>
       document.getElementById("save-btn").addEventListener("click", async () => {
-
-        // Clic sur le bouton "Sauvegarder"
-        console.log("Bouton cliqué");
-
-        const params = new URLSearchParams(window.location.search);
-        const nom = params.get("Nom"); // Récupère le nom depuis l'URL
-        
-        if (!nom) {
-          alert('Erreur : nom du joueur non trouvé');
-          return;
-        }
-        
-        // Récupérer les données des champs
-        const hpCurrent = parseInt(document.getElementById('player_hp_current').value, 10);
-        const hpMax = parseInt(document.getElementById('player_hp').value, 10);
-        const manaCurrent = parseInt(document.getElementById('player_mana_current').value, 10);
-        const manaMax = parseInt(document.getElementById('player_mana').value, 10);
-        const protectionMax = parseInt(document.getElementById('player_protection_max').value, 10);
-        const protectionCurrent = parseInt(document.getElementById('player_protection_current').value, 10);
-        const intoxCurrent = parseInt(document.getElementById('player_intox').value, 10);
-        const vieBonus = parseInt(document.getElementById('player_vie_bonus').value, 10);
-        const duraCurrent = parseInt(document.getElementById('player_dura_current').value, 10);
-        const duraMax = parseInt(document.getElementById('player_dura_max').value, 10);
-        
-        const survie = {
-          jet1: {
-            reussi: document.querySelector('input[name="survie1"][value="reussi"]').checked,
-            echec: document.querySelector('input[name="survie1"][value="echec"]').checked
-          },
-          jet2: {
-            reussi: document.querySelector('input[name="survie2"][value="reussi"]').checked,
-            echec: document.querySelector('input[name="survie2"][value="echec"]').checked
-          },
-          jet3: {
-            reussi: document.querySelector('input[name="survie3"][value="reussi"]').checked,
-            echec: document.querySelector('input[name="survie3"][value="echec"]').checked
-          }
-        };
-
-        // S'assurer que les valeurs current ne dépassent pas les valeurs max
-        if (hpCurrent > hpMax) {
-          hpCurrent = hpMax;
-          document.getElementById('player_hp_current').value = hpMax;
-          document.getElementById('player_hp_current').classList.remove('error');
-        }
-
-        if (manaCurrent > manaMax) {
-          manaCurrent = manaMax;
-          document.getElementById('player_mana_current').value = manaMax;
-          document.getElementById('player_mana_current').classList.remove('error');
-        }
-
-        if (protectionCurrent > protectionMax) {
-          protectionCurrent = protectionMax;
-          document.getElementById('player_protection_current').value = protectionMax;
-          document.getElementById('player_protection_current').classList.remove('error');
-        }
-
-        if (duraCurrent > duraMax) {
-          duraCurrent = duraMax;
-          document.getElementById('player_dura_current').value = duraMax;
-          document.getElementById('player_dura_current').classList.remove('error');
-        }
-
-        const nouvellesDonnees = {
-          nom: nom,
-          classe: document.getElementById('player_class').value,
-          race: document.getElementById('player_race').value,
-          hp: {
-            max: parseInt(document.getElementById('player_hp').value) || 0,
-            current: parseInt(document.getElementById('player_hp_current').value) || 0
-          },
-          mana: {
-            max: parseInt(document.getElementById('player_mana').value) || 0,
-            current: parseInt(document.getElementById('player_mana_current').value) || 0
-          },
-          armure: {
-            durabilite: {
-              max: parseInt(document.getElementById('player_dura_max').value) || 0,
-              current: parseInt(document.getElementById('player_dura_current').value) || 0
-            },
-            protection: {
-              max: parseInt(document.getElementById('player_protection_max').value) || 0,
-              current: parseInt(document.getElementById('player_protection_current').value) || 0
-            }
-          },
-          bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
-          intox: document.getElementById('player_intox').value || '0',
-          // On garde les autres données inchangées
-          stats: params.get('stats') ? JSON.parse(params.get('stats')) : {},
-          spells: params.get('spells') ? JSON.parse(params.get('spells')) : [],
-          sorts_mineurs: params.get('sorts_mineurs') ? JSON.parse(params.get('sorts_mineurs')) : [],
-          competences: params.get('competences') ? JSON.parse(params.get('competences')) : [],
-          armes: params.get('armes') ? JSON.parse(params.get('armes')) : []
-        };
-        
-        // Afficher les données dans la console (pour le débogage)
-        console.log("Données à envoyer:", { nom, nouvellesDonnees });
-
-        // Appeler la fonction mettreAJourJoueur via une API ou directement
         try {
-        const response = await fetch('/api/joueur/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(nouvellesDonnees)
-        });
+          const params = new URLSearchParams(window.location.search);
+          const nom = params.get("Nom");
+          
+          if (!nom) {
+            throw new Error('Erreur : nom du joueur non trouvé');
+          }
 
-      if (response.ok) {
-        // Mise à jour de l'URL avec les nouvelles valeurs
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set("VieCurrent", nouvellesDonnees.hp.current.toString());
-        newParams.set("VieMax", nouvellesDonnees.hp.max.toString());
-        newParams.set("ManaCurrent", nouvellesDonnees.mana.current.toString());
-        newParams.set("ManaMax", nouvellesDonnees.mana.max.toString());
-        newParams.set("Intox.", nouvellesDonnees.intox);
-        newParams.set("Vie bonus", nouvellesDonnees.bonus_vie.toString());
-        newParams.set("Valeur protection", nouvellesDonnees.armure.protection.current.toString());
-        newParams.set("Valeur protection max", nouvellesDonnees.armure.protection.max.toString());
-        newParams.set("DuraMax", nouvellesDonnees.armure.durabilite.max.toString());
-        newParams.set("DuraCurrent", nouvellesDonnees.armure.durabilite.current.toString());
+          // Fonction utilitaire pour parser les données JSON en toute sécurité
+          function safeJSONParse(value, defaultValue) {
+            if (!value) return defaultValue;
+            try {
+              // Vérifier si la valeur est déjà un objet
+              if (typeof value === 'object') return value;
+              // Essayer de décoder l'URI et parser le JSON
+              const decoded = decodeURIComponent(value);
+              return JSON.parse(decoded);
+            } catch (e) {
+              console.warn('Erreur parsing JSON:', e);
+              return defaultValue;
+            }
+          }
 
-        window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-        console.log('Données sauvegardées:', nouvellesDonnees);
-        alert('Données sauvegardées avec succès !');
-      } else {
-        throw new Error('Erreur lors de la sauvegarde');
+          // Construction des données à envoyer
+          const donnees = {
+            nom: nom,
+            classe: document.getElementById('player_class').value,
+            race: document.getElementById('player_race').value,
+            niveau: parseInt(params.get('Niveau')) || 1,
+            stats: safeJSONParse(params.get('stats'), {
+              force: 0,
+              dexterite: 0,
+              magie: 0,
+              constitution: 0,
+              charisme: 0,
+              perception: 0,
+              chance: 0,
+              intelligence: 0
+            }),
+            hp: {
+              max: parseInt(document.getElementById('player_hp').value) || 0,
+              current: parseInt(document.getElementById('player_hp_current').value) || 0
+            },
+            mana: {
+              max: parseInt(document.getElementById('player_mana').value) || 0,
+              current: parseInt(document.getElementById('player_mana_current').value) || 0
+            },
+            armure: {
+              type: params.get("Type d'armure") || '',
+              resistance: params.get("Résistance") || '',
+              durabilite: {
+                max: parseInt(document.getElementById('player_dura_max').value) || 0,
+                current: parseInt(document.getElementById('player_dura_current').value) || 0
+              },
+              protection: {
+                max: parseInt(document.getElementById('player_protection_max').value) || 0,
+                current: parseInt(document.getElementById('player_protection_current').value) || 0
+              }
+            },
+            bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
+            intox: document.getElementById('player_intox').value || '0',
+            bio: params.get('Biographie') || '',
+            sac: params.get('Sac') || '',
+            ceinture: params.get('Ceinture / Dos') || '',
+            spells: safeJSONParse(params.get('Sorts'), []),
+            sorts_mineurs: safeJSONParse(params.get('Sorts mineurs'), []),
+            competences: safeJSONParse(params.get('Competences'), []),
+            skills_speciales: params.get('Skills speciales') || '',
+            levelup: params.get('Choix de level up') || '',
+            armes: safeJSONParse(params.get('Armes'), [])
+          };
+
+          console.log('Données à envoyer:', donnees);
+
+          const response = await fetch('/api/joueur', {  // Modifier cette ligne
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              nom: donnees.nom,
+              nouvellesDonnees: donnees  // Ajouter la structure attendue par le serveur
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+          }
+
+          const result = await response.json();
+          console.log('Sauvegarde réussie:', result);
+          
+          // Mise à jour des paramètres dans l'URL
+          const newParams = new URLSearchParams(window.location.search);
+          newParams.set("VieCurrent", donnees.hp.current.toString());
+          newParams.set("VieMax", donnees.hp.max.toString());
+          newParams.set("ManaCurrent", donnees.mana.current.toString());
+          newParams.set("ManaMax", donnees.mana.max.toString());
+          newParams.set("DuraCurrent", donnees.armure.durabilite.current.toString());
+          newParams.set("DuraMax", donnees.armure.durabilite.max.toString());
+          newParams.set("Valeur protection", donnees.armure.protection.current.toString());
+          newParams.set("Valeur protection max", donnees.armure.protection.max.toString());
+          newParams.set("Vie bonus", donnees.bonus_vie.toString());
+          newParams.set("Intox.", donnees.intox);
+
+          window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+          alert('Données sauvegardées avec succès !');
+
+      } catch (error) {
+          console.error('Erreur détaillée:', error);
+          alert(`Erreur lors de la sauvegarde: ${error.message}`);
       }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Une erreur est survenue lors de la sauvegarde.');
-    }
-  });
+    });
     </script>
 </body>
 </html>
