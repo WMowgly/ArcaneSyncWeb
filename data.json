@@ -1383,7 +1383,7 @@
       "current": 5
     },
     "mana": {
-      "max": 30,
+      "max": 100,
       "current": 20
     },
     "bonus_vie": 20,
