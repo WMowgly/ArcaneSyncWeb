@@ -318,6 +318,15 @@
           raceSelect.appendChild(option);
         });
 
+        // Remplir la liste des armures
+        const armorSelect = document.getElementById('eq_armure');
+        gameData.armures.forEach(armorData => {
+          const option = document.createElement('option');
+          option.value = armorData.armure;
+          option.textContent = armorData.armure;
+          armorSelect.appendChild(option);
+        });
+
       } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur lors du chargement des données du jeu');

@@ -1162,5 +1162,128 @@
         }
       }
     }
+  },
+  {
+    "nom": "dqsd",
+    "classe": "Druide",
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": 55,
+      "dexterite": 5,
+      "magie": 5,
+      "constitution": 5,
+      "charisme": 5,
+      "perception": 5,
+      "chance": 15,
+      "intelligence": 5
+    },
+    "bio": "",
+    "sac": "5",
+    "ceinture": "5",
+    "armure": {
+      "type": "Armure Légère",
+      "resistance": "15",
+      "durabilite": {
+        "max": "15",
+        "current": "15"
+      },
+      "protection": 15
+    },
+    "hp": {
+      "max": 5,
+      "current": 5
+    },
+    "mana": {
+      "max": 5,
+      "current": 5
+    },
+    "bonus_vie": 5,
+    "intox": "5",
+    "spells": [
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "degats": "",
+        "niveau": null
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "",
+        "degats": ""
+      },
+      {
+        "nom": "",
+        "degats": ""
+      }
+    ],
+    "competences": [
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      },
+      {
+        "nom": "",
+        "effet": "",
+        "niveau": null
+      }
+    ],
+    "skills_speciales": "",
+    "levelup": "",
+    "armes": [
+      {
+        "type": "5",
+        "degats": ""
+      },
+      {
+        "type": "5",
+        "degats": ""
+      },
+      {
+        "type": "5",
+        "degats": ""
+      },
+      {
+        "type": "5",
+        "degats": ""
+      },
+      {
+        "type": "5",
+        "degats": ""
+      }
+    ]
   }
 ]

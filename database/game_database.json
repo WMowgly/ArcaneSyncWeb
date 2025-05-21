@@ -30,6 +30,21 @@
     }  
   ],
 
+  "armures": [
+    {
+        "id_armure": 1,
+        "armure": "Armure légère"
+    },
+    {
+        "id_race": 2,
+        "armure": "Armure moyenne"
+    },
+    {
+        "id_race": 3,
+        "armure": "Armure lourde"
+    }
+  ],
+
   "classes": [
     {
         "id": 1,

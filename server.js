@@ -89,11 +89,11 @@ app.post('/api/joueur', (req, res) => {
   }
 });
 
-// Ajouter cette route
+// Ajouter cette route pour accéder à la base de données
 app.get('/api/game-database', async (req, res) => {
   try {
     const databasePath = path.join(__dirname, 'database', 'game_database.json');
-    const data = await fsPromises.readFile(databasePath, 'utf8');
+    const data = await fs.readFile(databasePath, 'utf8');
     res.json(JSON.parse(data));
   } catch (error) {
     console.error('Erreur lors de la lecture de la base de données:', error);
