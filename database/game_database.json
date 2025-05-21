@@ -1,0 +1,87 @@
+{
+  "races": [
+    {
+        "id_race": 1,
+        "race": "Humain"
+    },
+    {
+        "id_race": 2,
+        "race": "Nain"
+    },
+    {
+        "id_race": 3,
+        "race": "Elfe"
+    },
+    {
+        "id_race": 4,
+        "race": "Draconnir"
+    },
+    {
+        "id_race": 5,
+        "race": "Demi-Elfe"
+    },
+    {
+        "id_race": 6,
+        "race": "Humnigar"
+    },
+    {
+        "id_race": 7,
+        "race": "Ecorfal"
+    }  
+  ],
+
+  "classes": [
+    {
+        "id": 1,
+        "classe": "Druide"
+    },
+    {
+        "id": 2,
+        "classe": "Guerrier"
+    },
+    {
+        "id": 3,
+        "classe": "Mage"
+    },
+    {
+        "id": 4,
+        "classe": "Paladin"
+    },
+    {
+        "id": 5,
+        "classe": "Marchand"
+    },
+    {
+        "id": 6,
+        "classe": "Ranger"
+    },
+    {
+        "id": 7,
+        "classe": "Aventurier"
+    },
+    {
+        "id": 8,
+        "classe": "Sorceleur"
+    }
+  ],
+  
+  "sorts_majeurs": [
+    {
+      "id": 1,
+      "nom": "Boule de feu",
+      "description": "Lance une puissante boule de feu",
+      "degats": "3d6",
+      "niveau": 3
+    }
+  ],
+  
+  "sorts_mineurs": [
+    {
+      "id": 1,
+      "nom": "Étincelle",
+      "description": "Crée une petite flamme",
+      "degats": "1d4",
+      "niveau": 3
+    }
+  ]
+}
