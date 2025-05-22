@@ -805,6 +805,55 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('Sauvegarde réussie:', result);
     alert('Données sauvegardées avec succès !');
 
+    // Construire la nouvelle URL avec le nom du personnage
+    const urlParams = new URLSearchParams();
+      urlParams.set('Nom', donnees.nom);
+      urlParams.set('Classe', donnees.classe);
+      urlParams.set('Race', donnees.race);
+      urlParams.set('Niveau', donnees.niveau.toString());
+      urlParams.set('VieMax', donnees.hp.max.toString());
+      urlParams.set('VieCurrent', donnees.hp.current.toString());
+      urlParams.set('ManaMax', donnees.mana.max.toString());
+      urlParams.set('ManaCurrent', donnees.mana.current.toString());
+      urlParams.set('Vie bonus', donnees.bonus_vie.toString());
+      urlParams.set('Valeur protection', donnees.armure.protection.current.toString());
+      urlParams.set('Valeur protection max', donnees.armure.protection.max.toString());
+      urlParams.set('DuraMax', donnees.armure.durabilite.max.toString());
+      urlParams.set('DuraCurrent', donnees.armure.durabilite.current.toString());
+      urlParams.set("Type d'armure", donnees.armure.type);
+      urlParams.set('Résistance', donnees.armure.resistance);
+      urlParams.set('Intox.', donnees.intox);
+
+      // Stats
+      urlParams.set('Force', donnees.stats.force.toString());
+      urlParams.set('Dexterite', donnees.stats.dexterite.toString());
+      urlParams.set('Magie', donnees.stats.magie.toString());
+      urlParams.set('Constitution', donnees.stats.constitution.toString());
+      urlParams.set('Charisme', donnees.stats.charisme.toString());
+      urlParams.set('Perception', donnees.stats.perception.toString());
+      urlParams.set('Chance', donnees.stats.chance.toString());
+      urlParams.set('Intelligence', donnees.stats.intelligence.toString());
+
+      // Inventaire
+      urlParams.set('Sac', donnees.sac);
+      urlParams.set('Ceinture / Dos', donnees.ceinture);
+
+      // Sorts et compétences
+      urlParams.set('Sorts', JSON.stringify(donnees.spells));
+      urlParams.set('Sorts mineurs', JSON.stringify(donnees.sorts_mineurs));
+      urlParams.set('Competences', JSON.stringify(donnees.competences));
+      urlParams.set('Armes', JSON.stringify(donnees.armes));
+
+      // Autres
+      urlParams.set('Skills speciales', donnees.skills_speciales);
+      urlParams.set('Biographie', donnees.bio);
+      urlParams.set('Choix de level up', donnees.levelup);
+
+      const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        
+    // Mettre à jour l'URL et recharger la page
+    window.location.href = newUrl;
+
   } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
     alert(`Erreur lors de la sauvegarde: ${error.message}`);
