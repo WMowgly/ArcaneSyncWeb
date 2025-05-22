@@ -1220,15 +1220,15 @@
       }
     },
     "hp": {
-      "max": 12,
-      "current": 12
+      "max": 30,
+      "current": 30
     },
     "mana": {
-      "max": 12,
-      "current": 12
+      "max": 30,
+      "current": 30
     },
-    "bonus_vie": 12,
-    "intox": "0",
+    "bonus_vie": 30,
+    "intox": "30",
     "spells": [
       {
         "nom": "Boule de feu",
