@@ -744,51 +744,51 @@ window.addEventListener('DOMContentLoaded', () => {
       race: document.getElementById('player_race').value,
       niveau: parseInt(document.getElementById('player_level').value) || 1,
       stats: {
-        force: parseInt(document.getElementById('stat_force').value) || 0,
-        dexterite: parseInt(document.getElementById('stat_dexterite').value) || 0,
-        magie: parseInt(document.getElementById('stat_magie').value) || 0,
-        constitution: parseInt(document.getElementById('stat_constitution').value) || 0,
-        charisme: parseInt(document.getElementById('stat_charisme').value) || 0,
-        perception: parseInt(document.getElementById('stat_perception').value) || 0,
-        chance: parseInt(document.getElementById('stat_chance').value) || 0,
-        intelligence: parseInt(document.getElementById('stat_intelligence').value) || 0
+          force: parseInt(document.getElementById('stat_force').value) || 0,
+          dexterite: parseInt(document.getElementById('stat_dexterite').value) || 0,
+          magie: parseInt(document.getElementById('stat_magie').value) || 0,
+          constitution: parseInt(document.getElementById('stat_constitution').value) || 0,
+          charisme: parseInt(document.getElementById('stat_charisme').value) || 0,
+          perception: parseInt(document.getElementById('stat_perception').value) || 0,
+          chance: parseInt(document.getElementById('stat_chance').value) || 0,
+          intelligence: parseInt(document.getElementById('stat_intelligence').value) || 0
       },
+      bio: document.getElementById('bio').value || '',
+      sac: document.getElementById('eq_sac').value || '',
+      ceinture: document.getElementById('eq_ceinture').value || '',
       armure: {
-        type: document.getElementById('eq_armure').value,
-        resistance: document.getElementById('eq_resistance').value,
-        durabilite: {
-          max: parseInt(document.getElementById('player_dura_max').value) || 0,
-          current: parseInt(document.getElementById('player_dura_current').value) || 0
-        },
-        protection: {
-          max: parseInt(document.getElementById('def_protection_max').value) || 0,
-          current: parseInt(document.getElementById('def_protection').value) || 0
-        }
+          type: document.getElementById('eq_armure').value,
+          resistance: document.getElementById('eq_resistance').value,
+          durabilite: {
+              max: parseInt(document.getElementById('player_dura_max').value) || 0,
+              current: parseInt(document.getElementById('player_dura_current').value) || 0
+          },
+          protection: {
+              max: parseInt(document.getElementById('def_protection_max').value) || 0,
+              current: parseInt(document.getElementById('def_protection').value) || 0
+          }
       },
       hp: {
-        max: parseInt(document.getElementById('player_hp').value) || 0,
-        current: parseInt(document.getElementById('player_hp_current').value) || 0
+          max: parseInt(document.getElementById('player_hp').value) || 0,
+          current: parseInt(document.getElementById('player_hp_current').value) || 0
       },
       mana: {
-        max: parseInt(document.getElementById('player_mana').value) || 0,
-        current: parseInt(document.getElementById('player_mana_current').value) || 0
+          max: parseInt(document.getElementById('player_mana').value) || 0,
+          current: parseInt(document.getElementById('player_mana_current').value) || 0
       },
       bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
       intox: document.getElementById('player_intox').value || '0',
-      sac: document.getElementById('eq_sac').value || '',
-      ceinture: document.getElementById('eq_ceinture').value || '',
-      bio: document.getElementById('bio').value || '',
-      spells: spells,
-      sorts_mineurs: sortsMineurs,
+      spells: getSpells(),
+      sorts_mineurs: getSortsMineurs(),
       competences: getCompetences(),
       skills_speciales: document.getElementById('skills_speciales').value || '',
       levelup: document.getElementById('levelup').value || '',
       armes: getArmes()
-    };
+  };
 
     console.log('Données à envoyer:', donnees);
 
-    const response = await fetch('/api/joueur', {  // Modification de l'URL
+    const response = await fetch('/api/joueur', { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
