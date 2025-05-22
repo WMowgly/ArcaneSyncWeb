@@ -54,7 +54,20 @@ function sauvegardeData(nom, nouvellesDonnees) {
   console.log("Index trouvé pour mise à jour :", index); // Debug
   if (index !== -1) {
     joueurs[index] = {
-      ...joueurs[index],
+      nom: nouvellesDonnees.nom,
+      classe: nouvellesDonnees.classe,
+      race: nouvellesDonnees.race,
+      niveau: nouvellesDonnees.niveau,
+      stats: {
+        force: nouvellesDonnees.stats?.force ?? joueurs[index].stats?.force,
+        dexterite: nouvellesDonnees.stats?.dexterite ?? joueurs[index].stats?.dexterite,
+        magie: nouvellesDonnees.stats?.magie ?? joueurs[index].stats?.magie,
+        constitution: nouvellesDonnees.stats?.constitution ?? joueurs[index].stats?.constitution,
+        charisme: nouvellesDonnees.stats?.charisme ?? joueurs[index].stats?.charisme,
+        perception: nouvellesDonnees.stats?.perception ?? joueurs[index].stats?.perception,
+        chance: nouvellesDonnees.stats?.chance ?? joueurs[index].stats?.chance,
+        intelligence: nouvellesDonnees.stats?.intelligence ?? joueurs[index].stats?.intelligence
+      },
       hp: {
         max: nouvellesDonnees.hp?.max ?? joueurs[index].hp?.max,
         current: nouvellesDonnees.hp?.current ?? joueurs[index].hp?.current
@@ -64,7 +77,8 @@ function sauvegardeData(nom, nouvellesDonnees) {
         current: nouvellesDonnees.mana?.current ?? joueurs[index].mana?.current
       },
       armure: {
-        ...joueurs[index].armure,
+        type: nouvellesDonnees.armure?.type ?? joueurs[index].armure?.type,
+        resistance: nouvellesDonnees.armure?.resistance ?? joueurs[index].armure?.resistance,
         durabilite: {
           max: nouvellesDonnees.armure?.durabilite?.max ?? joueurs[index].armure?.durabilite?.max,
           current: nouvellesDonnees.armure?.durabilite?.current ?? joueurs[index].armure?.durabilite?.current
@@ -75,17 +89,29 @@ function sauvegardeData(nom, nouvellesDonnees) {
         }
       },
       bonus_vie: nouvellesDonnees.bonus_vie ?? joueurs[index].bonus_vie,
-      intox: nouvellesDonnees.intox ?? joueurs[index].intox
-    }; // Fusionner les données existantes avec les nouvelles
+      intox: nouvellesDonnees.intox ?? joueurs[index].intox,
+      sac: nouvellesDonnees.sac ?? joueurs[index].sac,
+      ceinture: nouvellesDonnees.ceinture ?? joueurs[index].ceinture,
+      spells: nouvellesDonnees.spells ?? joueurs[index].spells,
+      sorts_mineurs: nouvellesDonnees.sorts_mineurs ?? joueurs[index].sorts_mineurs,
+      competences: nouvellesDonnees.competences ?? joueurs[index].competences,
+      skills_speciales: nouvellesDonnees.skills_speciales ?? joueurs[index].skills_speciales,
+      bio: nouvellesDonnees.bio ?? joueurs[index].bio,
+      levelup: nouvellesDonnees.levelup ?? joueurs[index].levelup,
+      armes: nouvellesDonnees.armes ?? joueurs[index].armes
+    };
+
     try {
       fs.writeFileSync(cheminFichier, JSON.stringify(joueurs, null, 2));
-      console.log("Joueur mis à jour :", joueurs[index]); // Debug
+      console.log("Joueur mis à jour :", joueurs[index]);
       return true;
     } catch (err) {
       console.error("Erreur lors de la sauvegarde après mise à jour:", err);
+      return false;
     }
   }
-  console.log("Aucun joueur trouvé avec le nom :", nom); // Debug
+  
+  console.log("Aucun joueur trouvé avec le nom :", nom);
   return false;
 }
 

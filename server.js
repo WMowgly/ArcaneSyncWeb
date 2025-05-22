@@ -72,6 +72,7 @@ app.delete('/api/joueurs/delete/:nom', (req, res) => {
 
 // API pour mettre à jour un joueur
 app.post('/api/joueur', (req, res) => {
+  console.log("Mise à jour du joueur :", req.body);
   const { nom, nouvellesDonnees } = req.body;
 
   if (!nom || !nouvellesDonnees) {

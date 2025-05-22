@@ -1192,54 +1192,57 @@
   {
     "nom": "player test",
     "classe": "Druide",
-    "race": "Humain",
-    "niveau": 1,
+    "race": "Ecorfal",
+    "niveau": 30,
     "stats": {
-      "force": 1,
-      "dexterite": 11,
-      "magie": 1,
-      "constitution": 1,
-      "charisme": 1,
-      "perception": 1,
-      "chance": 1,
-      "intelligence": 1
-    },
-    "bio": "qzdqfgdrthget",
-    "sac": "212",
-    "ceinture": "12",
-    "armure": {
-      "type": "Armure moyenne",
-      "resistance": "14",
-      "durabilite": {
-        "max": 15,
-        "current": 4
-      },
-      "protection": {
-        "max": 15,
-        "current": 7
-      }
+      "force": 30,
+      "dexterite": 30,
+      "magie": 30,
+      "constitution": 30,
+      "charisme": 30,
+      "perception": 30,
+      "chance": 30,
+      "intelligence": 30
     },
     "hp": {
       "max": 30,
-      "current": 30
+      "current": 15
     },
     "mana": {
       "max": 30,
       "current": 30
     },
+    "armure": {
+      "type": "Armure lourde",
+      "resistance": "30",
+      "durabilite": {
+        "max": 30,
+        "current": 30
+      },
+      "protection": {
+        "max": 30,
+        "current": 30
+      }
+    },
     "bonus_vie": 30,
     "intox": "30",
-    "spells": [
-      {
-        "nom": "Boule de feu",
-        "degats": "3d6",
-        "niveau": 3
-      }
-    ],
+    "sac": "212fdsfds30",
+    "ceinture": "1230",
+    "spells": [],
     "sorts_mineurs": [],
     "competences": [],
-    "skills_speciales": "qdqssdqdqd",
-    "levelup": "dfqdzsqdqd",
-    "armes": []
+    "skills_speciales": "qdqssdqdqd32123430",
+    "bio": "qzdqfgdrthget32434230",
+    "levelup": "dfqdzsqdqd342534230",
+    "armes": [
+      {
+        "type": "30",
+        "degats": "30"
+      },
+      {
+        "type": "30",
+        "degats": ""
+      }
+    ]
   }
 ]
