@@ -876,6 +876,53 @@ function getArmes() {
   }
   return armes;
 }
+
+// Fonction pour mettre à jour l'état de l'armure
+function updateArmorState() {
+  const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
+  const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
+  const armorStateInput = document.getElementById('player_armor');
+  const armorStateEffect = document.getElementById('armor_effect');
+  
+  let etat = '';
+  let couleur = '';
+  let effect = '';
+  
+  if (duraCurrent === 0) {
+    etat = "Absence d'armure";
+    couleur = '#000000';
+    effect = 'Plus aucune protection';
+  } else if (duraCurrent >= ((duraMax/3)*2)+1) {
+    etat = 'Armure Neuve';
+    couleur = '#2e7d32';
+    effect = 'Protection maximale';
+  } else if (duraCurrent >= (duraMax/3)+1) {
+    etat = 'Armure Abîmée';
+    couleur = '#ff9800';
+    effect = 'Bonus fixe supprimé';
+  } else {
+    etat = 'Armure Très Abîmée';
+    couleur = '#d32f2f';
+    effect = 'Résultat du jet réduite de moitié';
+  }
+  
+  armorStateInput.value = etat;
+  armorStateInput.style.color = couleur;
+  armorStateEffect.textContent = effect;
+  armorStateEffect.style.color = couleur;
+}
+
+// Ajouter les écouteurs d'événements pour la durabilité
+document.getElementById('player_dura_current').addEventListener('input', updateArmorState);
+document.getElementById('player_dura_max').addEventListener('input', updateArmorState);
+
+// Appeler updateArmorState après le remplissage initial des champs
+window.addEventListener('DOMContentLoaded', () => {
+  // ...code existant...
+
+  // Appeler updateArmorState après le remplissage des champs
+  updateArmorState();
+});
   </script>
 </body>
 </html>
