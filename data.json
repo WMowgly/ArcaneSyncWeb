@@ -1191,8 +1191,8 @@
   },
   {
     "nom": "player test",
-    "classe": "Druide",
-    "race": "Ecorfal",
+    "classe": "Guerrier",
+    "race": "Humain",
     "niveau": 30,
     "stats": {
       "force": 30,
@@ -1213,8 +1213,8 @@
       "current": 30
     },
     "armure": {
-      "type": "Armure lourde",
-      "resistance": "30",
+      "type": "Armure légère",
+      "resistance": "302020",
       "durabilite": {
         "max": 30,
         "current": 30
@@ -1226,22 +1226,123 @@
     },
     "bonus_vie": 30,
     "intox": "30",
-    "sac": "212fdsfds30",
-    "ceinture": "1230",
+    "sac": "212fdsfds302020",
+    "ceinture": "12302020",
     "spells": [],
     "sorts_mineurs": [],
-    "competences": [],
-    "skills_speciales": "qdqssdqdqd32123430",
-    "bio": "qzdqfgdrthget32434230",
-    "levelup": "dfqdzsqdqd342534230",
+    "competences": [
+      {
+        "nom": "20",
+        "effet": "",
+        "niveau": 1
+      },
+      {
+        "nom": "20",
+        "effet": "",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "qdqssdqdqd321234302020",
+    "bio": "qzdqfgdrthget324342302020",
+    "levelup": "dfqdzsqdqd3425342302020",
     "armes": [
       {
         "type": "30",
         "degats": "30"
       },
       {
-        "type": "30",
+        "type": "302020",
         "degats": ""
+      },
+      {
+        "type": "2020",
+        "degats": ""
+      }
+    ]
+  },
+  {
+    "nom": "testspells",
+    "classe": "Marchand",
+    "race": "Draconnir",
+    "niveau": 1,
+    "stats": {
+      "force": 10,
+      "dexterite": 20,
+      "magie": 30,
+      "constitution": 40,
+      "charisme": 50,
+      "perception": 60,
+      "chance": 70,
+      "intelligence": 80
+    },
+    "hp": {
+      "max": 10,
+      "current": 10
+    },
+    "mana": {
+      "max": 20,
+      "current": 20
+    },
+    "armure": {
+      "type": "Armure moyenne",
+      "resistance": "20",
+      "durabilite": {
+        "max": 20,
+        "current": 20
+      },
+      "protection": {
+        "max": 20,
+        "current": 20
+      }
+    },
+    "bonus_vie": 30,
+    "intox": "40",
+    "sac": "hgfhgfdsq20",
+    "ceinture": "hgfhgfdsq20",
+    "spells": [
+      {
+        "nom": "Boule de feu",
+        "degats": "3d6",
+        "niveau": 3
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "Étincelle",
+        "degats": "1d4"
+      }
+    ],
+    "competences": [
+      {
+        "nom": "20",
+        "effet": "20",
+        "niveau": 1
+      },
+      {
+        "nom": "20",
+        "effet": "",
+        "niveau": 1
+      }
+    ],
+    "skills_speciales": "kjhkjh20",
+    "bio": "kjhkj20",
+    "levelup": "kjhkj20",
+    "armes": [
+      {
+        "type": "hgfhgf",
+        "degats": "hfg"
+      },
+      {
+        "type": "h",
+        "degats": "hgfhfg"
+      },
+      {
+        "type": "hgf",
+        "degats": "hgf"
+      },
+      {
+        "type": "hgf",
+        "degats": "hgf"
       }
     ]
   }

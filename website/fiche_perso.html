@@ -642,13 +642,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // Gestion des sorts majeurs
   try {
     if (params.get('Sorts')) {
+      const sortsContainer = document.getElementById('sorts-container');
+      sortsContainer.innerHTML = ''; // Nettoie le conteneur
       const sorts = JSON.parse(getParamValue('Sorts', '[]'));
-      sorts.forEach((sort, index) => {
-        if (index < 3) {
-          fillField(`spell_name_${index + 1}`, sort.nom || '');
-          fillField(`spell_dmg_${index + 1}`, sort.degats || '');
-          fillField(`spell_lvl_${index + 1}`, sort.niveau || '1');
-        }
+      sorts.forEach(sort => {
+        createSortElement(sort, sortsContainer, false);
       });
     }
   } catch (error) {
@@ -658,12 +656,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // Gestion des sorts mineurs
   try {
     if (params.get('Sorts mineurs')) {
+      const sortsMineursContainer = document.getElementById('sorts-mineurs-container');
+      sortsMineursContainer.innerHTML = ''; // Nettoie le conteneur
       const sortsMineurs = JSON.parse(getParamValue('Sorts mineurs', '[]'));
-      sortsMineurs.forEach((sort, index) => {
-        if (index < 2) {
-          fillField(`minispell_name_${index + 1}`, sort.nom || '');
-          fillField(`minispell_dmg_${index + 1}`, sort.degats || '');
-        }
+      sortsMineurs.forEach(sort => {
+        createSortElement(sort, sortsMineursContainer, true);
       });
     }
   } catch (error) {
@@ -724,18 +721,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
       }
     });
-
-    // Fonction utilitaire pour obtenir la valeur d'un élément de façon sécurisée
-  function getSafeValue(id, defaultValue = '') {
-    const element = document.getElementById(id);
-    return element ? element.value || defaultValue : defaultValue;
-  }
-
-  // Fonction utilitaire pour obtenir une valeur numérique de façon sécurisée
-  function getSafeNumericValue(id, defaultValue = 0) {
-    const value = getSafeValue(id);
-    return parseInt(value) || defaultValue;
-  }
 
     // Construction des données à sauvegarder
     const donnees = {
@@ -926,6 +911,15 @@ function getArmes() {
   return armes;
 }
 
+// Ajout des boutons pour ajouter des sorts
+document.getElementById('add-sort-btn').addEventListener('click', () => {
+  createSortElement({ nom: '', degats: '', niveau: '1' }, document.getElementById('sorts-container'), false);
+});
+
+document.getElementById('add-sort-mineur-btn').addEventListener('click', () => {
+  createSortElement({ nom: '', degats: '' }, document.getElementById('sorts-mineurs-container'), true);
+});
+
 // Fonction pour mettre à jour l'état de l'armure
 function updateArmorState() {
   const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
@@ -959,6 +953,35 @@ function updateArmorState() {
   armorStateInput.style.color = couleur;
   armorStateEffect.textContent = effect;
   armorStateEffect.style.color = couleur;
+}
+
+function createSortElement(sort, container, isMineur = false) {
+  const sortRow = document.createElement('div');
+  sortRow.className = 'sort-row';
+
+  const nomInput = document.createElement('input');
+  nomInput.type = 'text';
+  nomInput.value = sort.nom || '';
+  nomInput.className = isMineur ? 'minispell_name' : 'spell_name';
+
+  const degatsInput = document.createElement('input');
+  degatsInput.type = 'text';
+  degatsInput.value = sort.degats || '';
+  degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
+
+  sortRow.appendChild(nomInput);
+  sortRow.appendChild(degatsInput);
+
+  if (!isMineur) {
+    const niveauInput = document.createElement('input');
+    niveauInput.type = 'number';
+    niveauInput.min = '1';
+    niveauInput.value = sort.niveau || '1';
+    niveauInput.className = 'spell_lvl';
+    sortRow.appendChild(niveauInput);
+  }
+
+  container.appendChild(sortRow);
 }
 
 // Ajouter les écouteurs d'événements pour la durabilité
