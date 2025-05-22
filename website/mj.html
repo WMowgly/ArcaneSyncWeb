@@ -18,6 +18,34 @@
   <script type="module">
     import { showMJPopup } from './popupmj.js';
 
+    function getArmorState(duraCurrent, duraMax) {
+      if (duraCurrent === 0) {
+        return { 
+          etat: "Absence d'armure", 
+          couleur: '#000000',
+          effet: 'Plus aucune protection'
+        };
+      } else if (duraCurrent >= ((duraMax/3)*2)+1) {
+        return { 
+          etat: 'Armure Neuve', 
+          couleur: '#2e7d32',
+          effet: 'Protection maximale'
+        };
+      } else if (duraCurrent >= (duraMax/3)+1) {
+        return { 
+          etat: 'Armure Abîmée', 
+          couleur: '#ff9800',
+          effet: 'Bonus fixe supprimé'
+        };
+      } else {
+        return { 
+          etat: 'Armure Très Abîmée', 
+          couleur: '#d32f2f',
+          effet: 'Résultat du jet réduite de moitié'
+        };
+      }
+    }
+
     // Fonction pour charger et afficher les joueurs
     function loadAndDisplayPlayers() {
       fetch('/api/joueurs')
@@ -36,11 +64,19 @@
             card.classList.add('card');
             card.setAttribute('data-id', joueur.nom);
 
+            const duraCurrent = joueur.armure?.durabilite?.current || 0;
+            const duraMax = joueur.armure?.durabilite?.max || 0;
+            const armorState = getArmorState(duraCurrent, duraMax);
+
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
               <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
               <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
               <p>Protection: ${joueur.armure?.protection?.current || 0} / ${joueur.armure?.protection?.max || 0}</p>
+              <p>
+                <span style="color: ${armorState.couleur}">${armorState.etat}</span><br>
+                <small style="color: #000000; font-size: 0.8em;">${armorState.effet}</small>
+              </p>
             `;
 
             card.addEventListener('click', () => {
