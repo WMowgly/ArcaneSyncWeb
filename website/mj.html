@@ -71,8 +71,9 @@
             card.innerHTML = `
               <h3>${joueur.nom}</h3>
               <p>HP: ${joueur.hp?.current} / ${joueur.hp?.max}</p>
+              <p>Bonus HP: ${joueur.bonus_vie}</p>
+              <p>Intox: ${joueur.intox} / ${joueur?.stats?.constitution}</p>
               <p>Mana: ${joueur.mana?.current} / ${joueur.mana?.max}</p>
-              <p>Protection: ${joueur.armure?.protection?.current || 0} / ${joueur.armure?.protection?.max || 0}</p>
               <p>
                 <span style="color: ${armorState.couleur}">${armorState.etat}</span><br>
                 <small style="color: #000000; font-size: 0.8em;">${armorState.effet}</small>

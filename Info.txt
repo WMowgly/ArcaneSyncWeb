@@ -1,15 +1,18 @@
+Data:
+  Ajouter logique par ID pour les datas (sinon lucas il va pleurer)
+
 Page MJ:
-    Liste des joueurs (avec info simplifié, HP - Mana), joueurs cliquable pour avoir toutes les infos
-    Lien avec back
+    Patch l'affichage sur les popups
+
+Sort / Sorts mineurs / Attaques spéciales:
+  Ajouter bouton de suppression
+  Ajouter bouton de description (qui déploie la description en dessous du sort)
+  Ajouter fonction de recherche
+
+  Mettre en place le fonctionnement pour attaques spé
+(pareil pour compétences de classe, avec choix en fonctions de la classe)
+
+  Mettre passifs avec comp spé du perso (séparé en plusieurs champs ? ou laisser comme ça ?)
     
-    Idée mob MJ (même fonctionnement que joueur mais en plus simple, sauf boss case à cocher boss pour mettre info)
-
-Page Création de joueur:
-    Améliorer visuel
-    Lien avec back
-
-Sélection du joueur
-    Lien avec back
-
-Interface jeu : 
-    Il faut mettre a jour les données dynamiquement sur la page du perso
+Global:
+  Améliorer le visuel (mais osef c'est lisa hihihi)
