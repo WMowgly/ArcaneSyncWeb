@@ -1,1348 +1,161 @@
 [
   {
-    "nom": "test",
+    "nom": "Jayce",
     "classe": "Aventurier",
-    "race": "Ecorfal",
-    "niveau": 2,
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 45,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
+    },
     "hp": {
-      "max": null,
-      "current": null
+      "max": 29,
+      "current": 29
     },
     "mana": {
-      "max": null,
-      "current": null
+      "max": 50,
+      "current": 50
     },
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "",
+    "armure": {
+      "type": "Armure légère",
       "resistance": "",
-      "durabilite": "",
-      "degats": ""
+      "durabilite": {
+        "max": 12,
+        "current": 12
+      },
+      "protection": {
+        "max": 0,
+        "current": 0
+      }
     },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
+    "bonus_vie": 0,
+    "intox": "0",
+    "sac": "Masque",
+    "ceinture": "",
+    "spells": [],
+    "sorts_mineurs": [],
+    "competences": [],
+    "skills_speciales": "",
     "bio": "",
-    "levelup": ""
+    "levelup": "",
+    "armes": [
+      {
+        "type": "Clackers Volley (Signature)",
+        "degats": ""
+      }
+    ]
+  },
+  {
+    "nom": "Andéol Skjaldborg",
+    "classe": "Paladin",
+    "race": "Humain",
+    "niveau": 1,
+    "stats": {
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 70,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
+    },
+    "hp": {
+      "max": 42,
+      "current": 42
+    },
+    "mana": {
+      "max": 46,
+      "current": 46
+    },
+    "armure": {
+      "type": "Armure lourde",
+      "resistance": "",
+      "durabilite": {
+        "max": 21,
+        "current": 2
+      },
+      "protection": {
+        "max": 21,
+        "current": 6
+      }
+    },
+    "bonus_vie": 0,
+    "intox": "20",
+    "sac": "",
+    "ceinture": "",
+    "spells": [],
+    "sorts_mineurs": [],
+    "competences": [],
+    "skills_speciales": "",
+    "bio": "stylé le type",
+    "levelup": "",
+    "armes": [
+      {
+        "type": "Épée",
+        "degats": "1d10+2"
+      },
+      {
+        "type": "Bouclier du Nord",
+        "degats": ""
+      }
+    ]
   },
   {
     "nom": "Elarion Rubavol",
     "classe": "Druide",
     "race": "Elfe",
-    "niveau": 1,
+    "niveau": 3,
+    "stats": {
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 30,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
+    },
     "hp": {
-      "max": 31,
-      "current": 18
+      "max": 28,
+      "current": 28
     },
     "mana": {
-      "max": 43,
-      "current": 43
+      "max": 62,
+      "current": 62
     },
-    "stats": {
-      "force": 20,
-      "dexterite": 60,
-      "magie": 70,
-      "constitution": 31,
-      "charisme": 51,
-      "perception": 69,
-      "chance": 50,
-      "intelligence": 60
-    },
-    "equipement": {
-      "durabilite": {
-        "current": 10,
-        "max": 12
-      }
-    },
-    "defense": {
-      "survie": {
-        "jet1": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet2": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet3": {
-          "reussi": false,
-          "echec": false
-        }
-      },
-      "bonus_vie": 0,
-      "protection": 10,
-      "protection_max": 12,
-      "intox": null
-    },
-    "competences": {
-      "classe": "Flair du Prédateur Naturel\nElarion sent intuitivement les intentions hostiles : il gagne un bonus de perception ou initiative face à des ennemis dissimulés ou qui mentent sur leurs intentions.\n\nContact de la nature - Le personnage se concentre sur les sorts de type “Nature”.",
-      "sorts": "Jugement de la nature : Des ronces surgissent du sol sous la cible désignée, s'enroulant autour d'elle : \n\n\t- Si la cible est un ennemi, les ronces se referment violemment.\n\n\t- Si la cible est un allié, elles forment autour d'elle une barrière protectrice.\n\nAbattement des vent anciens : Une masse d’air invisible et compressée se forme au-dessus de la cible avant de s’abattre violemment sur elle.\n",
-      "speciales": "Symbiose Sylvestre : Des ronces commence à entouré le corp d'Elarion le recouvrant entièrement, Elarion devient un le contrôleur de cette armure/golem.\nLes compétences changes : tire d'épines 1d4 +2/épine | lance de la nature 1d8+4 | bouclier de lianes 1d6+2 (en défense)"
-    },
-    "bio": "Elarion Rubavol est né au cœur de la Forêt de [Nom de la foret des elfes (ou une partie)], une communauté druidique vieille comme le monde. Au sein de cette forêt mystique, les enfants naissent sans connaître l’identité de leurs parents, car chaque enfant appartient à la forêt elle-même et à la communauté tout entière. Dans cette enclave d'harmonie, l’esprit de la nature dicte les lois, et chaque individu est formé dès son plus jeune âge aux arts druidiques : communiquer avec la nature, maîtriser la magie des plantes, des vents et des formes animales.\n\nLes enfants de [Nom de la foret des elfes (ou une partie)] n'ont pas de nom de famille à leur naissance, car ces derniers ne sont attribués qu'à l'âge de 50 ans, lorsque la magie propre à chaque individu se manifeste pleinement. À ce moment-là, chaque druide reçoit un nom de famille qui reflète ses capacités magiques particulières, une manière de marquer son lien unique avec la nature. Elarion, à ce moment-là, reçut le nom de Rubavol, un nom symbolisant sa maîtrise des ronces et de la métamorphose, des pouvoirs qui, tels des ronces enchevêtrées, forgent et transforment la réalité à sa volonté.\n\nDurant ses jeunes années, Elarion observait souvent un autre élève plus âgé : Faëlin Mornelys. Faëlin était déjà marqué par une magie ancienne, sombre et végétale, et parlait peu, mais chaque mot semblait peser le poids du monde. Le jour même où Elarion reçut son nom, Faëlin quitta la forêt pour accomplir son propre Voyage de l’Indépendance.\n\nLa formation d’Elarion a duré cent ans, une période où il a appris à connaître et à comprendre la nature dans toute sa complexité : des ronces vivantes aux changements de formes, en passant par la métamorphose et la protection de la forêt. En tout cela, il a grandi au sein d'une communauté où chaque adulte veille sur l’enfant des autres, et où chaque individu fait partie d’un tout. La forêt est sa mère, le vent son père, et la magie de la nature son âme.\n\nLe dernier rituel de son apprentissage arrive à l’aube de ses cent ans : le Voyage de l’Indépendance. Chaque druide, après sa formation, doit quitter la forêt et voyager pendant 100 ans, un temps suffisant pour affronter le monde avec les enseignements qu’il a reçus. Elarion, maintenant prêt, a quitté la sécurité de la forêt pour explorer les terres inconnues, où il devra comprendre et appliquer la magie de la nature en dehors des frontières de la communauté.\n\nCe voyage, qui durera un siècle, est un passage incontournable, une quête personnelle pour devenir maître de soi-même tout en restant en lien avec le monde naturel. Elarion devra faire face aux dangers et aux merveilles des contrées lointaines, mais sa connexion avec la forêt et ses mystères le guidera.\n\n",
-    "levelup": "",
     "armure": {
+      "type": "Armure légère",
+      "resistance": "",
       "durabilite": {
-        "max": 20,
-        "current": 12
+        "max": 9,
+        "current": 9
       },
       "protection": {
-        "max": 12,
-        "current": 4
+        "max": 9,
+        "current": 9
       }
     },
     "bonus_vie": 0,
-    "intox": "0"
-  },
-  {
-    "nom": "ds",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 1,
-    "hp": {
-      "max": null,
-      "current": null
-    },
-    "mana": {
-      "max": null,
-      "current": null
-    },
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "Armure légère",
-      "resistance": "",
-      "durabilite": {
-        "max": "",
-        "current": ""
-      },
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "Testphone",
-    "classe": "Druide",
-    "race": "Humain",
-    "niveau": 5,
-    "hp": {
-      "max": null,
-      "current": null
-    },
-    "mana": {
-      "max": null,
-      "current": null
-    },
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "equipement": {
-      "sac": "",
-      "ceinture": "",
-      "armes": "",
-      "armure": "Armure légère",
-      "resistance": "",
-      "durabilite": {
-        "max": "",
-        "current": ""
-      },
-      "degats": ""
-    },
-    "defense": {
-      "survie": "",
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": ""
-    },
-    "competences": {
-      "classe": "",
-      "sorts": "",
-      "speciales": ""
-    },
-    "bio": "",
-    "levelup": ""
-  },
-  {
-    "nom": "TESTZINZIN",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 2,
-    "stats": {
-      "force": 70,
-      "dexterite": 10,
-      "magie": 20,
-      "constitution": 30,
-      "charisme": 60,
-      "perception": 20,
-      "chance": 40,
-      "intelligence": 50
-    },
-    "bio": "le test de folie",
-    "sac": "potion soin",
-    "ceinture": "fleche",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "10",
-      "durabilite": 20,
-      "protection": 20
-    },
-    "mana": 30,
-    "vie": 30,
-    "bonus_vie": null,
     "intox": "0",
-    "spells": [
-      {
-        "nom": "FIREBALL",
-        "degats": "4d8+2",
-        "niveau": 1
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "kjhkj",
-        "degats": "kjhkhj",
-        "niveau": 3
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "fghfdg",
-        "degats": "dgfd"
-      },
-      {
-        "nom": "",
-        "degats": ""
-      }
-    ],
-    "competences": [
-      {
-        "nom": "FRANCAIS",
-        "effet": "charisme",
-        "niveau": 1
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      }
-    ],
-    "skills_speciales": "VIN",
-    "levelup": "je sais pas",
-    "armes": [
-      {
-        "type": "épée",
-        "degats": "1d6+2"
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "test",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 1,
-    "stats": {
-      "force": 10,
-      "dexterite": 10,
-      "magie": 10,
-      "constitution": 0,
-      "charisme": 50,
-      "perception": 540,
-      "chance": 5,
-      "intelligence": 110
-    },
-    "bio": "kjhhk",
-    "sac": "1212",
-    "ceinture": "lkjlkj",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "20",
-      "durabilite": 20,
-      "protection": 20
-    },
-    "mana": 50,
-    "vie": 10,
-    "bonus_vie": 20,
-    "intox": "10",
-    "spells": [
-      {
-        "nom": "kjh",
-        "degats": "10",
-        "niveau": 1
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": 1
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "hgfhgf",
-        "degats": "hfgh",
-        "niveau": 1
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "hgffgh",
-        "degats": ""
-      },
-      {
-        "nom": "",
-        "degats": "hgfhgf"
-      }
-    ],
-    "competences": [
-      {
-        "nom": "hgfhf",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "hgfhfg",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "kjhkhj",
-    "levelup": "kjhkh",
-    "armes": [
-      {
-        "type": "lkj",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "kjll",
-        "degats": ""
-      },
-      {
-        "type": "lkj",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "testxx",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 1,
-    "stats": {
-      "force": 20,
-      "dexterite": 20,
-      "magie": 20,
-      "constitution": 20,
-      "charisme": 30,
-      "perception": 80,
-      "chance": 40,
-      "intelligence": 30
-    },
-    "bio": "fdsfsdf",
-    "sac": "gfdg",
-    "ceinture": "gdfgdf",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "10",
-      "durabilite": {
-        "max": "10",
-        "current": "10"
-      },
-      "protection": 10
-    },
-    "hp": {
-      "max": 20,
-      "current": 20
-    },
-    "mana": {
-      "max": 30,
-      "current": 30
-    },
-    "bonus_vie": 10,
-    "intox": "2",
-    "spells": [
-      {
-        "nom": "kjgh",
-        "degats": "jhg",
-        "niveau": 1
-      },
-      {
-        "nom": "",
-        "degats": "hgf",
-        "niveau": 1
-      },
-      {
-        "nom": "hgf",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "hgf",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "gf",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "hgf",
-        "niveau": null
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "hfg",
-        "degats": ""
-      },
-      {
-        "nom": "gf",
-        "degats": "hfg"
-      }
-    ],
-    "competences": [
-      {
-        "nom": "hgf",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "hgf",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "hgf",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "fdsfds",
-    "levelup": "dsffds",
-    "armes": [
-      {
-        "type": "gdfgdf",
-        "degats": "gfd"
-      },
-      {
-        "type": "",
-        "degats": "gdf"
-      },
-      {
-        "type": "gfd",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": "gfd"
-      },
-      {
-        "type": "gfd",
-        "degats": "gfd"
-      }
-    ],
-    "equipement": {
-      "durabilite": {
-        "current": 30,
-        "max": null
-      }
-    },
-    "defense": {
-      "bonus_vie": 0,
-      "protection": 10,
-      "protection_max": null,
-      "intox": null,
-      "survie": {
-        "jet1": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet2": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet3": {
-          "reussi": false,
-          "echec": false
-        }
-      }
-    }
-  },
-  {
-    "nom": "bob",
-    "classe": "Druide",
-    "race": "Ecorfal",
-    "niveau": 1,
-    "stats": {
-      "force": 10,
-      "dexterite": 10,
-      "magie": 10,
-      "constitution": 50,
-      "charisme": 40,
-      "perception": 10,
-      "chance": 50,
-      "intelligence": 302
-    },
-    "bio": "456fdg456fdg",
-    "sac": "fdsffd s3232",
-    "ceinture": "fdsfdsf dsf ds fds32",
-    "armure": {
-      "type": "Armure lourde",
-      "resistance": "4",
-      "durabilite": {
-        "max": "30",
-        "current": "30"
-      },
-      "protection": 20
-    },
-    "hp": {
-      "max": 50,
-      "current": 50
-    },
-    "mana": {
-      "max": 20,
-      "current": 20
-    },
-    "bonus_vie": 20,
-    "intox": "10",
-    "spells": [
-      {
-        "nom": "gfd",
-        "degats": "gfd",
-        "niveau": null
-      },
-      {
-        "nom": "gfd",
-        "degats": "",
-        "niveau": 1
-      },
-      {
-        "nom": "fgd",
-        "degats": "gfd",
-        "niveau": 2
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "gfd",
-        "degats": "gfd",
-        "niveau": 23
-      },
-      {
-        "nom": "gfd",
-        "degats": "gfd",
-        "niveau": 32
-      },
-      {
-        "nom": "hgf",
-        "degats": "",
-        "niveau": 1
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "aerzae",
-        "degats": "dsqd"
-      },
-      {
-        "nom": "fjhgjh",
-        "degats": "nb,nb"
-      }
-    ],
-    "competences": [
-      {
-        "nom": "qsd",
-        "effet": "sdd",
-        "niveau": 1
-      },
-      {
-        "nom": "aaadz",
-        "effet": "sq",
-        "niveau": 2
-      },
-      {
-        "nom": "z",
-        "effet": "eze",
-        "niveau": 3
-      }
-    ],
-    "skills_speciales": "oiljhjdfghgf46465",
-    "levelup": "dfs645465fds",
-    "armes": [
-      {
-        "type": "fdsfds",
-        "degats": "fds"
-      },
-      {
-        "type": "fd",
-        "degats": ""
-      },
-      {
-        "type": "fds",
-        "degats": "fds"
-      },
-      {
-        "type": "",
-        "degats": "fds"
-      },
-      {
-        "type": "fds",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "kjhk",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 1,
-    "stats": {
-      "force": null,
-      "dexterite": null,
-      "magie": null,
-      "constitution": null,
-      "charisme": null,
-      "perception": null,
-      "chance": null,
-      "intelligence": null
-    },
-    "bio": "",
-    "sac": "dsq",
+    "sac": "",
     "ceinture": "",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "",
-      "durabilite": {
-        "max": "20",
-        "current": "20"
-      },
-      "protection": 30
-    },
-    "hp": {
-      "max": 30,
-      "current": 20
-    },
-    "mana": {
-      "max": 40,
-      "current": 40
-    },
-    "bonus_vie": null,
-    "intox": "",
-    "spells": [
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "",
-        "degats": "dsq",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "",
-        "degats": ""
-      },
-      {
-        "nom": "",
-        "degats": ""
-      }
-    ],
-    "competences": [
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      }
-    ],
-    "skills_speciales": "",
-    "levelup": "",
-    "armes": [
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      },
-      {
-        "type": "",
-        "degats": ""
-      }
-    ],
-    "equipement": {
-      "durabilite": {
-        "current": null,
-        "max": null
-      }
-    },
-    "defense": {
-      "bonus_vie": null,
-      "protection": null,
-      "protection_max": null,
-      "intox": null,
-      "survie": {
-        "jet1": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet2": {
-          "reussi": false,
-          "echec": false
-        },
-        "jet3": {
-          "reussi": false,
-          "echec": false
-        }
-      }
-    }
-  },
-  {
-    "nom": "dqsd",
-    "classe": "Druide",
-    "race": "Humain",
-    "niveau": 1,
-    "stats": {
-      "force": 55,
-      "dexterite": 5,
-      "magie": 5,
-      "constitution": 5,
-      "charisme": 5,
-      "perception": 5,
-      "chance": 15,
-      "intelligence": 5
-    },
-    "bio": "",
-    "sac": "5",
-    "ceinture": "5",
-    "armure": {
-      "type": "Armure Légère",
-      "resistance": "15",
-      "durabilite": {
-        "max": "15",
-        "current": "15"
-      },
-      "protection": 15
-    },
-    "hp": {
-      "max": 5,
-      "current": 5
-    },
-    "mana": {
-      "max": 5,
-      "current": 5
-    },
-    "bonus_vie": 5,
-    "intox": "5",
-    "spells": [
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "attaques_speciales": [
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "degats": "",
-        "niveau": null
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "",
-        "degats": ""
-      },
-      {
-        "nom": "",
-        "degats": ""
-      }
-    ],
-    "competences": [
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      },
-      {
-        "nom": "",
-        "effet": "",
-        "niveau": null
-      }
-    ],
-    "skills_speciales": "",
-    "levelup": "",
-    "armes": [
-      {
-        "type": "5",
-        "degats": ""
-      },
-      {
-        "type": "5",
-        "degats": ""
-      },
-      {
-        "type": "5",
-        "degats": ""
-      },
-      {
-        "type": "5",
-        "degats": ""
-      },
-      {
-        "type": "5",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "testXXXX",
-    "classe": "Druide",
-    "race": "Humain",
-    "niveau": 20,
-    "stats": {
-      "force": 30,
-      "dexterite": 40,
-      "magie": 50,
-      "constitution": 20,
-      "charisme": 60,
-      "perception": 50,
-      "chance": 30,
-      "intelligence": 10
-    },
-    "bio": "jhgjhg",
-    "sac": "hgfdgf",
-    "ceinture": "gfdgdfg",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "20",
-      "durabilite": {
-        "max": 30,
-        "current": 30
-      },
-      "protection": {
-        "max": 30,
-        "current": 30
-      }
-    },
-    "hp": {
-      "max": 20,
-      "current": 20
-    },
-    "mana": {
-      "max": 30,
-      "current": 30
-    },
-    "bonus_vie": 40,
-    "intox": "10",
     "spells": [],
     "sorts_mineurs": [],
-    "competences": [
-      {
-        "nom": "kjhk",
-        "effet": "",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "jhgjhg",
-    "levelup": "jhgjhg",
-    "armes": [
-      {
-        "type": "gfdg",
-        "degats": ""
-      },
-      {
-        "type": "fdg",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "bobv10000",
-    "classe": "Druide",
-    "race": "Humain",
-    "niveau": 2,
-    "stats": {
-      "force": 10,
-      "dexterite": 10,
-      "magie": 10,
-      "constitution": 10,
-      "charisme": 40,
-      "perception": 30,
-      "chance": 20,
-      "intelligence": 10
-    },
-    "bio": "fdsdsf24",
-    "sac": "dsqdsqdqs",
-    "ceinture": "dsqdsqd",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "dsqqds",
-      "durabilite": {
-        "max": 30,
-        "current": 10
-      },
-      "protection": {
-        "max": 20,
-        "current": 10
-      }
-    },
-    "hp": {
-      "max": 20,
-      "current": 5
-    },
-    "mana": {
-      "max": 100,
-      "current": 20
-    },
-    "bonus_vie": 20,
-    "intox": "5",
-    "spells": [
-      {
-        "nom": "Boule de feu",
-        "degats": "3d6",
-        "niveau": 3
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "Étincelle",
-        "degats": "1d4"
-      }
-    ],
-    "competences": [
-      {
-        "nom": "gfd",
-        "effet": "",
-        "niveau": 1
-      },
-      {
-        "nom": "gfd",
-        "effet": "",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "gfdgfd",
-    "levelup": "gf45gfgf",
-    "armes": [
-      {
-        "type": "dsqdsq",
-        "degats": ""
-      },
-      {
-        "type": "dsq",
-        "degats": ""
-      },
-      {
-        "type": "sqd",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "test",
-    "classe": "Druide",
-    "race": "Humain",
-    "niveau": 1,
-    "stats": {
-      "force": 14,
-      "dexterite": 14,
-      "magie": 14,
-      "constitution": 14,
-      "charisme": 14,
-      "perception": 14,
-      "chance": 14,
-      "intelligence": 14
-    },
-    "bio": "41",
-    "sac": "141",
-    "ceinture": "144",
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "14",
-      "durabilite": {
-        "max": 14,
-        "current": 14
-      },
-      "protection": {
-        "max": 14,
-        "current": 14
-      }
-    },
-    "hp": {
-      "max": 11,
-      "current": 11
-    },
-    "mana": {
-      "max": 41,
-      "current": 41
-    },
-    "bonus_vie": 1,
-    "intox": "1",
-    "spells": [
-      {
-        "nom": "Boule de feu",
-        "degats": "3d6",
-        "niveau": 3
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "Étincelle",
-        "degats": "1d4"
-      }
-    ],
     "competences": [],
-    "skills_speciales": "14",
-    "levelup": "14",
-    "armes": []
-  },
-  {
-    "nom": "player test",
-    "classe": "Guerrier",
-    "race": "Humain",
-    "niveau": 30,
-    "stats": {
-      "force": 30,
-      "dexterite": 30,
-      "magie": 30,
-      "constitution": 30,
-      "charisme": 30,
-      "perception": 30,
-      "chance": 30,
-      "intelligence": 30
-    },
-    "hp": {
-      "max": 30,
-      "current": 15
-    },
-    "mana": {
-      "max": 30,
-      "current": 30
-    },
-    "armure": {
-      "type": "Armure légère",
-      "resistance": "302020",
-      "durabilite": {
-        "max": 30,
-        "current": 30
-      },
-      "protection": {
-        "max": 30,
-        "current": 30
-      }
-    },
-    "bonus_vie": 30,
-    "intox": "30",
-    "sac": "212fdsfds302020",
-    "ceinture": "12302020",
-    "spells": [],
-    "sorts_mineurs": [],
-    "competences": [
-      {
-        "nom": "20",
-        "effet": "",
-        "niveau": 1
-      },
-      {
-        "nom": "20",
-        "effet": "",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "qdqssdqdqd321234302020",
-    "bio": "qzdqfgdrthget324342302020",
-    "levelup": "dfqdzsqdqd3425342302020",
+    "skills_speciales": "Sort : Attaque vitale\nSort : Soins de la nature\nMétamorphose : Colibri \n\n1 Passif\nFlair du Prédateur Naturel\nElarion sent intuitivement les intentions hostiles : il gagne un bonus de perception ou initiative face à des ennemis dissimulés ou qui mentent sur leurs intentions.\n\n2 Compétences\nJugement de la nature : Des ronces surgissent du sol sous la cible désignée, s'enroulant autour d'elle : \n\n\t- Si la cible est un ennemi, les ronces se referment violemment.\n\n\t- Si la cible est un allié, elles forment autour d'elle une barrière protectrice.\n\nAbattement des vent anciens : Une masse d’air invisible et compressée se forme au-dessus de la cible avant de s’abattre violemment sur elle.\n\n1 Ultimes\nSymbiose Sylvestre : Des ronces commence à entouré le corp d'Elarion le recouvrant entièrement, Elarion devient un le contrôleur de cette armure/golem.\nLes compétences changes : tire d'épines 1d4 +2/épine | lance de la nature 1d8+4 | bouclier de lianes 1d6+2 (en défense)",
+    "bio": "Elarion Rubavol est né au cœur de la Forêt de [Nom de la foret des elfes (ou une partie)], une communauté druidique vieille comme le monde. Au sein de cette forêt mystique, les enfants naissent sans connaître l’identité de leurs parents, car chaque enfant appartient à la forêt elle-même et à la communauté tout entière. Dans cette enclave d'harmonie, l’esprit de la nature dicte les lois, et chaque individu est formé dès son plus jeune âge aux arts druidiques : communiquer avec la nature, maîtriser la magie des plantes, des vents et des formes animales.\n\nLes enfants de [Nom de la foret des elfes (ou une partie)] n'ont pas de nom de famille à leur naissance, car ces derniers ne sont attribués qu'à l'âge de 50 ans, lorsque la magie propre à chaque individu se manifeste pleinement. À ce moment-là, chaque druide reçoit un nom de famille qui reflète ses capacités magiques particulières, une manière de marquer son lien unique avec la nature. Elarion, à ce moment-là, reçut le nom de Rubavol, un nom symbolisant sa maîtrise des ronces et de la métamorphose, des pouvoirs qui, tels des ronces enchevêtrées, forgent et transforment la réalité à sa volonté.\n\nDurant ses jeunes années, Elarion observait souvent un autre élève plus âgé : Faëlin Mornelys. Faëlin était déjà marqué par une magie ancienne, sombre et végétale, et parlait peu, mais chaque mot semblait peser le poids du monde. Le jour même où Elarion reçut son nom, Faëlin quitta la forêt pour accomplir son propre Voyage de l’Indépendance.\n\nLa formation d’Elarion a duré cent ans, une période où il a appris à connaître et à comprendre la nature dans toute sa complexité : des ronces vivantes aux changements de formes, en passant par la métamorphose et la protection de la forêt. En tout cela, il a grandi au sein d'une communauté où chaque adulte veille sur l’enfant des autres, et où chaque individu fait partie d’un tout. La forêt est sa mère, le vent son père, et la magie de la nature son âme.\n\nLe dernier rituel de son apprentissage arrive à l’aube de ses cent ans : le Voyage de l’Indépendance. Chaque druide, après sa formation, doit quitter la forêt et voyager pendant 100 ans, un temps suffisant pour affronter le monde avec les enseignements qu’il a reçus. Elarion, maintenant prêt, a quitté la sécurité de la forêt pour explorer les terres inconnues, où il devra comprendre et appliquer la magie de la nature en dehors des frontières de la communauté.\n\nCe voyage, qui durera un siècle, est un passage incontournable, une quête personnelle pour devenir maître de soi-même tout en restant en lien avec le monde naturel. Elarion devra faire face aux dangers et aux merveilles des contrées lointaines, mais sa connexion avec la forêt et ses mystères le guidera.\n",
+    "levelup": "",
     "armes": [
       {
-        "type": "30",
-        "degats": "30"
-      },
-      {
-        "type": "302020",
-        "degats": ""
-      },
-      {
-        "type": "2020",
-        "degats": ""
-      }
-    ]
-  },
-  {
-    "nom": "testspells",
-    "classe": "Marchand",
-    "race": "Draconnir",
-    "niveau": 1,
-    "stats": {
-      "force": 10,
-      "dexterite": 20,
-      "magie": 30,
-      "constitution": 40,
-      "charisme": 50,
-      "perception": 60,
-      "chance": 70,
-      "intelligence": 80
-    },
-    "hp": {
-      "max": 10,
-      "current": 10
-    },
-    "mana": {
-      "max": 20,
-      "current": 20
-    },
-    "armure": {
-      "type": "Armure moyenne",
-      "resistance": "20",
-      "durabilite": {
-        "max": 20,
-        "current": 20
-      },
-      "protection": {
-        "max": 20,
-        "current": 20
-      }
-    },
-    "bonus_vie": 30,
-    "intox": "40",
-    "sac": "hgfhgfdsq20",
-    "ceinture": "hgfhgfdsq20",
-    "spells": [
-      {
-        "nom": "Boule de feu",
-        "degats": "3d6",
-        "niveau": 3
-      }
-    ],
-    "sorts_mineurs": [
-      {
-        "nom": "Étincelle",
-        "degats": "1d4"
-      }
-    ],
-    "competences": [
-      {
-        "nom": "20",
-        "effet": "20",
-        "niveau": 1
-      },
-      {
-        "nom": "20",
-        "effet": "",
-        "niveau": 1
-      }
-    ],
-    "skills_speciales": "kjhkjh20",
-    "bio": "kjhkj20",
-    "levelup": "kjhkj20",
-    "armes": [
-      {
-        "type": "hgfhgf",
-        "degats": "hfg"
-      },
-      {
-        "type": "h",
-        "degats": "hgfhfg"
-      },
-      {
-        "type": "hgf",
-        "degats": "hgf"
-      },
-      {
-        "type": "hgf",
-        "degats": "hgf"
+        "type": "Baton",
+        "degats": "1d6 + 2"
       }
     ]
   }
