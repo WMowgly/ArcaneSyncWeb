@@ -425,17 +425,10 @@
             
         <div class="section">
             <h2>Attaques Spéciales</h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input type="text"></div>
-                <div class="field"><label>Dégâts</label><input type="text"></div>
-                <div class="field"><label>Niveau</label><input type="number" min="1"></div>
+            <div id="attacks-container">
+                <!-- Les attaques seront ajoutées ici dynamiquement -->
             </div>
+            <button type="button" class="add-btn" id="add-attack-btn">Ajouter une attaque</button>
         </div>
     </div>
 
@@ -568,7 +561,7 @@
         }
       }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé async ici
   const params = new URLSearchParams(window.location.search);
   
   // Fonction utilitaire pour récupérer les valeurs des paramètres
@@ -653,6 +646,20 @@ window.addEventListener('DOMContentLoaded', () => {
     console.error('Erreur lors du chargement des sorts:', error);
   }
 
+  // Gestion des attaques spéciales
+  try {
+    if (params.get('Attaques speciales')) {
+      const attacksContainer = document.getElementById('attacks-container');
+      attacksContainer.innerHTML = ''; // Nettoie le conteneur
+      const attacks = JSON.parse(getParamValue('Attaques speciales', '[]'));
+      attacks.forEach(attack => {
+        createAttackElement(attack, attacksContainer, false);
+      });
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des attaques spéciales:', error);
+  }
+
   // Gestion des sorts mineurs
   try {
     if (params.get('Sorts mineurs')) {
@@ -722,6 +729,19 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Collecte des attaques spéciales
+    const attaquesSpeciales = [];
+    document.querySelectorAll('#attacks-container .sort-row').forEach((row, index) => {
+      const nom = row.querySelector('.attack_name')?.value;
+      if (nom) {
+        attaquesSpeciales.push({
+          nom: nom,
+          degats: row.querySelector('.attack_dmg')?.value || '',
+          niveau: parseInt(row.querySelector('.attack_lvl')?.value) || 1
+        });
+      }
+    });
+
     // Construction des données à sauvegarder
     const donnees = {
       nom: document.getElementById('player_name').value,
@@ -768,7 +788,8 @@ window.addEventListener('DOMContentLoaded', () => {
       competences: getCompetences(),
       skills_speciales: document.getElementById('skills_speciales').value || '',
       levelup: document.getElementById('levelup').value || '',
-      armes: getArmes()
+      armes: getArmes(),
+      attaques_speciales: getSpecialAttacks()
   };
 
     console.log('Données à envoyer:', donnees);
@@ -828,6 +849,7 @@ window.addEventListener('DOMContentLoaded', () => {
       urlParams.set('Sorts mineurs', JSON.stringify(donnees.sorts_mineurs));
       urlParams.set('Competences', JSON.stringify(donnees.competences));
       urlParams.set('Armes', JSON.stringify(donnees.armes));
+      urlParams.set('Attaques speciales', JSON.stringify(donnees.attaques_speciales));
 
       // Autres
       urlParams.set('Skills speciales', donnees.skills_speciales);
@@ -876,6 +898,21 @@ function getSortsMineurs() {
   return sortsMineurs;
 }
 
+function getSpecialAttacks() {
+  const attacks = [];
+  document.querySelectorAll('#attacks-container .sort-row').forEach(row => {
+    const nom = row.querySelector('.attack_name')?.value;
+    if (nom) {
+      attacks.push({
+        nom: nom,
+        degats: row.querySelector('.attack_dmg')?.value || '',
+        niveau: parseInt(row.querySelector('.attack_lvl')?.value) || 1
+      });
+    }
+  });
+  return attacks;
+}
+
 function getCompetences() {
   const competences = [];
   const table = document.querySelector('.competences-table tbody');
@@ -920,6 +957,11 @@ document.getElementById('add-sort-mineur-btn').addEventListener('click', () => {
   createSortElement({ nom: '', degats: '' }, document.getElementById('sorts-mineurs-container'), true);
 });
 
+// Modifier l'événement du bouton add-attack-btn
+document.getElementById('add-attack-btn').addEventListener('click', async () => {
+  createAttackElement({ nom: '', degats: '', niveau: '1' }, document.getElementById('attacks-container'));
+});
+
 // Fonction pour mettre à jour l'état de l'armure
 function updateArmorState() {
   const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
@@ -955,36 +997,154 @@ function updateArmorState() {
   armorStateEffect.style.color = couleur;
 }
 
-function createSortElement(sort, container, isMineur = false) {
-  const sortRow = document.createElement('div');
-  sortRow.className = 'sort-row';
+async function createSortElement(sort, container, isMineur = false) {
+  try {
+    const response = await fetch('/api/game-database');
+    if (!response.ok) throw new Error('Erreur de chargement des sorts');
+    const gameData = await response.json();
+    
+    const sortRow = document.createElement('div');
+    sortRow.className = 'sort-row';
 
-  const nomInput = document.createElement('input');
-  nomInput.type = 'text';
-  nomInput.value = sort.nom || '';
-  nomInput.className = isMineur ? 'minispell_name' : 'spell_name';
+    const nomSelect = document.createElement('select');
+    nomSelect.className = isMineur ? 'minispell_name' : 'spell_name';
+    
+    // Option vide par défaut
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Sélectionner un sort';
+    nomSelect.appendChild(defaultOption);
 
-  const degatsInput = document.createElement('input');
-  degatsInput.type = 'text';
-  degatsInput.value = sort.degats || '';
-  degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
+    // Ajouter les options depuis la base de données
+    const sorts = isMineur ? gameData.sorts_mineurs : gameData.sorts_majeurs;
+    sorts.forEach(sortData => {
+      const option = document.createElement('option');
+      option.value = sortData.nom;
+      option.textContent = sortData.nom;
+      option.dataset.degats = sortData.degats;
+      option.dataset.niveau = sortData.niveau;
+      // Sélectionner l'option si c'est le sort sauvegardé
+      if (sortData.nom === sort.nom) {
+        option.selected = true;
+      }
+      nomSelect.appendChild(option);
+    });
 
-  sortRow.appendChild(nomInput);
-  sortRow.appendChild(degatsInput);
+    const degatsInput = document.createElement('input');
+    degatsInput.type = 'text';
+    degatsInput.value = sort.degats || '';
+    degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
+    degatsInput.readOnly = true;
 
-  if (!isMineur) {
+    // Événement de changement du sort
+    nomSelect.addEventListener('change', (e) => {
+      const selectedOption = e.target.options[e.target.selectedIndex];
+      degatsInput.value = selectedOption.dataset.degats || '';
+      if (!isMineur && niveauInput) {
+        niveauInput.value = selectedOption.dataset.niveau || '1';
+      }
+    });
+
+    sortRow.appendChild(nomSelect);
+    sortRow.appendChild(degatsInput);
+
+    let niveauInput;
+    if (!isMineur) {
+      niveauInput = document.createElement('input');
+      niveauInput.type = 'number';
+      niveauInput.min = '1';
+      niveauInput.value = sort.niveau || '1';
+      niveauInput.className = 'spell_lvl';
+      niveauInput.readOnly = true;
+      sortRow.appendChild(niveauInput);
+    }
+
+    container.appendChild(sortRow);
+
+  } catch (error) {
+    console.error('Erreur lors de la création du sort:', error);
+    alert('Erreur lors de la création du sort');
+  }
+}
+
+// Ajouter la fonction pour créer une attaque spéciale
+async function createAttackElement(attack) {
+  try {
+    console.log('Création d\'une attaque avec les données:', attack);
+    
+    const response = await fetch('/api/game-database');
+    if (!response.ok) throw new Error('Erreur de chargement des attaques');
+    const gameData = await response.json();
+    
+    console.log('Données du jeu reçues:', gameData.attack_special);
+    
+    const attackRow = document.createElement('div');
+    attackRow.className = 'sort-row';
+
+    // Select pour le nom de l'attaque
+    const nomSelect = document.createElement('select');
+    nomSelect.className = 'attack_name';
+    
+    // Option par défaut
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Sélectionner une attaque';
+    nomSelect.appendChild(defaultOption);
+
+    // Ajouter les options depuis la base de données
+    const attacks = gameData.attack_special || [];
+    attacks.forEach(attackData => {
+      const option = document.createElement('option');
+      option.value = attackData.nom;
+      option.textContent = attackData.nom;
+      option.dataset.degats = attackData.degats;
+      option.dataset.niveau = attackData.niveau;
+      nomSelect.appendChild(option);
+    });
+
+    // Input pour les dégâts
+    const degatsInput = document.createElement('input');
+    degatsInput.type = 'text';
+    degatsInput.className = 'attack_dmg';
+    degatsInput.readOnly = true;
+
+    // Input pour le niveau
     const niveauInput = document.createElement('input');
     niveauInput.type = 'number';
     niveauInput.min = '1';
-    niveauInput.value = sort.niveau || '1';
-    niveauInput.className = 'spell_lvl';
-    sortRow.appendChild(niveauInput);
-  }
+    niveauInput.className = 'attack_lvl';
+    niveauInput.readOnly = true;
 
-  container.appendChild(sortRow);
+    // Ajouter les éléments à la ligne
+    attackRow.appendChild(nomSelect);
+    attackRow.appendChild(degatsInput);
+    attackRow.appendChild(niveauInput);
+
+    // Sélectionner l'attaque existante si elle existe
+    if (attack && attack.nom) {
+      const option = Array.from(nomSelect.options).find(opt => opt.value === attack.nom);
+      if (option) {
+        option.selected = true;
+        degatsInput.value = attack.degats || '';
+        niveauInput.value = attack.niveau || '1';
+      }
+    }
+
+    // Événement de changement de l'attaque
+    nomSelect.addEventListener('change', (e) => {
+      const selectedOption = e.target.options[e.target.selectedIndex];
+      degatsInput.value = selectedOption.dataset.degats || '';
+      niveauInput.value = selectedOption.dataset.niveau || '1';
+    });
+
+    return attackRow;
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'attaque:', error);
+    throw error;
+  }
 }
 
-// Ajouter les écouteurs d'événements pour la durabilité
+/*// Ajouter les écouteurs d'événements pour la durabilité
 document.getElementById('player_dura_current').addEventListener('input', updateArmorState);
 document.getElementById('player_dura_max').addEventListener('input', updateArmorState);
 
@@ -994,7 +1154,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Appeler updateArmorState après le remplissage des champs
   updateArmorState();
-});
+});*/
+
   </script>
 </body>
 </html>
