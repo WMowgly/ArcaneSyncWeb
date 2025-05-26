@@ -264,11 +264,72 @@
     padding: 0 5px;
   }
 
+  .status-text {
+    margin-top: 5px;
+    font-size: 0.9em;
+    font-style: italic;
+  }
+
+  #player_armor {
+    font-weight: bold;
+  }
+  
+  .sort-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;  /* Modifié pour ajouter une colonne pour le bouton */
+    gap: 10px;
+    align-items: center;
+  }
+
+  .delete-btn {
+    font-family: 'Uncial Antiqua', cursive;
+    background: #d32f2f;
+    color: #fefae0;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .delete-btn:hover {
+    background: #b71c1c;
+  }
+
+  .description-btn {
+    font-family: 'Uncial Antiqua', cursive;
+    background: #8b5e3c;
+    color: #fefae0;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 8px;
+  }
+
+  .description-btn:hover {
+    background: #5c3b21;
+  }
+
+  .description-content {
+    display: none;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(139, 94, 60, 0.1);
+    border-radius: 4px;
+    font-size: 0.9em;
+    grid-column: 1 / -1;
+  }
+
+  .description-content.visible {
+    display: block;
+  }
   </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
-  <h1>Fiche de Personnage v2</h1>
+  <h1>Fiche de Personnage</h1>
 
   <div class="section">
     <h2>Informations Générales</h2>
@@ -397,7 +458,7 @@
       
                     <div class="field">
                       <label>État de l'armure</label>
-                      <input type="text" id="player_armor">
+                      <input type="text" id="player_armor" readonly>
                       <div id="armor_effect" class="status-text"></div>
                     </div>
                     <div class="field">
@@ -441,7 +502,8 @@
     </div>
 
   <div class="section">
-    <h2>Compétences de classe et passifs</h2>
+  <h2>Compétences de classe et passifs</h2>
+  <div id="competences-passives-container">
     <table class="competences-table">
       <thead>
         <tr>
@@ -451,24 +513,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" min="1"></td>
-        </tr>
+        <!-- Les compétences seront ajoutées ici dynamiquement -->
       </tbody>
     </table>
   </div>
+</div>
 
   <div class="section">
     <h2>Compétences spéciales du personnage</h2>
@@ -616,21 +665,53 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
   fillField('skills_speciales', getParamValue('Skills speciales', ''));
   fillField('levelup', getParamValue('Choix de level up', ''));
 
-  // Gestion des compétences de classe
+  // Gestion des compétences de classe et passifs
   try {
-    if (params.get('Competences')) {
-      const competences = JSON.parse(getParamValue('Competences', '[]'));
-      competences.forEach((comp, index) => {
-        if (index < 3) {
-          fillField(`class_skill_name_${index + 1}`, comp.nom || '');
-          fillField(`class_skill_effect_${index + 1}`, comp.effet || '');
-          fillField(`class_skill_lvl_${index + 1}`, comp.niveau || '1');
-        }
-      });
-    }
+    const competencesPassivesContainer = document.querySelector('#competences-passives-container tbody');
+    competencesPassivesContainer.innerHTML = ''; // Nettoie le conteneur
+    
+    const selectedClass = document.getElementById('player_class').value;
+    const response = await fetch('/api/game-database');
+    const gameData = await response.json();
+    const competencesClasse = gameData.competences_classes[selectedClass] || [];
+    
+    competencesClasse.forEach(comp => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
+        <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
+        <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
+      `;
+      competencesPassivesContainer.appendChild(row);
+    });
   } catch (error) {
-    console.error('Erreur lors du chargement des compétences:', error);
+    console.error('Erreur lors du chargement des compétences passives:', error);
   }
+
+  // Ajouter le gestionnaire d'événement pour le changement de classe
+  document.getElementById('player_class').addEventListener('change', async function() {
+    const selectedClass = this.value;
+    const competencesPassivesContainer = document.querySelector('#competences-passives-container tbody');
+    competencesPassivesContainer.innerHTML = ''; // Nettoie le conteneur
+
+    try {
+      const response = await fetch('/api/game-database');
+      const gameData = await response.json();
+      const competencesClasse = gameData.competences_classes[selectedClass] || [];
+      
+      competencesClasse.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
+          <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
+          <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
+        `;
+        competencesPassivesContainer.appendChild(row);
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des compétences:', error);
+    }
+  });
 
   // Gestion des sorts majeurs
   try {
@@ -953,24 +1034,6 @@ function getArmes() {
   return armes;
 }
 
-// Ajout des boutons pour ajouter des sorts
-document.getElementById('add-sort-btn').addEventListener('click', () => {
-  createSortElement({ nom: '', degats: '', niveau: '1' }, document.getElementById('sorts-container'), false);
-});
-
-document.getElementById('add-sort-mineur-btn').addEventListener('click', () => {
-  createSortElement({ nom: '', degats: '' }, document.getElementById('sorts-mineurs-container'), true);
-});
-
-// Modifier l'événement du bouton add-attack-btn
-document.getElementById('add-attack-spe-btn').addEventListener('click', async () => {
-    const container = document.getElementById('attack-special-container');
-    const attackRow = await createAttackElement({ nom: '', degats: '', niveau: '1' });
-    if (attackRow) {
-        container.appendChild(attackRow);
-    }
-});
-
 // Fonction pour mettre à jour l'état de l'armure
 function updateArmorState() {
   const duraMax = parseInt(document.getElementById('player_dura_max').value) || 0;
@@ -1006,6 +1069,32 @@ function updateArmorState() {
   armorStateEffect.style.color = couleur;
 }
 
+// Ajouter ces écouteurs d'événements dans le DOMContentLoaded
+document.getElementById('player_dura_current').addEventListener('input', updateArmorState);
+document.getElementById('player_dura_max').addEventListener('input', updateArmorState);
+
+// Appeler updateArmorState après le chargement initial des données
+updateArmorState();
+
+// Ajout des boutons pour ajouter des sorts
+document.getElementById('add-sort-btn').addEventListener('click', () => {
+  createSortElement({ nom: '', degats: '', niveau: '1' }, document.getElementById('sorts-container'), false);
+});
+
+document.getElementById('add-sort-mineur-btn').addEventListener('click', () => {
+  createSortElement({ nom: '', degats: '' }, document.getElementById('sorts-mineurs-container'), true);
+});
+
+// Modifier l'événement du bouton add-attack-btn
+document.getElementById('add-attack-spe-btn').addEventListener('click', async () => {
+    const container = document.getElementById('attack-special-container');
+    const attackRow = await createAttackElement({ nom: '', degats: '', niveau: '1' });
+    if (attackRow) {
+        container.appendChild(attackRow);
+    }
+});
+
+
 async function createSortElement(sort, container, isMineur = false) {
   try {
     const response = await fetch('/api/game-database');
@@ -1018,6 +1107,24 @@ async function createSortElement(sort, container, isMineur = false) {
     const nomSelect = document.createElement('select');
     nomSelect.className = isMineur ? 'minispell_name' : 'spell_name';
     
+    const degatsInput = document.createElement('input');
+    degatsInput.type = 'text';
+    degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
+    degatsInput.readOnly = true;
+
+    const descBtn = document.createElement('button');
+    descBtn.className = 'description-btn';
+    descBtn.textContent = '?';
+    descBtn.title = 'Voir la description';
+
+    const descContent = document.createElement('div');
+    descContent.className = 'description-content';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Supprimer';
+    
     // Option vide par défaut
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
@@ -1026,53 +1133,78 @@ async function createSortElement(sort, container, isMineur = false) {
 
     // Ajouter les options depuis la base de données
     const sorts = isMineur ? gameData.sorts_mineurs : gameData.sorts_majeurs;
+    if (!Array.isArray(sorts)) {
+      throw new Error('La liste des sorts n\'est pas un tableau valide');
+    }
+
     sorts.forEach(sortData => {
       const option = document.createElement('option');
       option.value = sortData.nom;
       option.textContent = sortData.nom;
       option.dataset.degats = sortData.degats;
       option.dataset.niveau = sortData.niveau;
+      option.dataset.description = sortData.description;
       // Sélectionner l'option si c'est le sort sauvegardé
       if (sortData.nom === sort.nom) {
         option.selected = true;
+        descContent.textContent = option.dataset.description || 'Aucune description disponible';
       }
       nomSelect.appendChild(option);
     });
 
-    const degatsInput = document.createElement('input');
-    degatsInput.type = 'text';
-    degatsInput.value = sort.degats || '';
-    degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
-    degatsInput.readOnly = true;
+        // Sélectionner le sort si fourni
+    if (sort && sort.nom) {
+      const option = Array.from(nomSelect.options).find(opt => opt.value === sort.nom);
+      if (option) {
+        option.selected = true;
+        degatsInput.value = sort.degats || '';
+        descContent.textContent = option.dataset.description || 'Aucune description disponible';
+      }
+    }
+    
+    // Événements
+    deleteBtn.addEventListener('click', () => sortRow.remove());
 
-    // Événement de changement du sort
+    descBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      descContent.classList.toggle('visible');
+    });
+
     nomSelect.addEventListener('change', (e) => {
       const selectedOption = e.target.options[e.target.selectedIndex];
       degatsInput.value = selectedOption.dataset.degats || '';
-      if (!isMineur && niveauInput) {
-        niveauInput.value = selectedOption.dataset.niveau || '1';
-      }
+      descContent.textContent = selectedOption.dataset.description || 'Aucune description disponible';
     });
 
-    sortRow.appendChild(nomSelect);
+    // Assemblage les éléments
+    const titleContainer = document.createElement('div');
+    titleContainer.style.display = 'flex';
+    titleContainer.style.alignItems = 'center';
+    titleContainer.appendChild(nomSelect);
+    titleContainer.appendChild(descBtn);
+
+    sortRow.appendChild(titleContainer);
     sortRow.appendChild(degatsInput);
 
     let niveauInput;
     if (!isMineur) {
-      niveauInput = document.createElement('input');
+      const niveauInput = document.createElement('input');
       niveauInput.type = 'number';
       niveauInput.min = '1';
-      niveauInput.value = sort.niveau || '1';
       niveauInput.className = 'spell_lvl';
+      niveauInput.value = sort.niveau || '1';
       niveauInput.readOnly = true;
       sortRow.appendChild(niveauInput);
     }
+    sortRow.appendChild(deleteBtn); 
+    sortRow.appendChild(descContent);
+    
 
     container.appendChild(sortRow);
 
   } catch (error) {
     console.error('Erreur lors de la création du sort:', error);
-    alert('Erreur lors de la création du sort');
+    alert('Erreur lors de la création du sort: ' + error.message);
   }
 }
 
@@ -1108,6 +1240,7 @@ async function createAttackElement(attack) {
       option.textContent = attackData.nom;
       option.dataset.degats = attackData.degats;
       option.dataset.niveau = attackData.niveau;
+      option.dataset.description = attackData.description;
       nomSelect.appendChild(option);
     });
 
@@ -1124,10 +1257,36 @@ async function createAttackElement(attack) {
     niveauInput.className = 'attack_lvl';
     niveauInput.readOnly = true;
 
+    // Ajouter le bouton de suppression
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Supprimer';
+    deleteBtn.addEventListener('click', () => {
+      attackRow.remove();
+    });
+
+    // Ajouter le bouton de description
+    const descBtn = document.createElement('button');
+    descBtn.className = 'description-btn';
+    descBtn.textContent = '?';
+    descBtn.title = 'Voir la description';
+
+    // Créer la div pour la description
+    const descContent = document.createElement('div');
+    descContent.className = 'description-content';
+
+    // Événement pour afficher/masquer la description
+    descBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      descContent.classList.toggle('visible');
+    });
+
     // Ajouter les éléments à la ligne
     attackRow.appendChild(nomSelect);
     attackRow.appendChild(degatsInput);
     attackRow.appendChild(niveauInput);
+    attackRow.appendChild(deleteBtn);
 
     // Sélectionner l'attaque existante si elle existe
     if (attack && attack.nom) {
@@ -1136,6 +1295,7 @@ async function createAttackElement(attack) {
         option.selected = true;
         degatsInput.value = attack.degats || '';
         niveauInput.value = attack.niveau || '1';
+        descContent.textContent = option.dataset.description || 'Aucune description disponible';
       }
     }
 
@@ -1144,7 +1304,23 @@ async function createAttackElement(attack) {
       const selectedOption = e.target.options[e.target.selectedIndex];
       degatsInput.value = selectedOption.dataset.degats || '';
       niveauInput.value = selectedOption.dataset.niveau || '1';
+      // Mettre à jour la description
+      const description = selectedOption.dataset.description || 'Aucune description disponible';
+      descContent.textContent = description;
     });
+
+    // Ajouter les éléments à la ligne
+    const titleContainer = document.createElement('div');
+    titleContainer.style.display = 'flex';
+    titleContainer.style.alignItems = 'center';
+    titleContainer.appendChild(nomSelect);
+    titleContainer.appendChild(descBtn);
+
+    attackRow.appendChild(titleContainer);
+    attackRow.appendChild(degatsInput);
+    attackRow.appendChild(niveauInput);
+    attackRow.appendChild(deleteBtn);
+    attackRow.appendChild(descContent);
 
     return attackRow;
   } catch (error) {
