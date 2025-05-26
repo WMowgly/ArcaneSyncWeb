@@ -223,17 +223,10 @@
             
         <div class="section">
             <h2>Attaques Spéciales</h2>
-            <div class="grid-3">
-                <div class="field"><label>Nom</label><input id="special_name_1" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="special_dmg_1" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="special_lvl_1" type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input id="special_name_2" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="special_dmg_2" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="special_lvl_2" type="number" min="1"></div>
-                <div class="field"><label>Nom</label><input id="special_name_3" type="text"></div>
-                <div class="field"><label>Dégâts</label><input id="special_dmg_3" type="text"></div>
-                <div class="field"><label>Niveau</label><input id="special_lvl_3" type="number" min="1"></div>
+            <div id="attack-special-container">
+                    <!-- Les attaques spéciales seront ajoutés ici dynamiquement -->
             </div>
+            <button type="button" class="add-btn" id="add-attack-spe-btn">Ajouter une attaque spéciale</button>
         </div>
     </div>
 
@@ -391,6 +384,21 @@
       }
     });
 
+    // Collecte des attaques spéciales
+    const attackSpecial = [];
+    document.querySelectorAll('#attack-special-container .sort-row').forEach(row => {
+      const select = row.querySelector('select');
+      const degats = row.querySelector('input[type="text"]');
+      const niveau = row.querySelector('input[type="number"]');
+      if (select.value) {
+        attackSpecial.push({
+          nom: select.options[select.selectedIndex].text,
+          degats: degats.value,
+          niveau: parseInt(niveau.value) || 1
+        });
+      }
+    });
+
     const data = {
       nom: document.getElementById('player_name').value,
       classe: document.getElementById('player_class').value,
@@ -436,7 +444,8 @@
       competences: getCompetences(),
       skills_speciales: document.getElementById('skills_speciales').value || '',
       levelup: document.getElementById('levelup').value || '',
-      armes: getArmes()
+      armes: getArmes(),
+      attaques_speciales: attackSpecial,
     };
 
     console.log('Données à envoyer:', data);
@@ -493,81 +502,99 @@ function getArmes() {
 }
 
 // Après le chargement de la page
-document.addEventListener('DOMContentLoaded', async () => {
-    // Fonction pour créer une nouvelle ligne de sort
-    async function createSortRow(isMajeur = true) {
-        try {
-            const response = await fetch('/api/game-database');
-            if (!response.ok) throw new Error('Erreur de chargement des sorts');
-            const gameData = await response.json();
-            
-            const sortRow = document.createElement('div');
-            sortRow.className = 'sort-row';
-            
-            // Select pour le nom du sort
-            const selectSort = document.createElement('select');
-            selectSort.className = 'sort-select';
-            
-            // Récupérer la liste des sorts depuis la base de données
-            const sorts = isMajeur ? gameData.sorts_majeurs : gameData.sorts_mineurs;
-            
-            // Option par défaut
-            selectSort.innerHTML = '<option value="">Sélectionner un sort</option>';
-            
-            // Ajouter les options de sorts
-            sorts.forEach(sort => {
-                const option = document.createElement('option');
-                option.value = sort.id;
-                option.textContent = sort.nom;
-                option.dataset.degats = sort.degats;
-                option.dataset.niveau = sort.niveau;
-                selectSort.appendChild(option);
-            });
-
-            // Champs pour les dégâts et le niveau
-            const degatsInput = document.createElement('input');
-            degatsInput.type = 'text';
-            degatsInput.readOnly = true;
-            
-            const niveauInput = document.createElement('input');
-            niveauInput.type = 'number';
-            niveauInput.readOnly = true;
-
-            // Événement de changement du sort
-            selectSort.addEventListener('change', (e) => {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                degatsInput.value = selectedOption.dataset.degats || '';
-                niveauInput.value = selectedOption.dataset.niveau || '';
-            });
-
-            // Ajouter les éléments à la ligne
-            sortRow.appendChild(selectSort);
-            sortRow.appendChild(degatsInput);
-            if (isMajeur) {
-                sortRow.appendChild(niveauInput);
-            }
-
-            return sortRow;
-        } catch (error) {
-            console.error('Erreur:', error);
-            alert('Erreur lors du chargement des sorts');
+async function createSortRow(type = 'majeur') {
+    try {
+        const response = await fetch('/api/game-database');
+        if (!response.ok) throw new Error('Erreur de chargement des sorts');
+        const gameData = await response.json();
+        
+        const sortRow = document.createElement('div');
+        sortRow.className = 'sort-row';
+        
+        // Select pour le nom du sort
+        const selectSort = document.createElement('select');
+        selectSort.className = 'sort-select';
+        
+        // Déterminer quelle liste utiliser selon le type
+        let sorts;
+        switch(type) {
+            case 'majeur':
+                sorts = gameData.sorts_majeurs;
+                break;
+            case 'mineur':
+                sorts = gameData.sorts_mineurs;
+                break;
+            case 'special':
+                sorts = gameData.attack_special;
+                break;
+            default:
+                sorts = [];
         }
+        
+        // Option par défaut
+        selectSort.innerHTML = '<option value="">Sélectionner un ' + 
+            (type === 'special' ? 'attaque' : 'sort') + '</option>';
+        
+        // Ajouter les options
+        sorts.forEach(sort => {
+            const option = document.createElement('option');
+            option.value = sort.id;
+            option.textContent = sort.nom || '';
+            option.dataset.degats = sort.degats || '';
+            option.dataset.niveau = sort.niveau || '';
+            selectSort.appendChild(option);
+        });
+
+        // Champs pour les dégâts et le niveau
+        const degatsInput = document.createElement('input');
+        degatsInput.type = 'text';
+        degatsInput.readOnly = true;
+        
+        const niveauInput = document.createElement('input');
+        niveauInput.type = 'number';
+        niveauInput.readOnly = true;
+
+        // Événement de changement
+        selectSort.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            degatsInput.value = selectedOption.dataset.degats || '';
+            niveauInput.value = selectedOption.dataset.niveau || '';
+        });
+
+        // Ajouter les éléments à la ligne
+        sortRow.appendChild(selectSort);
+        sortRow.appendChild(degatsInput);
+        if (type === 'majeur' || type === 'special') {
+            sortRow.appendChild(niveauInput);
+        }
+
+        return sortRow;
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors du chargement des données');
     }
+}
 
     // Gestionnaire pour le bouton d'ajout de sort majeur
     document.getElementById('add-sort-btn').addEventListener('click', async () => {
         const container = document.getElementById('sorts-container');
-        const sortRow = await createSortRow(true);
+        const sortRow = await createSortRow('majeur');
         container.appendChild(sortRow);
     });
 
     // Gestionnaire pour le bouton d'ajout de sort mineur
     document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
         const container = document.getElementById('sorts-mineurs-container');
-        const sortRow = await createSortRow(false);
+        const sortRow = await createSortRow('mineur');
         container.appendChild(sortRow);
     });
-  });
+
+    // Gestionnaire pour le bouton d'ajout d'attaque spéciale'
+    document.getElementById('add-attack-spe-btn').addEventListener('click', async () => {
+        const container = document.getElementById('attack-special-container');
+        const sortRow = await createSortRow('special');
+        container.appendChild(sortRow);
+    });
   </script>
 </body>
 </html>

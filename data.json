@@ -189,5 +189,79 @@
         "degats": "1d6 + 2"
       }
     ]
+  },
+  {
+    "nom": "testcomplet",
+    "classe": "Mage",
+    "race": "Elfe",
+    "niveau": 1,
+    "stats": {
+      "force": 10,
+      "dexterite": 1,
+      "magie": 50,
+      "constitution": 30,
+      "charisme": 20,
+      "perception": 30,
+      "chance": 40,
+      "intelligence": 20
+    },
+    "hp": {
+      "max": 60,
+      "current": 60
+    },
+    "mana": {
+      "max": 20,
+      "current": 20
+    },
+    "armure": {
+      "type": "Armure légère",
+      "resistance": "10",
+      "durabilite": {
+        "max": 10,
+        "current": 10
+      },
+      "protection": {
+        "max": 10,
+        "current": 10
+      }
+    },
+    "bonus_vie": 10,
+    "intox": "10",
+    "sac": "gfhdfg",
+    "ceinture": "gfdgfd",
+    "spells": [
+      {
+        "nom": "Boule de feu",
+        "degats": "3d6",
+        "niveau": 3
+      }
+    ],
+    "sorts_mineurs": [
+      {
+        "nom": "Étincelle",
+        "degats": "1d4"
+      }
+    ],
+    "attaques_speciales": [
+      {
+        "nom": "Frappe puissante",
+        "degats": "2d6",
+        "niveau": 1
+      }
+    ],
+    "competences": [],
+    "skills_speciales": "test ",
+    "bio": "hgf20",
+    "levelup": "jkh20",
+    "armes": [
+      {
+        "type": "gfdgfd",
+        "degats": ""
+      },
+      {
+        "type": "dfg",
+        "degats": ""
+      }
+    ]
   }
 ]
