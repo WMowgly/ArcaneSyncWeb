@@ -425,10 +425,10 @@
             
         <div class="section">
             <h2>Attaques Spéciales</h2>
-            <div id="attacks-container">
+            <div id="attack-special-container">
                 <!-- Les attaques seront ajoutées ici dynamiquement -->
             </div>
-            <button type="button" class="add-btn" id="add-attack-btn">Ajouter une attaque</button>
+            <button type="button" class="add-btn" id="add-attack-spe-btn">Ajouter une attaque</button>
         </div>
     </div>
 
@@ -649,12 +649,16 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
   // Gestion des attaques spéciales
   try {
     if (params.get('Attaques speciales')) {
-      const attacksContainer = document.getElementById('attacks-container');
+      const attacksContainer = document.getElementById('attack-special-container');
       attacksContainer.innerHTML = ''; // Nettoie le conteneur
       const attacks = JSON.parse(getParamValue('Attaques speciales', '[]'));
-      attacks.forEach(attack => {
-        createAttackElement(attack, attacksContainer, false);
-      });
+      console.log('Chargement des attaques spéciales:', attacks); // Debug
+      for (const attack of attacks) {
+        const attackRow = await createAttackElement(attack);
+        if (attackRow) {
+          attacksContainer.appendChild(attackRow);
+        }
+      }
     }
   } catch (error) {
     console.error('Erreur lors du chargement des attaques spéciales:', error);
@@ -900,7 +904,7 @@ function getSortsMineurs() {
 
 function getSpecialAttacks() {
   const attacks = [];
-  document.querySelectorAll('#attacks-container .sort-row').forEach(row => {
+  document.querySelectorAll('#attack-special-container .sort-row').forEach(row => {
     const nom = row.querySelector('.attack_name')?.value;
     if (nom) {
       attacks.push({
@@ -910,6 +914,7 @@ function getSpecialAttacks() {
       });
     }
   });
+  console.log('Attaques spéciales récupérées:', attacks);
   return attacks;
 }
 
@@ -958,8 +963,12 @@ document.getElementById('add-sort-mineur-btn').addEventListener('click', () => {
 });
 
 // Modifier l'événement du bouton add-attack-btn
-document.getElementById('add-attack-btn').addEventListener('click', async () => {
-  createAttackElement({ nom: '', degats: '', niveau: '1' }, document.getElementById('attacks-container'));
+document.getElementById('add-attack-spe-btn').addEventListener('click', async () => {
+    const container = document.getElementById('attack-special-container');
+    const attackRow = await createAttackElement({ nom: '', degats: '', niveau: '1' });
+    if (attackRow) {
+        container.appendChild(attackRow);
+    }
 });
 
 // Fonction pour mettre à jour l'état de l'armure

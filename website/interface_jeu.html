@@ -293,7 +293,8 @@
             competences: safeJSONParse(params.get('Competences'), []),
             skills_speciales: params.get('Skills speciales') || '',
             levelup: params.get('Choix de level up') || '',
-            armes: safeJSONParse(params.get('Armes'), [])
+            armes: safeJSONParse(params.get('Armes'), []),
+            attaques_speciales: safeJSONParse(params.get('Attaques Spéciales'), []),
           };
 
           console.log('Données à envoyer:', donnees);
