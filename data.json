@@ -232,11 +232,15 @@
     "spells": [
       {
         "nom": "Boule de feu",
-        "degats": "3d6",
-        "niveau": 3
+        "degats": "",
+        "niveau": 1
       }
     ],
     "sorts_mineurs": [
+      {
+        "nom": "Étincelle",
+        "degats": "1d4"
+      },
       {
         "nom": "Étincelle",
         "degats": "1d4"
@@ -244,12 +248,23 @@
     ],
     "attaques_speciales": [
       {
-        "nom": "Frappe puissante",
-        "degats": "2d6",
+        "nom": "Coup précis",
+        "degats": "1d8+2",
         "niveau": 1
       }
     ],
-    "competences": [],
+    "competences": [
+      {
+        "nom": "Maîtrise des armes",
+        "effet": "+1 aux dégâts",
+        "niveau": 1
+      },
+      {
+        "nom": "Second souffle",
+        "effet": "Récupère 1d10 PV",
+        "niveau": 1
+      }
+    ],
     "skills_speciales": "test ",
     "bio": "hgf20",
     "levelup": "jkh20",

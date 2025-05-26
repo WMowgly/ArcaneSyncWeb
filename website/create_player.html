@@ -114,6 +114,26 @@
     .add-btn:hover {
       background: #5c3b21;
     }
+    .sort-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;  /* Modifié pour ajouter une colonne pour le bouton */
+      gap: 10px;
+      align-items: center;
+    }
+    .delete-btn {
+      font-family: 'Uncial Antiqua', cursive;
+      background: #d32f2f;
+      color: #fefae0;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .delete-btn:hover {
+      background: #b71c1c;
+    }
+
   </style>
 </head>
 <body>
@@ -238,35 +258,6 @@
         <button type="button" class="add-btn" id="add-sort-mineur-btn">Ajouter un sort mineur</button>
     </div>
 
-  <div class="section">
-    <h2>Compétences de classe et passifs</h2>
-    <table class="competences-table">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Effets</th>
-          <th>Niveau</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input id="class_skill_name_1" type="text"></td>
-          <td><input id="class_skill_effect_1" type="text"></td>
-          <td><input id="class_skill_lvl_1" type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input id="class_skill_name_2" type="text"></td>
-          <td><input id="class_skill_effect_2" type="text"></td>
-          <td><input id="class_skill_lvl_2" type="number" min="1"></td>
-        </tr>
-        <tr>
-          <td><input id="class_skill_name_3" type="text"></td>
-          <td><input id="class_skill_effect_3" type="text"></td>
-          <td><input id="class_skill_lvl_3" type="number" min="1"></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
   <div class="section">
     <h2>Compétences spéciales du personnage</h2>
@@ -561,12 +552,22 @@ async function createSortRow(type = 'majeur') {
             niveauInput.value = selectedOption.dataset.niveau || '';
         });
 
+        // Créer le bouton de suppression
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.title = 'Supprimer';
+        deleteBtn.addEventListener('click', () => {
+            sortRow.remove();
+        });
+
         // Ajouter les éléments à la ligne
         sortRow.appendChild(selectSort);
         sortRow.appendChild(degatsInput);
         if (type === 'majeur' || type === 'special') {
             sortRow.appendChild(niveauInput);
         }
+        sortRow.appendChild(deleteBtn);
 
         return sortRow;
     } catch (error) {

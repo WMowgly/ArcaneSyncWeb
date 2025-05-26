@@ -106,24 +106,64 @@
       "niveau": 3
     }
   ],
+
   "attack_special": [
     {
       "id": 1,
       "nom": "Frappe puissante",
       "degats": "2d6",
+      "description": "frappe avec une force décuplée",
       "niveau": 1
     },
     {
       "id": 2,
       "nom": "Coup précis",
       "degats": "1d8+2",
+      "description": "coup avec une précision chirurgicale",
       "niveau": 1
     },
     {
       "id": 3,
       "nom": "Attaque en rafale",
       "degats": "3d4",
+      "description": "attaque rapide en plusieurs coups",
       "niveau": 2
     }
-  ]
+  ],
+
+  "competences_classes": {
+    "Druide": [
+      {
+        "id": 1,
+        "nom": "Communion naturelle",
+        "effet": "Permet de communiquer avec les animaux",
+        "description": "Permet de comprendre et de parler aux animaux",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Guérison naturelle",
+        "effet": "Soigne 1d6 PV",
+        "description": "Soigne les blessures légères",
+        "niveau": 1
+      }
+    ],
+    "Mage": [
+      {
+        "id": 1,
+        "nom": "Maîtrise des armes",
+        "effet": "+1 aux dégâts",
+        "description": "Augmente les dégâts infligés avec les armes",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Second souffle",
+        "effet": "Récupère 1d10 PV",
+        "description": "Permet de récupérer des points de vie",
+        "niveau": 1
+      }
+    ]
+  }
+
 }
