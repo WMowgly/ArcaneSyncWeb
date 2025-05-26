@@ -325,6 +325,7 @@
   .description-content.visible {
     display: block;
   }
+  
   </style>
 </head>
 <body>
@@ -1161,7 +1162,7 @@ async function createSortElement(sort, container, isMineur = false) {
         descContent.textContent = option.dataset.description || 'Aucune description disponible';
       }
     }
-    
+
     // Événements
     deleteBtn.addEventListener('click', () => sortRow.remove());
 

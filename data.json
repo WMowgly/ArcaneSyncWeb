@@ -196,22 +196,22 @@
     "race": "Elfe",
     "niveau": 1,
     "stats": {
-      "force": 10,
-      "dexterite": 1,
-      "magie": 50,
-      "constitution": 30,
-      "charisme": 20,
-      "perception": 30,
-      "chance": 40,
-      "intelligence": 20
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 0,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
     },
     "hp": {
       "max": 60,
-      "current": 60
+      "current": 20
     },
     "mana": {
       "max": 20,
-      "current": 20
+      "current": 0
     },
     "armure": {
       "type": "Armure légère",
@@ -246,13 +246,7 @@
         "degats": "1d4"
       }
     ],
-    "attaques_speciales": [
-      {
-        "nom": "Coup précis",
-        "degats": "1d8+2",
-        "niveau": 1
-      }
-    ],
+    "attaques_speciales": [],
     "competences": [
       {
         "nom": "Maîtrise des armes",
