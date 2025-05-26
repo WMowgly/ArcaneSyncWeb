@@ -105,5 +105,25 @@
       "degats": "1d4",
       "niveau": 3
     }
+  ],
+  "attack_special": [
+    {
+      "id": 1,
+      "nom": "Frappe puissante",
+      "degats": "2d6",
+      "niveau": 1
+    },
+    {
+      "id": 2,
+      "nom": "Coup précis",
+      "degats": "1d8+2",
+      "niveau": 1
+    },
+    {
+      "id": 3,
+      "nom": "Attaque en rafale",
+      "degats": "3d4",
+      "niveau": 2
+    }
   ]
 }

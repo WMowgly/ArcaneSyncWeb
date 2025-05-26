@@ -94,6 +94,7 @@ function sauvegardeData(nom, nouvellesDonnees) {
       ceinture: nouvellesDonnees.ceinture ?? joueurs[index].ceinture,
       spells: nouvellesDonnees.spells ?? joueurs[index].spells,
       sorts_mineurs: nouvellesDonnees.sorts_mineurs ?? joueurs[index].sorts_mineurs,
+      attaques_speciales: nouvellesDonnees.attaques_speciales ?? joueurs[index].attaques_speciales,
       competences: nouvellesDonnees.competences ?? joueurs[index].competences,
       skills_speciales: nouvellesDonnees.skills_speciales ?? joueurs[index].skills_speciales,
       bio: nouvellesDonnees.bio ?? joueurs[index].bio,
