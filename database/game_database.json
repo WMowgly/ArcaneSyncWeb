@@ -164,6 +164,121 @@
         "niveau": 1
       }
     ]
+  },
+
+  "competences_races": {
+    "Humain": [
+      {
+        "id": 1,
+        "nom": "Adaptabilité",
+        "effet": "+1 à toutes les stats",
+        "description": "La nature adaptable des humains leur permet d'exceller dans tous les domaines",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Volonté humaine",
+        "effet": "Avantage sur les jets de sauvegarde mentaux",
+        "description": "La détermination humaine leur permet de mieux résister aux effets mentaux",
+        "niveau": 1
+      }
+    ],
+    "Nain": [
+      {
+        "id": 1,
+        "nom": "Résistance naine",
+        "effet": "+2 Constitution",
+        "description": "La robustesse naturelle des nains les rend plus résistants",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Vision dans le noir",
+        "effet": "Peut voir lucas tout nus",
+        "description": "Les yeux des nains sont adaptés à la vie souterraine",
+        "niveau": 1
+      }
+    ],
+    "Elfe": [
+      {
+        "id": 1,
+        "nom": "Grâce elfique",
+        "effet": "+2 Dextérité",
+        "description": "L'agilité naturelle des elfes améliore leur coordination",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Sens aiguisés",
+        "effet": "Avantage aux jets de Perception",
+        "description": "Les sens des elfes sont naturellement plus développés",
+        "niveau": 1
+      }
+    ],
+    "Draconnir": [
+      {
+        "id": 1,
+        "nom": "Souffle draconique",
+        "effet": "Attaque de souffle 2d6",
+        "description": "Peut projeter un souffle élémentaire une fois par repos",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Résistance élémentaire",
+        "effet": "Résistance à un type de dégâts",
+        "description": "Héritage draconique procurant une résistance naturelle",
+        "niveau": 1
+      }
+    ],
+    "Demi-Elfe": [
+      {
+        "id": 1,
+        "nom": "Héritage mixte",
+        "effet": "+2 Charisme, +1 au choix",
+        "description": "Le mélange des sangs procure des avantages variés",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Polyvalence",
+        "effet": "Maîtrise d'une compétence au choix",
+        "description": "L'adaptabilité des demi-elfes leur permet d'exceller dans un domaine choisi",
+        "niveau": 1
+      }
+    ],
+    "Humnigar": [
+      {
+        "id": 1,
+        "nom": "Furtivité naturelle",
+        "effet": "+2 Perception",
+        "description": "La nature discrète des Humnigars affine leurs sens",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Camouflage",
+        "effet": "Avantage aux jets de Discrétion",
+        "description": "Capacité naturelle à se fondre dans l'environnement",
+        "niveau": 1
+      }
+    ],
+    "Ecorfal": [
+      {
+        "id": 1,
+        "nom": "Affinité élémentaire",
+        "effet": "+2 Magie",
+        "description": "Connexion naturelle avec les forces élémentaires",
+        "niveau": 1
+      },
+      {
+        "id": 2,
+        "nom": "Adaptation environnementale",
+        "effet": "Résistance aux conditions extrêmes",
+        "description": "Le corps des Ecorfals s'adapte naturellement à son environnement",
+        "niveau": 1
+      }
+    ]
   }
 
 }
