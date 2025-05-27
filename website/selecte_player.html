@@ -70,7 +70,7 @@
 
   <h2>Liste des joueurs</h2>
   <div id="joueurs-list"></div>
-
+</body>
   <script src="navbar.js"></script>
   <script type="module">
     import { openFicheJoueur } from './popupjoueur.js';
@@ -102,7 +102,7 @@
               <p>Race: ${joueur.race}</p>
               <p>Classe: ${joueur.classe}</p>
               <div class="stat-bar-container">
-                <label>HP</label>
+                <label>Point de Vie</label>
                 <div class="stat-bar">
                   <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
                   <div class="stat-bar-text">${joueur.hp?.current || 0} / ${joueur.hp?.max || 0}</div>
@@ -115,6 +115,7 @@
                   <div class="stat-bar-text">${joueur.mana?.current || 0} / ${joueur.mana?.max || 0}</div>
                 </div>
               </div>
+              <p>Intox: ${joueur.intox} / ${joueur?.stats?.constitution}</p>
               <button class="delete-btn">Supprimer</button>
             `;
 
@@ -180,5 +181,4 @@
       loadAndDisplayPlayers(); // Recharger la liste des joueurs
     });
   </script>
-</body>
 </html>

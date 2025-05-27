@@ -504,8 +504,10 @@
 
   <div class="section">
   <h2>Compétences de classe et passifs</h2>
-  <div id="competences-passives-container">
-    <table class="competences-table">
+    <div id="competences-container">
+    <!-- Compétences de classe -->
+    <h3>Compétences de Classe</h3>
+    <table class="competences-table" id="competences-classe-table">
       <thead>
         <tr>
           <th>Nom</th>
@@ -514,7 +516,22 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Les compétences seront ajoutées ici dynamiquement -->
+        <!-- Les compétences de classe seront ajoutées ici -->
+      </tbody>
+    </table>
+
+    <!-- Compétences raciales -->
+    <h3>Compétences Raciales</h3>
+    <table class="competences-table" id="competences-raciales-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Effets</th>
+          <th>Niveau</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Les compétences raciales seront ajoutées ici -->
       </tbody>
     </table>
   </div>
@@ -667,39 +684,22 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
   fillField('levelup', getParamValue('Choix de level up', ''));
 
   // Gestion des compétences de classe et passifs
-  try {
-    const competencesPassivesContainer = document.querySelector('#competences-passives-container tbody');
-    competencesPassivesContainer.innerHTML = ''; // Nettoie le conteneur
-    
-    const selectedClass = document.getElementById('player_class').value;
-    const response = await fetch('/api/game-database');
-    const gameData = await response.json();
-    const competencesClasse = gameData.competences_classes[selectedClass] || [];
-    
-    competencesClasse.forEach(comp => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
-        <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
-        <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
-      `;
-      competencesPassivesContainer.appendChild(row);
-    });
-  } catch (error) {
-    console.error('Erreur lors du chargement des compétences passives:', error);
-  }
-
-  // Ajouter le gestionnaire d'événement pour le changement de classe
-  document.getElementById('player_class').addEventListener('change', async function() {
-    const selectedClass = this.value;
-    const competencesPassivesContainer = document.querySelector('#competences-passives-container tbody');
-    competencesPassivesContainer.innerHTML = ''; // Nettoie le conteneur
-
+  async function updateCompetences() {
     try {
+      const classeTableBody = document.querySelector('#competences-classe-table tbody');
+      const racialesTableBody = document.querySelector('#competences-raciales-table tbody');
+    
+      // Nettoyer les conteneurs
+      classeTableBody.innerHTML = '';
+      racialesTableBody.innerHTML = '';
+      
+      const selectedClass = document.getElementById('player_class').value;
+      const selectedRace = document.getElementById('player_race').value;
       const response = await fetch('/api/game-database');
       const gameData = await response.json();
-      const competencesClasse = gameData.competences_classes[selectedClass] || [];
       
+      // Ajouter les compétences de classe
+      const competencesClasse = gameData.competences_classes[selectedClass] || [];
       competencesClasse.forEach(comp => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -707,12 +707,30 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
           <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
           <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
         `;
-        competencesPassivesContainer.appendChild(row);
+        classeTableBody.appendChild(row);
+      });
+
+      // Ajouter les compétences raciales
+      const competencesRace = gameData.competences_races[selectedRace] || [];
+      competencesRace.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
+          <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
+          <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
+        `;
+        racialesTableBody.appendChild(row);
       });
     } catch (error) {
       console.error('Erreur lors du chargement des compétences:', error);
     }
-  });
+  }
+
+  // Ajouter le gestionnaire d'événement pour le changement de classe
+  document.getElementById('player_class').addEventListener('change', updateCompetences);
+  document.getElementById('player_race').addEventListener('change', updateCompetences);
+
+  await updateCompetences();
 
   // Gestion des sorts majeurs
   try {
@@ -1002,19 +1020,33 @@ function getSpecialAttacks() {
 
 function getCompetences() {
   const competences = [];
-  const table = document.querySelector('.competences-table tbody');
-  if (table) {
-    table.querySelectorAll('tr').forEach(row => {
-      const inputs = row.querySelectorAll('input');
-      if (inputs[0].value) {
-        competences.push({
-          nom: inputs[0].value,
-          effet: inputs[1].value || '',
-          niveau: parseInt(inputs[2].value) || 1
-        });
-      }
-    });
-  }
+  
+  // Récupérer les compétences de classe
+  document.querySelectorAll('#competences-classe-table tbody tr').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0].value) {
+      competences.push({
+        nom: inputs[0].value,
+        effet: inputs[1].value || '',
+        niveau: parseInt(inputs[2].value) || 1,
+        type: 'classe'
+      });
+    }
+  });
+  
+  // Récupérer les compétences raciales
+  document.querySelectorAll('#competences-raciales-table tbody tr').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0].value) {
+      competences.push({
+        nom: inputs[0].value,
+        effet: inputs[1].value || '',
+        niveau: parseInt(inputs[2].value) || 1,
+        type: 'racial'
+      });
+    }
+  });
+  
   return competences;
 }
 

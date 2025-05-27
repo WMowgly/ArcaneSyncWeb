@@ -231,8 +231,8 @@
     "ceinture": "gfdgfd",
     "spells": [
       {
-        "nom": "Boule de feu",
-        "degats": "",
+        "nom": "Boule d'eau'",
+        "degats": "3d8",
         "niveau": 1
       }
     ],
@@ -240,23 +240,39 @@
       {
         "nom": "Étincelle",
         "degats": "1d4"
-      },
-      {
-        "nom": "Étincelle",
-        "degats": "1d4"
       }
     ],
-    "attaques_speciales": [],
+    "attaques_speciales": [
+      {
+        "nom": "Frappe puissante",
+        "degats": "2d6",
+        "niveau": 1
+      }
+    ],
     "competences": [
       {
         "nom": "Maîtrise des armes",
         "effet": "+1 aux dégâts",
-        "niveau": 1
+        "niveau": 1,
+        "type": "classe"
       },
       {
         "nom": "Second souffle",
         "effet": "Récupère 1d10 PV",
-        "niveau": 1
+        "niveau": 1,
+        "type": "classe"
+      },
+      {
+        "nom": "Grâce elfique",
+        "effet": "+2 Dextérité",
+        "niveau": 1,
+        "type": "racial"
+      },
+      {
+        "nom": "Sens aiguisés",
+        "effet": "Avantage aux jets de Perception",
+        "niveau": 1,
+        "type": "racial"
       }
     ],
     "skills_speciales": "test ",
