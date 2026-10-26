@@ -2,11 +2,76 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>MJ - ArcaneSync</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MJ - ArcaneSync V1.6.1</title>
   <link rel="stylesheet" href="style.css"/> 
   <link rel="icon" type="image/png" href="img/icon.png"/>
   <script src="/socket.io/socket.io.js"></script>
   <style>
+    /* ===============================================================
+       V1.13.4 — Mise en page de l'interface MJ
+       -----------------------------------------------------------------
+       CAUSE DU GRAND ESPACE VIDE :
+       style.css definit `.card { width: 250px; text-align: center;
+       cursor: pointer; }` — une regle heritee des vignettes de
+       personnage. Les <section class="card"> de cette page heritaient
+       donc d'une largeur FIXE de 250 px : elles se tassaient a gauche
+       et laissaient tout le reste de l'ecran inutilise.
+       Seul #mob-management neutralisait deja cette regle (V1.6.1), d'ou
+       l'alternance colonne etroite / bloc centre visible a l'ecran.
+       On neutralise ici la regle pour TOUTES les sections de la page,
+       et on organise le contenu en tableau de bord.
+       =============================================================== */
+    body {
+      padding: 0 16px 26px;
+      /* Uncial Antiqua reste reservee aux titres : illisible en corps
+         de texte, comme sur les pages de carte. */
+      font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+      font-size: 14px;
+    }
+    h1, h2, h3, h4, h5 { font-family: 'Uncial Antiqua', cursive; font-weight: 400; }
+
+    .mj-page { width: 100%; max-width: 1560px; margin: 0 auto; }
+
+    .mj-header {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      padding: 14px 4px 8px;
+    }
+    .mj-header h1 { margin: 0; font-size: 1.45rem; text-align: left; flex: 1 1 auto; }
+    .mj-cta {
+      display: inline-block; text-decoration: none; white-space: nowrap;
+      padding: 9px 16px; border: 2px solid #8b5e3c; border-radius: 8px;
+      background: #fff4d6; color: #5c3b21; font-weight: 600;
+    }
+    .mj-cta:hover { background: #f0e2c4; }
+
+    /* Neutralisation de la largeur fixe et des effets de vignette. */
+    .mj-page section.card {
+      width: auto; max-width: none; margin: 0 0 14px;
+      text-align: left; cursor: default;
+    }
+    .mj-page section.card:hover {
+      transform: none;
+      box-shadow: 0 2px 4px rgba(139, 94, 60, 0.2);
+    }
+    .mj-page section.card > h2 { margin-top: 0; font-size: 1.1rem; }
+    .mj-page section.card > p  { margin-top: 0; opacity: .85; }
+
+    /* Bandeau superieur : les deux panneaux courts occupent la largeur
+       a deux colonnes, au lieu d'empiler deux vignettes etroites. */
+    .mj-top {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .mj-top > section.card { margin: 0; }
+
+    /* Cette section etait bornee a 1200 px et centree par elle-meme ;
+       c'est desormais .mj-page qui borne la page entiere. */
+    #mob-management.mob-manager { max-width: none; margin: 0 0 14px; }
+
     .stat-bar-container {
       margin: 8px 0;
       width: 100%;
@@ -62,14 +127,477 @@
       margin: 10px;
       box-shadow: 0 2px 4px rgba(139, 94, 60, 0.2);
     }
-  </style>
+  
+    /* ===============================================================
+       V1.6.1 — MJ responsive Mob/NPC interface
+       The generic .card class is 250px wide in style.css. The MJ
+       mob manager must override that legacy rule and become fluid.
+       =============================================================== */
+    #mob-management.mob-manager {
+      width: 100%;
+      max-width: 1200px;
+      box-sizing: border-box;
+      margin: 20px auto;
+      text-align: left;
+    }
+
+    #mob-management.mob-manager *,
+    #mob-management.mob-manager *::before,
+    #mob-management.mob-manager *::after {
+      box-sizing: border-box;
+    }
+
+    #mob-management .mob-form-container {
+      width: 100%;
+      max-width: none;
+      margin-top: 15px;
+      padding: clamp(12px, 2vw, 22px);
+      border: 2px solid #8b5e3c;
+      border-radius: 8px;
+      background: #fff4d6;
+      overflow: hidden;
+    }
+
+    #mob-management .mob-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+      gap: clamp(10px, 1.5vw, 18px);
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    #mob-management .mob-form-grid label {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    #mob-management .mob-form-grid input,
+    #mob-management .mob-form-grid textarea {
+      width: 100% !important;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    #mob-management .mob-form-grid textarea {
+      font-family: 'Uncial Antiqua', cursive;
+      padding: 8px 10px;
+      border: 2px solid #8b5e3c;
+      border-radius: 6px;
+      background: #fefae0;
+      resize: vertical;
+    }
+
+    #mob-management .mob-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      margin: 10px 0;
+    }
+
+    #mob-management .mob-actions .game-button {
+      max-width: 100%;
+    }
+
+    #mob-management .mob-template-card,
+    #mob-management .active-mob-card {
+      width: 100%;
+      min-width: 0;
+      border: 2px solid #8b5e3c;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      background: #fefae0;
+      overflow-wrap: anywhere;
+    }
+
+    #mob-management .mob-template-card button,
+    #mob-management .active-mob-card button {
+      margin: 4px;
+      max-width: 100%;
+    }
+
+    #mob-management h2,
+    #mob-management h3,
+    #mob-management h4,
+    #mob-management p {
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 900px) {
+      #mob-management.mob-manager {
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      #mob-management.mob-manager {
+        padding: 12px;
+      }
+
+      #mob-management .mob-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #mob-management .mob-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #mob-management .mob-actions .game-button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #mob-management.mob-manager {
+        padding: 10px;
+        margin-top: 12px;
+        margin-bottom: 12px;
+      }
+
+      #mob-management .mob-form-container {
+        padding: 10px;
+      }
+    }
+
+    #mob-management .active-mob-resource-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+    #mob-management .active-mob-resource {
+      border: 1px solid #8b5e3c;
+      border-radius: 7px;
+      padding: 10px;
+      background: #fff4d6;
+    }
+    #mob-management .active-mob-resource h5 { margin: 0 0 7px; }
+    #mob-management .active-mob-resource-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+    #mob-management .active-mob-resource-actions input {
+      width: 75px;
+      max-width: 100%;
+    }
+    #mob-management .mob-status {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-weight: bold;
+      border: 1px solid #8b5e3c;
+    }
+    #mob-management .mob-status.dead { text-decoration: line-through; opacity: 0.8; }
+    @media (max-width: 600px) {
+      #mob-management .active-mob-resource-controls { grid-template-columns: 1fr; }
+    }
+
+
+    /* V1.8.1 — Gestion rapide directement dans les cartes joueurs */
+    #joueurs-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+    #joueurs-list > .card {
+      margin: 0;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .gm-player-resource-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .gm-player-resource {
+      border: 1px solid #8b5e3c;
+      border-radius: 7px;
+      padding: 9px;
+      background: #fff4d6;
+    }
+    .gm-player-resource h5 { margin: 0 0 7px; }
+    .gm-player-resource-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .gm-player-resource-actions input {
+      width: 65px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .gm-player-statuses {
+      border-top: 1px solid #8b5e3c;
+      margin-top: 12px;
+      padding-top: 10px;
+    }
+    .gm-player-status-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 7px 0;
+    }
+    .gm-player-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid #8b5e3c;
+      border-radius: 7px;
+      background: #fff4d6;
+    }
+    .gm-player-status-badge.agony {
+      border-color: #7b1e1e;
+      background: #f8d7da;
+      color: #7b1e1e;
+      font-weight: 700;
+    }
+    .gm-player-status-add {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .gm-player-status-add select {
+      min-width: 150px;
+      max-width: 100%;
+    }
+    .gm-player-card-message {
+      margin: 7px 0 0;
+      min-height: 1.2em;
+      font-size: 0.9em;
+    }
+    @media (max-width: 600px) {
+      .gm-player-resource-controls { grid-template-columns: 1fr; }
+      .gm-player-status-add {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .gm-player-status-add select,
+      .gm-player-status-add button { width: 100%; }
+    }
+
+
+    /* V1.9 — communication privée joueur / MJ */
+    .gm-private-notes {
+      margin-top: 12px;
+      border-top: 1px solid #8b5e3c;
+      padding-top: 10px;
+    }
+    .gm-private-notes summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .gm-private-notes-thread {
+      max-height: 260px;
+      overflow-y: auto;
+      margin: 8px 0;
+      padding: 8px;
+      border: 1px solid #8b5e3c;
+      border-radius: 6px;
+      background: #fff8dc;
+    }
+    .private-note {
+      margin: 6px 0;
+      padding: 7px 9px;
+      border-radius: 7px;
+      border: 1px solid #8b5e3c;
+    }
+    .private-note-mj { background: #eadfcf; }
+    .private-note-player { background: #fefae0; }
+    .private-note-meta {
+      font-size: .78em;
+      margin-bottom: 3px;
+      opacity: .8;
+    }
+    .gm-private-notes-compose {
+      display: flex;
+      gap: 7px;
+      align-items: stretch;
+    }
+    .gm-private-notes-compose textarea {
+      flex: 1;
+      min-width: 0;
+      min-height: 55px;
+      resize: vertical;
+      font-family: 'Uncial Antiqua', cursive;
+    }
+    .gm-private-notes-compose button { flex: 0 0 auto; }
+
+
+    /* V1.9.1 — notes publiques et séparation des espaces privés */
+    .gm-public-notes { margin:20px; }
+    .gm-public-note-card {
+      border:1px solid #8b5e3c;
+      border-radius:8px;
+      padding:10px;
+      margin:8px 0;
+      background:#fff8dc;
+    }
+    .gm-public-note-editor {
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+    .gm-public-note-editor input,
+    .gm-public-note-editor textarea {
+      box-sizing:border-box;
+      width:100%;
+    }
+    .gm-public-note-editor textarea { min-height:90px; resize:vertical; }
+    .gm-public-note-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .gm-personal-notes {
+      margin-top:12px;
+      border-top:1px solid #8b5e3c;
+      padding-top:10px;
+    }
+    .gm-personal-notes-view {
+      padding:10px;
+      background:#fff8dc;
+      border:1px solid #8b5e3c;
+      border-radius:8px;
+      white-space:pre-wrap;
+      min-height:40px;
+    }
+    .gm-private-messages {
+      margin-top:12px;
+      border-top:1px solid #8b5e3c;
+      padding-top:10px;
+    }
+
+</style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
-  <h1>Interface du Maitre du Jeu</h1>
 
-  <h2>Liste des joueurs</h2>
-  <div id="joueurs-list"></div>
+  <div class="mj-page">
+    <header class="mj-header">
+      <h1>Interface du Maître du Jeu</h1>
+      <!-- V1.13 : accès direct à la table de jeu, pendant du lien
+           « Ouvrir ma carte » de l'Interface de Jeu du joueur. -->
+      <a class="mj-cta" href="map.html">🗺️ Ouvrir la carte de jeu</a>
+    </header>
+
+    <!-- Bandeau supérieur : deux panneaux courts côte à côte. -->
+    <div class="mj-top">
+  <section class="card" id="session-management">
+    <h2>Gestion de la partie active</h2>
+    <p>
+      Exportez la session pour la déplacer vers un autre serveur, ou importez
+      une session précédemment exportée. L'import remplace la partie active.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button id="export-session-btn" class="game-button" type="button">
+        Exporter la partie
+      </button>
+      <button id="import-session-btn" class="game-button" type="button">
+        Importer une partie
+      </button>
+      <input id="import-session-file" type="file" accept=".json,application/json" hidden>
+    </div>
+    <p id="session-management-status" style="margin-top:10px;"></p>
+  </section>
+
+  <section class="card gm-public-notes" id="public-notes-management">
+    <h2>📢 Notes publiques</h2>
+    <p>Ces notes sont visibles par tous les joueurs. Seul le MJ peut les créer, modifier ou supprimer.</p>
+    <div class="gm-public-note-editor">
+      <input id="public-note-title" type="text" maxlength="200" placeholder="Titre de la note">
+      <textarea id="public-note-content" placeholder="Contenu visible par tous les joueurs..."></textarea>
+      <div class="gm-public-note-actions">
+        <button id="public-note-save" class="game-button" type="button">Créer la note</button>
+        <button id="public-note-cancel" class="game-button" type="button" hidden>Annuler</button>
+      </div>
+      <p id="public-note-status"></p>
+    </div>
+    <div id="public-notes-list"><p>Chargement...</p></div>
+  </section>
+    </div><!-- /.mj-top -->
+
+  <section class="card mob-manager" id="mob-management">
+    <h2>Gestion des Mobs / NPC</h2>
+    <p>Le MJ crée et gère les mobs. ArcaneSync ne calcule pas les combats.</p>
+
+    <div class="mob-actions">
+      <button id="new-mob-btn" class="game-button" type="button">Créer un mob</button>
+      <button id="new-mob-template-btn" class="game-button" type="button">Créer un template</button>
+    </div>
+
+    <div id="mob-form-container" class="mob-form-container">
+      <h3 id="mob-form-title">Nouveau mob</h3>
+      <input type="hidden" id="mob-id">
+
+      <div class="mob-form-grid">
+        <label>Nom<input id="mob-name" type="text"></label>
+        <label>Description<input id="mob-description" type="text"></label>
+        <label>HP max<input id="mob-hp-max" type="number" min="0" value="10"></label>
+        <label>HP actuel<input id="mob-hp-current" type="number" min="0" value="10"></label>
+        <label>Mana max<input id="mob-mana-max" type="number" min="0" value="0"></label>
+        <label>Mana actuel<input id="mob-mana-current" type="number" min="0" value="0"></label>
+        <label>Type d'armure<input id="mob-armor-type" type="text"></label>
+        <label>Résistance<input id="mob-armor-resistance" type="text"></label>
+        <label>Durabilité max<input id="mob-dura-max" type="number" min="0" value="0"></label>
+        <label>Durabilité actuelle<input id="mob-dura-current" type="number" min="0" value="0"></label>
+        <label>Protection max<input id="mob-protection-max" type="number" min="0" value="0"></label>
+        <label>Protection actuelle<input id="mob-protection-current" type="number" min="0" value="0"></label>
+        <label>Bonus de vie<input id="mob-bonus-hp" type="number" value="0"></label>
+        <label>Intoxication<input id="mob-intox" type="number" value="0"></label>
+      </div>
+
+      <h4>Statistiques</h4>
+      <div class="mob-form-grid">
+        <label>Force<input id="mob-force" type="number" value="0"></label>
+        <label>Dextérité<input id="mob-dexterite" type="number" value="0"></label>
+        <label>Magie<input id="mob-magie" type="number" value="0"></label>
+        <label>Constitution<input id="mob-constitution" type="number" value="0"></label>
+        <label>Charisme<input id="mob-charisme" type="number" value="0"></label>
+        <label>Perception<input id="mob-perception" type="number" value="0"></label>
+        <label>Chance<input id="mob-chance" type="number" value="0"></label>
+        <label>Intelligence<input id="mob-intelligence" type="number" value="0"></label>
+      </div>
+
+      <div class="mob-form-grid">
+        <label>Armes (une par ligne)<textarea id="mob-weapons" rows="4"></textarea></label>
+        <label>Sorts (un par ligne)<textarea id="mob-spells" rows="4"></textarea></label>
+        <label>Compétences (une par ligne)<textarea id="mob-skills" rows="4"></textarea></label>
+        <label>Notes<textarea id="mob-notes" rows="4"></textarea></label>
+      </div>
+
+      <div class="mob-actions">
+        <button id="save-mob-btn" class="game-button" type="button">Ajouter le mob à la partie</button>
+        <button id="save-mob-template-btn" class="game-button" type="button" hidden>Enregistrer le template</button>
+        <button id="cancel-mob-btn" class="game-button" type="button">Annuler</button>
+      </div>
+      <p id="mob-form-status"></p>
+    </div>
+
+    <h3>Templates de mobs</h3>
+    <div id="mob-templates-list"></div>
+
+    <h3>Mobs de la partie active</h3>
+    <div id="active-mobs-list"></div>
+  </section>
+    <section class="card" id="players-management">
+      <h2>Liste des joueurs</h2>
+      <div id="joueurs-list"></div>
+    </section>
+  </div><!-- /.mj-page -->
 
   <script src="navbar.js"></script>
   <script type="module">
@@ -103,78 +631,919 @@
       }
     }
 
-    // Fonction pour charger et afficher les joueurs
-    function loadAndDisplayPlayers() {
-      fetch('/api/joueurs')
-        .then(response => response.json())
-        .then(joueurs => {
-          const listContainer = document.getElementById('joueurs-list');
-          listContainer.innerHTML = '';
-          
-          if (joueurs.length === 0) {
-            listContainer.innerHTML = '<p>Aucun joueur enregistré.</p>';
-            return;
-          }
+    // ---------------------------------------------------------------
+    // Gestion MJ intégrée des joueurs
+    // ---------------------------------------------------------------
+    let availablePlayerStatuses = [];
 
-          joueurs.forEach(joueur => {
-            const card = document.createElement('div');
-            card.classList.add('card');
-            card.setAttribute('data-id', joueur.nom);
+    async function loadAvailablePlayerStatuses() {
+      const response = await fetch('/api/statuses');
+      if (!response.ok) throw new Error('Impossible de charger les statuts.');
+      availablePlayerStatuses = await response.json();
+    }
 
-            const hpPercentage = (joueur.hp?.max > 0) ? ((joueur.hp?.current || 0) / joueur.hp?.max) * 100 : 0;
-            const manaPercentage = (joueur.mana?.max > 0) ? ((joueur.mana?.current || 0) / joueur.mana?.max) * 100 : 0;
-            const duraCurrent = joueur.armure?.durabilite?.current || 0;
-            const duraMax = joueur.armure?.durabilite?.max || 0;
-            const armorState = getArmorState(duraCurrent, duraMax);
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
-            card.innerHTML = `
-              <h3>${joueur.nom}</h3>
-              <div class="stat-bar-container">
-                <label>Points de Vie</label>
-                <div class="stat-bar">
-                  <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
-                  <div class="stat-bar-text">${joueur.hp?.current || 0} / ${joueur.hp?.max || 0}</div>
-                </div>
-              </div>
-              <p>Bonus HP: ${joueur.bonus_vie}</p>
-              <div class="stat-bar-container">
-                <label>Points de Mana</label>
-                <div class="stat-bar">
-                  <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
-                  <div class="stat-bar-text">${joueur.mana?.current || 0} / ${joueur.mana?.max || 0}</div>
-                </div>
-              </div>
-              <p>Intox: ${joueur.intox} / ${joueur?.stats?.constitution}</p>
-              <p>
-                <span style="color: ${armorState.couleur}">${armorState.etat}</span><br>
-                <small style="color: #000000; font-size: 0.8em;">${armorState.effet}</small>
-              </p>
-            `;
-
-            card.addEventListener('click', () => {
-              showMJPopup(joueur);
-            });
-
-            listContainer.appendChild(card);
-          });
-        })
-        .catch(err => {
-          console.error("Erreur lors de la récupération des joueurs:", err);
-          alert("Erreur lors de la récupération des joueurs.");
+    async function updateGMPlayerResources(player, changes, messageElement) {
+      try {
+        const response = await fetch('/api/session/player', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id: player.id, nouvellesDonnees: changes})
         });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Impossible de modifier le joueur.');
+        if (messageElement) {
+          messageElement.textContent = result.message || 'Modification enregistrée.';
+          messageElement.style.color = '#2e7d32';
+        }
+        await loadAndDisplayPlayers();
+      } catch (error) {
+        console.error('Erreur modification ressources joueur:', error);
+        if (messageElement) {
+          messageElement.textContent = error.message;
+          messageElement.style.color = '#a52a2a';
+        }
+      }
+    }
+
+    async function applyGMPlayerStatus(player, statusId, messageElement) {
+      try {
+        const response = await fetch(`/api/session/player/${encodeURIComponent(player.id)}/statuses`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({statutId: statusId})
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Impossible d’appliquer le statut.');
+        if (messageElement) {
+          messageElement.textContent = `Statut ${result.message || 'appliqué.'}`;
+          messageElement.style.color = '#2e7d32';
+        }
+        await loadAndDisplayPlayers();
+      } catch (error) {
+        console.error('Erreur application statut joueur:', error);
+        if (messageElement) {
+          messageElement.textContent = error.message;
+          messageElement.style.color = '#a52a2a';
+        }
+      }
+    }
+
+    async function removeGMPlayerStatus(player, statusId, messageElement) {
+      try {
+        const response = await fetch(
+          `/api/session/player/${encodeURIComponent(player.id)}/statuses/${encodeURIComponent(statusId)}`,
+          {method: 'DELETE'}
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Impossible de retirer le statut.');
+        if (messageElement) {
+          messageElement.textContent = `Statut retiré de ${player.nom}.`;
+          messageElement.style.color = '#2e7d32';
+        }
+        await loadAndDisplayPlayers();
+      } catch (error) {
+        console.error('Erreur retrait statut joueur:', error);
+        if (messageElement) {
+          messageElement.textContent = error.message;
+          messageElement.style.color = '#a52a2a';
+        }
+      }
+    }
+
+
+    function formatNotesDate(value) {
+      try { return new Date(value).toLocaleString('fr-FR'); }
+      catch { return value || ''; }
+    }
+
+    function renderPrivateMessages(container, messages) {
+      if (!messages.length) {
+        container.innerHTML='<p>Aucun message privé.</p>';
+        return;
+      }
+      container.innerHTML=messages.map(message=>`
+        <div class="private-note private-note-${message.author==='mj'?'mj':'player'}">
+          <div class="private-note-meta">
+            <strong>${message.author==='mj'?'MJ':'Joueur'}</strong>
+            — ${escapeHtml(formatNotesDate(message.createdAt))}
+          </div>
+          <div>${escapeHtml(message.content).replace(/\n/g,'<br>')}</div>
+        </div>
+      `).join('');
+      container.scrollTop=container.scrollHeight;
+    }
+
+    async function loadPlayerPersonalNotes(player, viewElement) {
+      try {
+        const response=await fetch(`/api/session/player/${encodeURIComponent(player.id)}/personal-notes?role=mj`);
+        const result=await response.json();
+        if(!response.ok) throw new Error(result.message||'Impossible de charger les notes personnelles.');
+        const content=(result.content||'').trim();
+        viewElement.innerHTML=content
+          ? escapeHtml(content).replace(/\n/g,'<br>')
+          : '<em>Aucune note personnelle.</em>';
+      } catch(error) {
+        viewElement.innerHTML=`<span>${escapeHtml(error.message)}</span>`;
+      }
+    }
+
+    async function loadPlayerPrivateMessages(player, threadElement) {
+      try {
+        const response=await fetch(`/api/session/player/${encodeURIComponent(player.id)}/private-messages?role=mj`);
+        const result=await response.json();
+        if(!response.ok) throw new Error(result.message||'Impossible de charger les messages privés.');
+        renderPrivateMessages(threadElement,result.messages||[]);
+      } catch(error) {
+        threadElement.innerHTML=`<p>${escapeHtml(error.message)}</p>`;
+      }
+    }
+
+    async function sendPrivateMessageFromMJ(player, textarea, messageElement, threadElement) {
+      const content=textarea.value.trim();
+      if(!content){
+        messageElement.textContent='Le message est vide.';
+        messageElement.style.color='#a52a2a';
+        return;
+      }
+      try{
+        const response=await fetch(`/api/session/player/${encodeURIComponent(player.id)}/private-messages`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({role:'mj',content})
+        });
+        const result=await response.json();
+        if(!response.ok) throw new Error(result.message||'Impossible d’envoyer le message.');
+        textarea.value='';
+        renderPrivateMessages(threadElement,result.messages||[]);
+        messageElement.textContent='Message privé envoyé.';
+        messageElement.style.color='#2e7d32';
+      }catch(error){
+        messageElement.textContent=error.message;
+        messageElement.style.color='#a52a2a';
+      }
+    }
+
+    async function loadPublicNotesMJ() {
+      const response=await fetch('/api/session/public-notes');
+      const result=await response.json();
+      if(!response.ok) throw new Error(result.message||'Impossible de charger les notes publiques.');
+      renderPublicNotesMJ(result.notes||[]);
+    }
+
+    function renderPublicNotesMJ(notes) {
+      const container=document.getElementById('public-notes-list');
+      if(!notes.length){container.innerHTML='<p>Aucune note publique.</p>';return;}
+      container.innerHTML=notes.map(note=>`
+        <article class="gm-public-note-card">
+          <h3>${escapeHtml(note.title||'Note du MJ')}</h3>
+          <div>${escapeHtml(note.content).replace(/\n/g,'<br>')}</div>
+          <small>Dernière modification : ${escapeHtml(formatNotesDate(note.updatedAt))}</small>
+          <div class="gm-public-note-actions">
+            <button type="button" data-public-edit="${escapeHtml(note.id)}">Modifier</button>
+            <button type="button" data-public-delete="${escapeHtml(note.id)}">Supprimer</button>
+          </div>
+        </article>
+      `).join('');
+
+      container.querySelectorAll('[data-public-edit]').forEach(button=>{
+        button.addEventListener('click',()=>{
+          const note=notes.find(item=>item.id===button.dataset.publicEdit);
+          if(!note)return;
+          document.getElementById('public-note-title').value=note.title;
+          document.getElementById('public-note-content').value=note.content;
+          document.getElementById('public-note-save').dataset.editingId=note.id;
+          document.getElementById('public-note-save').textContent='Enregistrer la modification';
+          document.getElementById('public-note-cancel').hidden=false;
+        });
+      });
+
+      container.querySelectorAll('[data-public-delete]').forEach(button=>{
+        button.addEventListener('click',async()=>{
+          if(!confirm('Supprimer cette note publique ?'))return;
+          const response=await fetch(`/api/session/public-notes/${encodeURIComponent(button.dataset.publicDelete)}`,{
+            method:'DELETE',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({role:'mj'})
+          });
+          const result=await response.json();
+          if(!response.ok){alert(result.message||'Erreur de suppression.');return;}
+          renderPublicNotesMJ(result.notes||[]);
+        });
+      });
+    }
+
+    async function savePublicNoteMJ() {
+      const title=document.getElementById('public-note-title').value.trim();
+      const content=document.getElementById('public-note-content').value.trim();
+      const button=document.getElementById('public-note-save');
+      const status=document.getElementById('public-note-status');
+      if(!title&&!content){status.textContent='La note publique est vide.';status.style.color='#a52a2a';return;}
+
+      const id=button.dataset.editingId;
+      const response=await fetch(id?`/api/session/public-notes/${encodeURIComponent(id)}`:'/api/session/public-notes',{
+        method:id?'PUT':'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({role:'mj',title,content})
+      });
+      const result=await response.json();
+      if(!response.ok){status.textContent=result.message||'Erreur.';status.style.color='#a52a2a';return;}
+      resetPublicNoteEditor();
+      renderPublicNotesMJ(result.notes||[]);
+      status.textContent=id?'Note publique modifiée.':'Note publique créée.';
+      status.style.color='#2e7d32';
+    }
+
+    function resetPublicNoteEditor() {
+      document.getElementById('public-note-title').value='';
+      document.getElementById('public-note-content').value='';
+      const button=document.getElementById('public-note-save');
+      button.dataset.editingId='';
+      button.textContent='Créer la note';
+      document.getElementById('public-note-cancel').hidden=true;
+    }
+
+    async function loadAndDisplayPlayers() {
+      try {
+        if (!availablePlayerStatuses.length) await loadAvailablePlayerStatuses();
+
+        const response = await fetch('/api/session/players');
+        if (!response.ok) throw new Error('Impossible de charger les joueurs.');
+        const joueurs = await response.json();
+        const listContainer = document.getElementById('joueurs-list');
+        listContainer.innerHTML = '';
+
+        if (!joueurs.length) {
+          listContainer.innerHTML = '<p>Aucun joueur enregistré.</p>';
+          return;
+        }
+
+        joueurs.forEach(joueur => {
+          const card = document.createElement('div');
+          card.classList.add('card');
+          card.setAttribute('data-id', joueur.id);
+
+          const hpMax = Math.max(0, Number(joueur.hp?.max) || 0);
+          const hpCurrent = Math.max(0, Math.min(Number(joueur.hp?.current) || 0, hpMax));
+          const manaMax = Math.max(0, Number(joueur.mana?.max) || 0);
+          const manaCurrent = Math.max(0, Math.min(Number(joueur.mana?.current) || 0, manaMax));
+          const hpPercentage = hpMax > 0 ? (hpCurrent / hpMax) * 100 : 0;
+          const manaPercentage = manaMax > 0 ? (manaCurrent / manaMax) * 100 : 0;
+
+          const duraCurrent = joueur.armure?.durabilite?.current || 0;
+          const duraMax = joueur.armure?.durabilite?.max || 0;
+          const armorState = getArmorState(duraCurrent, duraMax);
+
+          const activeStatuses = Array.isArray(joueur.statuts) ? joueur.statuts : [];
+          const statusBadges = activeStatuses.length
+            ? activeStatuses.map(status => `
+                <span class="gm-player-status-badge ${status.id === 'agonie' ? 'agony' : ''}">
+                  <strong>${escapeHtml(status.nom)}</strong>
+                  ${status.id === 'agonie'
+                    ? '<small>automatique</small>'
+                    : `<button type="button" data-remove-player-status="${escapeHtml(status.id)}">Retirer</button>`}
+                </span>`).join('')
+            : '<span>Aucun statut actif.</span>';
+
+          const statusOptions = availablePlayerStatuses.map(status => {
+            const alreadyActive = activeStatuses.some(active => active.id === status.id);
+            const disabled = alreadyActive || status.id === 'agonie';
+            return `<option value="${escapeHtml(status.id)}" ${disabled ? 'disabled' : ''}>${escapeHtml(status.nom)}${status.id === 'agonie' ? ' (automatique)' : ''}</option>`;
+          }).join('');
+
+          card.innerHTML = `
+            <h3>${escapeHtml(joueur.nom)}</h3>
+            <div class="stat-bar-container">
+              <label>Points de Vie</label>
+              <div class="stat-bar">
+                <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
+                <div class="stat-bar-text">${hpCurrent} / ${hpMax}</div>
+              </div>
+            </div>
+
+            <div class="gm-player-resource-controls">
+              <div class="gm-player-resource">
+                <h5>Retirer des HP</h5>
+                <div class="gm-player-resource-actions">
+                  <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de HP à retirer">
+                  <button data-a="damage-hp" type="button">− HP</button><button data-a="heal-hp" type="button">+ HP</button>
+                </div>
+              </div>
+              <div class="gm-player-resource">
+                <h5>Retirer du Mana</h5>
+                <div class="gm-player-resource-actions">
+                  <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de Mana à retirer">
+                  <button data-a="drain-mana" type="button">− Mana</button><button data-a="restore-mana" type="button">+ Mana</button>
+                </div>
+              </div>
+            </div>
+
+            <p>Bonus HP: ${joueur.bonus_vie ?? 0}</p>
+            <div class="stat-bar-container">
+              <label>Points de Mana</label>
+              <div class="stat-bar">
+                <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
+                <div class="stat-bar-text">${manaCurrent} / ${manaMax}</div>
+              </div>
+            </div>
+
+            <p>Intox: ${joueur.intox ?? 0} / ${joueur?.stats?.constitution ?? 0}</p>
+            <p>
+              <span style="color: ${armorState.couleur}">${escapeHtml(armorState.etat)}</span><br>
+              <small style="color:#000; font-size:.8em;">${escapeHtml(armorState.effet)}</small>
+            </p>
+
+            <details class="gm-personal-notes">
+              <summary>📝 Notes personnelles de ${escapeHtml(joueur.nom)}</summary>
+              <div data-a="personal-notes-view" class="gm-personal-notes-view">
+                <p>Chargement...</p>
+              </div>
+            </details>
+
+            <details class="gm-private-messages">
+              <summary>🔒 Messages privés avec ${escapeHtml(joueur.nom)}</summary>
+              <div class="gm-private-notes-thread" data-a="private-thread">
+                <p>Chargement...</p>
+              </div>
+              <div class="gm-private-notes-compose">
+                <textarea data-a="private-compose" placeholder="Écrire un message privé à ce joueur..."></textarea>
+                <button type="button" data-a="private-send">Envoyer</button>
+              </div>
+              <p data-a="private-message" class="gm-player-card-message"></p>
+            </details>
+
+            <div class="gm-player-statuses">
+              <strong>Statuts</strong>
+              <div class="gm-player-status-badges">${statusBadges}</div>
+              <div class="gm-player-status-add">
+                <select data-a="status-select" aria-label="Statut à appliquer">${statusOptions}</select>
+                <button type="button" data-a="apply-status">Appliquer</button>
+              </div>
+              <p class="gm-player-card-message" data-a="player-message"></p>
+            </div>
+          `;
+
+          // Clic sur la carte = éditeur complet V1.8.
+          card.addEventListener('click', () => showMJPopup(joueur));
+
+          const messageElement = card.querySelector('[data-a="player-message"]');
+
+          const personalNotesView=card.querySelector('[data-a="personal-notes-view"]');
+
+          const privateThread=card.querySelector('[data-a="private-thread"]');
+          const privateCompose=card.querySelector('[data-a="private-compose"]');
+          const privateSend=card.querySelector('[data-a="private-send"]');
+          const privateMessage=card.querySelector('[data-a="private-message"]');
+
+          card.querySelectorAll('details').forEach(details=>{
+            details.addEventListener('click',event=>event.stopPropagation());
+          });
+
+          privateSend.addEventListener('click',async event=>{
+            event.stopPropagation();
+            await sendPrivateMessageFromMJ(joueur,privateCompose,privateMessage,privateThread);
+          });
+
+          privateCompose.addEventListener('keydown',event=>{
+            event.stopPropagation();
+            if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
+              event.preventDefault();
+              privateSend.click();
+            }
+          });
+
+          loadPlayerPersonalNotes(joueur,personalNotesView);
+          loadPlayerPrivateMessages(joueur,privateThread);
+
+          card.querySelector('[data-a="damage-hp"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            const amount = Math.max(1, Number(card.querySelector('[data-a="hp-amount"]').value) || 1);
+            const newHp = Math.max(0, hpCurrent - amount);
+            await updateGMPlayerResources(joueur, {hp: {current: newHp}}, messageElement);
+          });
+          card.querySelector('[data-a="heal-hp"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            const amount = Math.max(1, Number(card.querySelector('[data-a="hp-amount"]').value) || 1);
+            const newHp = Math.min(hpMax, hpCurrent + amount);
+            await updateGMPlayerResources(joueur, {hp: {current: newHp}}, messageElement);
+          });
+
+          card.querySelector('[data-a="drain-mana"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            const amount = Math.max(1, Number(card.querySelector('[data-a="mana-amount"]').value) || 1);
+            const newMana = Math.max(0, manaCurrent - amount);
+            await updateGMPlayerResources(joueur, {mana: {current: newMana}}, messageElement);
+          });
+          card.querySelector('[data-a="restore-mana"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            const amount = Math.max(1, Number(card.querySelector('[data-a="mana-amount"]').value) || 1);
+            const newMana = Math.min(manaMax, manaCurrent + amount);
+            await updateGMPlayerResources(joueur, {mana: {current: newMana}}, messageElement);
+          });
+
+          card.querySelector('[data-a="apply-status"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            const select = card.querySelector('[data-a="status-select"]');
+            if (!select.value) {
+              messageElement.textContent = 'Aucun statut sélectionné.';
+              messageElement.style.color = '#a52a2a';
+              return;
+            }
+            await applyGMPlayerStatus(joueur, select.value, messageElement);
+          });
+
+          card.querySelectorAll('[data-remove-player-status]').forEach(button => {
+            button.addEventListener('click', async event => {
+              event.stopPropagation();
+              await removeGMPlayerStatus(joueur, button.dataset.removePlayerStatus, messageElement);
+            });
+          });
+
+          // Aucun contrôle de la carte ne doit ouvrir l'éditeur complet.
+          card.querySelectorAll('button, input, select').forEach(control => {
+            control.addEventListener('click', event => event.stopPropagation());
+          });
+
+          listContainer.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Erreur lors de la récupération des joueurs:", err);
+        document.getElementById('joueurs-list').innerHTML =
+          `<p>Erreur : ${escapeHtml(err.message)}</p>`;
+      }
     }
 
     // Charger les joueurs initialement
     loadAndDisplayPlayers();
 
     // Configurer WebSocket
-    const socket = io();
-    
+    const socket = io({
+      query:{role:'mj'},
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity
+    });
+
+    // V1.12 : le MJ récupère automatiquement l'état autoritaire
+    // après la connexion initiale et après chaque reconnexion.
+    socket.on('connect', () => {
+      console.log('V1.12 — MJ connecté/reconnecté, demande de resynchronisation.');
+      socket.emit('stateSyncRequest');
+    });
+
+    socket.on('stateSync', async (snapshot) => {
+      if (!snapshot || snapshot.role !== 'mj') return;
+      try {
+        await loadAndDisplayPlayers();
+        await loadPublicNotesMJ();
+      } catch (error) {
+        console.error('Erreur lors de la resynchronisation MJ:', error);
+      }
+    });
+
+    socket.on('stateSyncError', (event) => {
+      console.error('Resynchronisation MJ impossible:', event?.message || 'Erreur inconnue');
+    });
+
     // Écouter les mises à jour
+    socket.on('sessionUpdated', (data) => {
+      console.log('Mise à jour de la partie reçue:', data);
+      loadAndDisplayPlayers();
+    });
+
     socket.on('playerUpdate', (data) => {
       console.log('Mise à jour reçue:', data);
       loadAndDisplayPlayers();
     });
-  </script>
+
+    socket.on('playerStatusUpdated', () => loadAndDisplayPlayers());
+
+    socket.on('personalNotesUpdated', (event) => {
+      if (event?.playerId) loadAndDisplayPlayers();
+    });
+
+    socket.on('privateMessagesUpdated', (event) => {
+      if (event?.playerId) loadAndDisplayPlayers();
+    });
+
+    socket.on('publicNotesUpdated', () => loadPublicNotesMJ());
+  
+    document.getElementById('public-note-save')?.addEventListener('click', savePublicNoteMJ);
+    document.getElementById('public-note-cancel')?.addEventListener('click', resetPublicNoteEditor);
+    loadPublicNotesMJ().catch(error => {
+      document.getElementById('public-notes-list').innerHTML = `<p>${escapeHtml(error.message)}</p>`;
+    });
+
+    // ---------------------------------------------------------------
+    // Gestion de la partie active : export / import
+    // ---------------------------------------------------------------
+    const exportSessionButton = document.getElementById('export-session-btn');
+    const importSessionButton = document.getElementById('import-session-btn');
+    const importSessionFile = document.getElementById('import-session-file');
+    const sessionManagementStatus = document.getElementById('session-management-status');
+
+    function setSessionStatus(message, isError = false) {
+      if (!sessionManagementStatus) return;
+      sessionManagementStatus.textContent = message;
+      sessionManagementStatus.style.color = isError ? '#a52a2a' : '#2e7d32';
+    }
+
+    exportSessionButton?.addEventListener('click', async () => {
+      try {
+        setSessionStatus('Préparation de l’export...');
+
+        const response = await fetch('/api/session/export');
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.message || `Erreur HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="([^"]+)"/);
+        const filename = match ? match[1] : 'arcanesync-session.json';
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        setSessionStatus('Session exportée avec succès.');
+      } catch (error) {
+        console.error('Erreur export session:', error);
+        setSessionStatus(`Erreur lors de l’export : ${error.message}`, true);
+      }
+    });
+
+    importSessionButton?.addEventListener('click', () => {
+      importSessionFile?.click();
+    });
+
+    importSessionFile?.addEventListener('change', async () => {
+      const file = importSessionFile.files?.[0];
+      if (!file) return;
+
+      const confirmation = window.confirm(
+        "Importer cette partie ?\n\n" +
+        "La session active actuelle sera remplacée par le contenu du fichier."
+      );
+
+      if (!confirmation) {
+        importSessionFile.value = '';
+        return;
+      }
+
+      try {
+        setSessionStatus('Import en cours...');
+
+        const text = await file.text();
+        let payload;
+
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          throw new Error('Le fichier sélectionné n’est pas un JSON valide.');
+        }
+
+        const response = await fetch('/api/session/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          // V1.13.5 : l'import remplace la partie entière et exige le rôle MJ.
+          body: JSON.stringify({ ...payload, role: 'mj' })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          const unknown = result.unknownPlayerIds?.length
+            ? `\nIDs inconnus : ${result.unknownPlayerIds.join(', ')}`
+            : '';
+          throw new Error((result.message || `Erreur HTTP ${response.status}`) + unknown);
+        }
+
+        setSessionStatus(
+          `Session importée avec succès (${result.playerIds?.length || 0} joueur(s)).`
+        );
+      } catch (error) {
+        console.error('Erreur import session:', error);
+        setSessionStatus(`Erreur lors de l’import : ${error.message}`, true);
+        alert(`Erreur lors de l’import : ${error.message}`);
+      } finally {
+        importSessionFile.value = '';
+      }
+    });
+
+
+    // ---------------------------------------------------------------
+    // Gestion MJ des mobs / NPC
+    // ---------------------------------------------------------------
+    const mobForm = {
+      id: document.getElementById('mob-id'),
+      name: document.getElementById('mob-name'),
+      description: document.getElementById('mob-description'),
+      hpMax: document.getElementById('mob-hp-max'), hpCurrent: document.getElementById('mob-hp-current'),
+      manaMax: document.getElementById('mob-mana-max'), manaCurrent: document.getElementById('mob-mana-current'),
+      armorType: document.getElementById('mob-armor-type'), armorResistance: document.getElementById('mob-armor-resistance'),
+      duraMax: document.getElementById('mob-dura-max'), duraCurrent: document.getElementById('mob-dura-current'),
+      protectionMax: document.getElementById('mob-protection-max'), protectionCurrent: document.getElementById('mob-protection-current'),
+      bonusHp: document.getElementById('mob-bonus-hp'), intox: document.getElementById('mob-intox'),
+      force: document.getElementById('mob-force'), dexterite: document.getElementById('mob-dexterite'),
+      magie: document.getElementById('mob-magie'), constitution: document.getElementById('mob-constitution'),
+      charisme: document.getElementById('mob-charisme'), perception: document.getElementById('mob-perception'),
+      chance: document.getElementById('mob-chance'), intelligence: document.getElementById('mob-intelligence'),
+      weapons: document.getElementById('mob-weapons'), spells: document.getElementById('mob-spells'),
+      skills: document.getElementById('mob-skills'), notes: document.getElementById('mob-notes')
+    };
+    const mobFormTitle=document.getElementById('mob-form-title');
+    const mobFormStatus=document.getElementById('mob-form-status');
+    const activeMobsList=document.getElementById('active-mobs-list');
+    const mobTemplatesList=document.getElementById('mob-templates-list');
+
+    const linesToArray=v=>v.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const arrayToLines=v=>Array.isArray(v)?v.map(x=>typeof x==='string'?x:JSON.stringify(x)).join('\n'):'';
+
+    function mobFromForm(){
+      return {
+        nom:mobForm.name.value.trim(), description:mobForm.description.value.trim(),
+        hp:{max:Number(mobForm.hpMax.value)||0,current:Number(mobForm.hpCurrent.value)||0},
+        mana:{max:Number(mobForm.manaMax.value)||0,current:Number(mobForm.manaCurrent.value)||0},
+        armure:{
+          type:mobForm.armorType.value.trim(), resistance:mobForm.armorResistance.value.trim(),
+          durabilite:{max:Number(mobForm.duraMax.value)||0,current:Number(mobForm.duraCurrent.value)||0},
+          protection:{max:Number(mobForm.protectionMax.value)||0,current:Number(mobForm.protectionCurrent.value)||0}
+        },
+        bonus_vie:Number(mobForm.bonusHp.value)||0, intox:Number(mobForm.intox.value)||0,
+        stats:{
+          force:Number(mobForm.force.value)||0,dexterite:Number(mobForm.dexterite.value)||0,
+          magie:Number(mobForm.magie.value)||0,constitution:Number(mobForm.constitution.value)||0,
+          charisme:Number(mobForm.charisme.value)||0,perception:Number(mobForm.perception.value)||0,
+          chance:Number(mobForm.chance.value)||0,intelligence:Number(mobForm.intelligence.value)||0
+        },
+        armes:linesToArray(mobForm.weapons.value),spells:linesToArray(mobForm.spells.value),
+        competences:linesToArray(mobForm.skills.value),notes:mobForm.notes.value.trim()
+      };
+    }
+
+    function fillMobForm(m){
+      m=m||{};
+      mobForm.id.value=m.id||''; mobForm.name.value=m.nom||''; mobForm.description.value=m.description||'';
+      mobForm.hpMax.value=m.hp?.max??10; mobForm.hpCurrent.value=m.hp?.current??m.hp?.max??10;
+      mobForm.manaMax.value=m.mana?.max??0; mobForm.manaCurrent.value=m.mana?.current??m.mana?.max??0;
+      mobForm.armorType.value=m.armure?.type||''; mobForm.armorResistance.value=m.armure?.resistance||'';
+      mobForm.duraMax.value=m.armure?.durabilite?.max??0; mobForm.duraCurrent.value=m.armure?.durabilite?.current??0;
+      mobForm.protectionMax.value=m.armure?.protection?.max??0; mobForm.protectionCurrent.value=m.armure?.protection?.current??0;
+      mobForm.bonusHp.value=m.bonus_vie??0; mobForm.intox.value=m.intox??0;
+      const st=m.stats||{};
+      mobForm.force.value=st.force??0;mobForm.dexterite.value=st.dexterite??0;mobForm.magie.value=st.magie??0;
+      mobForm.constitution.value=st.constitution??0;mobForm.charisme.value=st.charisme??0;mobForm.perception.value=st.perception??0;
+      mobForm.chance.value=st.chance??0;mobForm.intelligence.value=st.intelligence??0;
+      mobForm.weapons.value=arrayToLines(m.armes);mobForm.spells.value=arrayToLines(m.spells);
+      mobForm.skills.value=arrayToLines(m.competences);mobForm.notes.value=m.notes||'';
+      mobFormTitle.textContent=m.id?`Modifier : ${m.nom}`:'Nouveau mob';
+    }
+
+    let mobFormMode='mob';
+
+    function resetMobForm(mode='mob'){
+      mobFormMode=mode;
+      fillMobForm({hp:{max:10,current:10},mana:{max:0,current:0},armure:{durabilite:{max:0,current:0},protection:{max:0,current:0}},stats:{}});
+      mobForm.id.value='';
+      const isTemplate=mode==='template';
+      mobFormTitle.textContent=isTemplate?'Nouveau template de mob':'Nouveau mob';
+      document.getElementById('save-mob-btn').hidden=isTemplate;
+      document.getElementById('save-mob-template-btn').hidden=!isTemplate;
+      setMobStatus(isTemplate
+        ? 'Mode template : ce formulaire enregistrera un modèle réutilisable.'
+        : 'Mode mob : ce formulaire créera directement un mob dans la partie active, sans créer de template.');
+      document.getElementById('mob-form-container').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function setMobStatus(msg,error=false){mobFormStatus.textContent=msg;mobFormStatus.style.color=error?'#a52a2a':'#2e7d32';}
+
+    async function loadMobTemplates(){
+      const r=await fetch('/api/mob-templates'); if(!r.ok)throw new Error('Impossible de charger les templates.');
+      const list=await r.json(); mobTemplatesList.innerHTML='';
+      if(!list.length){mobTemplatesList.innerHTML='<p>Aucun template enregistré.</p>';return;}
+      list.forEach(t=>{
+        const c=document.createElement('div'); c.className='mob-template-card';
+        c.innerHTML=`<strong>${t.nom}</strong><p>${t.description||'Aucune description.'}</p>
+          <small>HP ${t.hp?.max??0} | Mana ${t.mana?.max??0}</small>
+          <div><button data-a="spawn">Créer dans la partie</button><button data-a="edit">Charger</button><button data-a="delete">Supprimer</button></div>`;
+        c.querySelector('[data-a="spawn"]').onclick=async()=>{
+          if(!confirm(`Créer "${t.nom}" dans la partie active ?`))return;
+          const r=await fetch(`/api/mob-templates/${encodeURIComponent(t.id)}/spawn`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+          const x=await r.json();
+          if(!r.ok){setMobStatus(x.message||'Erreur.',true);return;}
+          setMobStatus(`Mob "${x.mob.nom}" créé dans la partie.`);
+          await loadActiveMobs();
+        };
+        c.querySelector('[data-a="edit"]').onclick=()=>{resetMobForm('template');fillMobForm(t);mobForm.id.value='';mobFormTitle.textContent=`Nouveau template depuis : ${t.nom}`;setMobStatus('Template chargé comme base. Son enregistrement créera un nouveau template.');};
+        c.querySelector('[data-a="delete"]').onclick=async()=>{
+          if(!confirm(`Supprimer le template "${t.nom}" ?`))return;
+          const r=await fetch(`/api/mob-templates/${encodeURIComponent(t.id)}`,{method:'DELETE'});const x=await r.json();
+          if(!r.ok){setMobStatus(x.message||'Erreur.',true);return;}await loadMobTemplates();
+        };
+        mobTemplatesList.appendChild(c);
+      });
+    }
+
+    async function loadActiveMobs(){
+      const r=await fetch('/api/mobs'); if(!r.ok)throw new Error('Impossible de charger les mobs actifs.');
+      const list=await r.json(); activeMobsList.innerHTML='';
+      if(!list.length){activeMobsList.innerHTML='<p>Aucun mob dans la partie.</p>';return;}
+
+      list.forEach(m=>{
+        const c=document.createElement('div'); c.className='active-mob-card';
+        const max=Math.max(0,Number(m.hp?.max)||0);
+        const cur=Math.max(0,Math.min(Number(m.hp?.current)||0,max));
+        const manaMax=Math.max(0,Number(m.mana?.max)||0);
+        const manaCur=Math.max(0,Math.min(Number(m.mana?.current)||0,manaMax));
+        const pct=max>0?Math.max(0,Math.min(100,cur/max*100)):0;
+        const isDead=cur<=0;
+        const statusText=isDead?'MORT':'VIVANT';
+
+        c.innerHTML=`<h4>${m.nom}</h4><p>${m.description||''}</p>
+          <p class="mob-status ${isDead?'dead':''}"><strong>Statut : ${statusText}</strong></p>
+          <p><strong>HP :</strong> ${cur} / ${max}</p>
+          <div class="stat-bar"><div class="stat-bar-fill hp-bar" style="width:${pct}%"></div><div class="stat-bar-text">${cur} / ${max}</div></div>
+          <p><strong>Mana :</strong> ${manaCur} / ${manaMax}</p>
+
+          <div class="active-mob-resource-controls">
+            <div class="active-mob-resource">
+              <h5>Retirer des HP</h5>
+              <div class="active-mob-resource-actions">
+                <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de HP à retirer">
+                <button data-a="damage" type="button">− HP</button><button data-a="heal" type="button">+ HP</button>
+              </div>
+            </div>
+            <div class="active-mob-resource">
+              <h5>Retirer du Mana</h5>
+              <div class="active-mob-resource-actions">
+                <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de Mana à retirer">
+                <button data-a="drain-mana" type="button">− Mana</button><button data-a="restore-mana" type="button">+ Mana</button>
+              </div>
+            </div>
+          </div>
+
+          <p><strong>Protection :</strong> ${m.armure?.protection?.current??0} / ${m.armure?.protection?.max??0}</p>
+          ${isDead
+            ? '<button data-a="edit">Modifier</button><button data-a="delete">Retirer de la partie</button><button data-a="revive">Réanimer</button>'
+            : '<button data-a="edit">Modifier</button><button data-a="delete">Retirer de la partie</button>'}`;
+
+        async function updateMobResources(changes, successMessage){
+          try{
+            const response=await fetch(`/api/mobs/${encodeURIComponent(m.id)}`,{
+              method:'PUT',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify(changes)
+            });
+            const result=await response.json();
+            if(!response.ok){
+              setMobStatus(result.message||'Erreur lors de la mise à jour du mob.',true);
+              return;
+            }
+            setMobStatus(successMessage);
+            await loadActiveMobs();
+          }catch(error){
+            console.error('Erreur mise à jour ressources mob:',error);
+            setMobStatus('Impossible de mettre à jour le mob.',true);
+          }
+        }
+
+        c.querySelector('[data-a="damage"]').onclick=async()=>{
+          const amount=Math.max(1,Number(c.querySelector('[data-a="hp-amount"]').value)||1);
+          const newHp=Math.max(0,cur-amount);
+          await updateMobResources(
+            {hp:{current:newHp}},
+            newHp===0?`${m.nom} est maintenant MORT.`:`${amount} HP retiré(s) à ${m.nom}.`
+          );
+        };
+        c.querySelector('[data-a="heal"]').onclick=async()=>{
+          const amount=Math.max(1,Number(c.querySelector('[data-a="hp-amount"]').value)||1);
+          const newHp=Math.min(max,cur+amount);
+          await updateMobResources(
+            {hp:{current:newHp}},
+            `${amount} HP ajouté(s) à ${m.nom}.`
+          );
+        };
+
+        c.querySelector('[data-a="drain-mana"]').onclick=async()=>{
+          const amount=Math.max(1,Number(c.querySelector('[data-a="mana-amount"]').value)||1);
+          const newMana=Math.max(0,manaCur-amount);
+          await updateMobResources(
+            {mana:{current:newMana}},
+            `${amount} Mana retiré(s) à ${m.nom}.`
+          );
+        };
+        c.querySelector('[data-a="restore-mana"]').onclick=async()=>{
+          const amount=Math.max(1,Number(c.querySelector('[data-a="mana-amount"]').value)||1);
+          const newMana=Math.min(manaMax,manaCur+amount);
+          await updateMobResources(
+            {mana:{current:newMana}},
+            `${amount} Mana ajouté(s) à ${m.nom}.`
+          );
+        };
+
+        const reviveButton=c.querySelector('[data-a="revive"]');
+        if(reviveButton){
+          reviveButton.onclick=async()=>{
+            if(!confirm(`Réanimer "${m.nom}" avec ses HP et son Mana au maximum ?`))return;
+            await updateMobResources(
+              {
+                hp:{current:max},
+                mana:{current:manaMax}
+              },
+              `${m.nom} a été réanimé avec ses HP et son Mana au maximum.`
+            );
+          };
+        }
+
+        c.querySelector('[data-a="edit"]').onclick=()=>{
+          mobFormMode='mob';
+          fillMobForm(m);
+          document.getElementById('save-mob-btn').hidden=false;
+          document.getElementById('save-mob-template-btn').hidden=true;
+        };
+
+        c.querySelector('[data-a="delete"]').onclick=async()=>{
+          if(!confirm(`Retirer "${m.nom}" de la partie active ?`))return;
+          const response=await fetch(`/api/mobs/${encodeURIComponent(m.id)}`,{method:'DELETE'});
+          const result=await response.json();
+          if(!response.ok){setMobStatus(result.message||'Erreur.',true);return;}
+          await loadActiveMobs();
+        };
+
+        activeMobsList.appendChild(c);
+      });
+    }
+
+    document.getElementById('new-mob-btn').onclick=()=>resetMobForm('mob');
+    document.getElementById('new-mob-template-btn').onclick=()=>resetMobForm('template');
+    document.getElementById('cancel-mob-btn').onclick=()=>resetMobForm('mob');
+
+    document.getElementById('save-mob-btn').onclick=async()=>{
+      try{
+        const mob=mobFromForm();
+        if(!mob.nom){setMobStatus('Le nom du mob est obligatoire.',true);return;}
+        const id=mobForm.id.value;
+        const url=id?`/api/mobs/${encodeURIComponent(id)}`:'/api/mobs';
+        const method=id?'PUT':'POST';
+        const r=await fetch(url,{
+          method,
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(mob)
+        });
+        const x=await r.json();
+        if(!r.ok){setMobStatus(x.message||'Erreur de sauvegarde.',true);return;}
+        setMobStatus(id
+          ? `Mob "${x.mob.nom}" modifié.`
+          : `Mob "${x.mob.nom}" ajouté directement à la partie active (aucun template créé).`);
+        await loadActiveMobs();
+        if(!id) resetMobForm('mob');
+      }catch(error){
+        console.error('Erreur création/modification mob:',error);
+        setMobStatus(`Erreur : ${error.message||'Impossible de créer le mob.'}`,true);
+      }
+    };
+
+    document.getElementById('save-mob-template-btn').onclick=async()=>{
+      try{
+        const mob=mobFromForm();
+        if(!mob.nom){setMobStatus('Le nom du template est obligatoire.',true);return;}
+        const r=await fetch('/api/mob-templates',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(mob)
+        });
+        const x=await r.json();
+        if(!r.ok){setMobStatus(x.message||'Erreur.',true);return;}
+        await loadMobTemplates();
+        resetMobForm('template');
+        setMobStatus(`Template "${x.template.nom}" créé. Aucun mob n'a été ajouté à la partie.`);
+      }catch(error){
+        console.error('Erreur création template:',error);
+        setMobStatus(`Erreur : ${error.message||'Impossible de créer le template.'}`,true);
+      }
+    };
+
+    socket.on('mobUpdated',()=>loadActiveMobs());
+    socket.on('mobTemplateUpdated',()=>loadMobTemplates());
+    await Promise.all([loadMobTemplates(),loadActiveMobs(),loadStatusPlayers()]);
+    resetMobForm('mob');
+
+</script>
 </body>
 </html>

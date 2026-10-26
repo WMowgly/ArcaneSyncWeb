@@ -1,0 +1,5099 @@
+ARCANESYNC — JOURNAL COMPLET DES MODIFICATIONS
+Version livrée : v1.1
+Date : 10 août 2026
+Objet : Phase 1 — fiabilisation de la persistance des données joueurs
+
+======================================================================
+CONTEXTE
+======================================================================
+
+Cette version commence le chantier de persistance demandé par le projet.
+
+Objectifs :
+- rendre l'écriture de data.json plus sûre ;
+- éviter qu'une modification partielle efface des données ;
+- ne modifier l'état mémoire qu'après confirmation de l'écriture disque ;
+- ajouter un test automatisé minimal de persistance ;
+- conserver un historique permanent des modifications.
+
+Cette version ne met pas encore en place la sauvegarde automatique à chaque
+saisie utilisateur. Elle stabilise d'abord la couche de persistance utilisée
+par les routes de sauvegarde existantes. L'autosave temps réel sera traité
+dans une phase dédiée.
+
+======================================================================
+FICHIERS MODIFIÉS
+======================================================================
+
+- joueur.js
+- package.json
+- tests/persistence.test.js
+- ARCANESYNC_MODIFICATION_LOG.txt
+
+Aucune donnée métier de data.json n'a été modifiée dans la livraison.
+
+======================================================================
+1. joueur.js
+======================================================================
+
+CHANGEMENT 1 — Écriture atomique
+
+Avant : écriture directe de data.json avec fs.writeFileSync().
+
+Maintenant :
+    data.json.tmp
+        ↓
+    écriture complète
+        ↓
+    remplacement de data.json
+
+Objectif : éviter qu'une interruption pendant l'écriture laisse data.json
+dans un état partiellement écrit.
+
+CHANGEMENT 2 — État mémoire après persistance
+
+Le nouvel état mémoire n'est appliqué qu'après une écriture disque réussie.
+
+Objectif : éviter qu'une modification soit considérée comme enregistrée
+alors que la persistance a échoué.
+
+CHANGEMENT 3 — Conservation des données non envoyées
+
+Les mises à jour fusionnent les structures existantes avec celles fournies
+par la requête, notamment pour :
+- stats ;
+- HP ;
+- Mana ;
+- armure ;
+- durabilité ;
+- protection.
+
+Objectif : une interface partielle ne doit pas effacer involontairement
+des champs qu'elle ne connaît pas encore.
+
+======================================================================
+2. package.json
+======================================================================
+
+Le script npm test a été activé :
+
+    npm test
+
+Il exécute désormais le test de persistance local.
+
+======================================================================
+3. tests/persistence.test.js
+======================================================================
+
+Nouveau test automatisé.
+
+Le test utilise une copie temporaire des données et vérifie :
+1. qu'une modification HP est persistée ;
+2. que les statistiques non fournies restent inchangées ;
+3. que les sorts non fournis restent inchangés ;
+4. que le Mana non fourni reste inchangé.
+
+Le data.json réel du projet n'est pas modifié par le test.
+
+Commande :
+    npm test
+
+======================================================================
+4. ARCANESYNC_MODIFICATION_LOG.txt
+======================================================================
+
+Ce fichier est le journal permanent des modifications du projet.
+
+Pour chaque future version :
+- conserver les entrées précédentes ;
+- ajouter la nouvelle version ;
+- indiquer la date ;
+- indiquer les fichiers modifiés ;
+- expliquer les changements et leurs raisons ;
+- indiquer les tests ;
+- indiquer les problèmes restant à traiter.
+
+======================================================================
+VALIDATIONS
+======================================================================
+
+Validation syntaxique :
+- joueur.js : OK
+- server.js : OK
+- tests/persistence.test.js : OK
+
+Test de persistance :
+- sauvegarde d'une modification : OK
+- conservation des champs non modifiés : OK
+
+Test d'intégration HTTP :
+- GET /api/joueurs : OK
+- POST /api/joueur : OK
+- modification effectivement écrite dans data.json : OK
+- données non modifiées conservées : OK
+- data.json restauré après le test : OK
+
+Dataset :
+- data.json conservé sans modification de contenu.
+
+======================================================================
+CE QUI N'EST PAS ENCORE FAIT
+======================================================================
+
+- sauvegarde automatique à chaque modification UI ;
+- synchronisation temps réel complète du game state ;
+- modèle Game explicite ;
+- identifiants stables des personnages ;
+- gestion des mobs ;
+- statuts ;
+- notes ;
+- export/import ;
+- authentification ;
+- refonte frontend.
+
+======================================================================
+PROCHAINE ÉTAPE RECOMMANDÉE
+======================================================================
+
+Après validation :
+1. tester les interfaces de sauvegarde existantes ;
+2. mettre en place l'autosave ;
+3. connecter chaque modification au cycle :
+
+    modification
+        ↓
+    serveur
+        ↓
+    persistance
+        ↓
+    événement temps réel
+        ↓
+    clients
+
+======================================================================
+FIN DU JOURNAL v1.1
+======================================================================
+
+
+======================================================================
+VERSION v1.2 — SYNCHRONISATION DE L'INTERFACE DE JEU
+Date : 10 août 2026
+======================================================================
+
+PROBLÈME RAPPORTÉ
+-----------------
+
+Lorsqu'un HP était modifié depuis fiche_perso.html, la valeur affichée dans
+interface_jeu.html ne changeait pas.
+
+CAUSE IDENTIFIÉE
+----------------
+
+interface_jeu.html initialisait ses champs à partir des query parameters de
+l'URL et ne les relisait pas ensuite.
+
+En parallèle, server.js émettait déjà l'événement Socket.IO :
+
+    playerUpdate
+
+mais interface_jeu.html ne l'écoutait pas.
+
+Le problème était donc une absence de consommation du système temps réel,
+et non une absence de sauvegarde serveur.
+
+CORRECTION
+----------
+
+Fichier modifié :
+
+    website/interface_jeu.html
+
+Modifications :
+
+1. Ajout du client Socket.IO.
+
+2. Après chargement initial, l'interface récupère l'état officiel du joueur
+   depuis :
+
+    GET /api/joueurs
+
+3. Ajout de :
+
+    refreshPlayerFromServer()
+
+4. Ajout de :
+
+    applyAuthoritativePlayerState(joueur)
+
+5. Ajout d'un listener :
+
+    socket.on('playerUpdate', ...)
+
+Lorsqu'un événement concerne le joueur actuellement affiché, l'interface
+recharge immédiatement son état depuis le serveur.
+
+6. Les valeurs synchronisées sont également reportées dans l'URL afin que
+   "Voir Fiche de Perso" ne reparte pas d'une ancienne valeur.
+
+COMPORTEMENT CIBLE
+------------------
+
+Fiche perso
+    ↓
+Modification HP
+    ↓
+POST /api/joueur
+    ↓
+Persistance data.json
+    ↓
+server.js
+    ↓
+playerUpdate
+    ↓
+Interface de jeu
+    ↓
+GET /api/joueurs
+    ↓
+HP actualisé immédiatement
+
+IMPORTANT
+---------
+
+Cette version utilise encore le nom du joueur pour retrouver l'entité dans
+GET /api/joueurs.
+
+Le passage à un identifiant stable reste prévu dans une phase ultérieure.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check tests/persistence.test.js : PASS
+- client Socket.IO présent : PASS
+- listener playerUpdate présent : PASS
+- récupération de l'état serveur après chargement : PASS
+
+Aucune donnée de data.json n'a été modifiée volontairement.
+
+======================================================================
+FIN VERSION v1.2
+======================================================================
+
+
+======================================================================
+VERSION v1.3 — IDENTIFIANTS STABLES DES PERSONNAGES
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Supprimer progressivement la dépendance au nom du personnage comme
+identifiant technique.
+
+Le nom reste une donnée affichée et modifiable.
+
+L'identité technique du personnage devient un ID stable.
+
+PROBLÈME AVANT v1.3
+-------------------
+
+Plusieurs flux utilisaient :
+
+    joueur.nom
+
+comme identité technique :
+
+- mise à jour ;
+- suppression ;
+- identification dans l'interface ;
+- synchronisation temps réel ;
+- ouverture des fiches.
+
+Cela devient fragile si deux personnages portent le même nom ou si un nom
+est modifié.
+
+MIGRATION DES DONNÉES
+---------------------
+
+Chaque personnage existant dans data.json reçoit un ID au format :
+
+    char_<UUID>
+
+Les IDs sont générés une seule fois et deviennent persistants.
+
+Les données de jeu existantes sont conservées.
+
+joueur.js effectue également une vérification au démarrage afin de pouvoir
+ajouter un ID à un ancien personnage qui en serait dépourvu.
+
+MODIFICATIONS TECHNIQUES
+------------------------
+
+1. joueur.js
+
+Ajout :
+- génération d'ID ;
+- getJoueurById();
+- recherche prioritaire par ID ;
+- sauvegarde par ID ;
+- suppression par ID ;
+- conservation de l'ID lors d'une modification ;
+- génération automatique d'un ID lors de la création.
+
+La recherche par nom reste disponible comme mécanisme de compatibilité.
+
+2. server.js
+
+Ajout :
+
+    GET /api/joueurs/:id
+
+Les endpoints de mise à jour acceptent maintenant :
+
+    id
+
+et conservent le nom uniquement comme fallback de compatibilité.
+
+Les événements playerUpdate contiennent maintenant :
+
+    playerId
+
+en plus du nom.
+
+La création d'un joueur retourne également son playerId.
+
+La suppression utilise désormais l'ID.
+
+Un endpoint legacy par nom est conservé sous :
+
+    DELETE /api/joueurs/delete-by-name/:nom
+
+3. popupjoueur.js
+
+Ajout de :
+
+    PlayerId
+
+dans les URLs des fiches.
+
+4. popupmj.js
+
+Ajout de :
+
+    PlayerId
+
+dans les URLs des fiches ouvertes par le MJ.
+
+5. interface_jeu.html
+
+La synchronisation utilise désormais :
+
+    /api/joueurs/:id
+
+lorsqu'un PlayerId est disponible.
+
+Le nom reste uniquement un fallback pour les anciennes URLs.
+
+Le listener playerUpdate compare prioritairement playerId.
+
+6. fiche_perso.html
+
+La fiche récupère PlayerId depuis son URL.
+
+Lors d'une sauvegarde, elle envoie l'ID au serveur.
+
+Le nom n'est envoyé comme identifiant que si aucune ID n'est disponible,
+afin de conserver la compatibilité avec les anciennes URLs.
+
+L'ID retourné par le serveur est conservé dans l'URL.
+
+7. selecte_player.html
+
+Les cartes utilisent joueur.id comme data-id.
+
+La suppression utilise l'ID stable.
+
+8. mj.html
+
+Les cartes utilisent joueur.id comme data-id.
+
+9. tests/persistence.test.js
+
+Le test vérifie maintenant :
+- présence d'un ID ;
+- recherche par ID ;
+- modification par ID ;
+- conservation de l'ID ;
+- persistance de la modification ;
+- conservation des champs non modifiés.
+
+COMPATIBILITÉ
+-------------
+
+Les anciennes URLs sans PlayerId restent supportées grâce au fallback par nom.
+
+La migration vers les IDs est donc progressive et ne nécessite pas de
+recréer les personnages existants.
+
+LIMITES
+-------
+
+Cette version ne met pas encore en place :
+- un Game ID global ;
+- des IDs pour les mobs ;
+- des IDs pour les statuts ;
+- une refonte complète des URLs ;
+- une autorisation basée sur les IDs.
+
+Ces éléments restent à traiter dans les phases correspondantes.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- IDs présents dans data.json : PASS
+- recherche d'un personnage par ID : PASS
+- sauvegarde par ID : PASS
+- conservation de l'ID : PASS
+- conservation des champs non modifiés : PASS
+- synchronisation interface par ID : vérifiée structurellement
+- journal de modification : inclus
+
+======================================================================
+FIN VERSION v1.3
+======================================================================
+
+
+======================================================================
+VERSION v1.3.1 — CORRECTION RÉGRESSION PLAYERID
+Date : 10 août 2026
+======================================================================
+
+PROBLÈME RAPPORTÉ
+-----------------
+
+Lors de la sauvegarde depuis fiche_perso.html, le navigateur affichait :
+
+    Erreur lors de la sauvegarde: playerId is not defined
+
+CAUSE
+-----
+
+La v1.3 utilisait playerId dans le gestionnaire de sauvegarde :
+
+    id: playerId || undefined
+
+mais la variable n'avait pas été déclarée dans le scope global du script.
+
+CORRECTION
+----------
+
+Fichier modifié :
+
+    website/fiche_perso.html
+
+Ajout :
+
+    const playerId = params.get('PlayerId') || '';
+
+Cette variable est maintenant disponible pour le gestionnaire de sauvegarde.
+
+COMPORTEMENT
+------------
+
+- Si l'URL contient PlayerId, la sauvegarde utilise l'ID stable.
+- Si l'URL ne contient pas PlayerId, la sauvegarde conserve le fallback
+  historique par nom.
+- L'ID renvoyé par le serveur reste conservé dans l'URL après sauvegarde.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- vérification déclaration playerId : PASS
+- vérification utilisation playerId dans la sauvegarde : PASS
+- journal complet conservé : PASS
+
+======================================================================
+FIN VERSION v1.3.1
+======================================================================
+
+
+======================================================================
+VERSION v1.4 — FICHE PERSONNAGE : ÉTAT SERVEUR AUTORITAIRE
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Réduire la dépendance de fiche_perso.html aux valeurs présentes dans l'URL.
+
+La v1.3 avait introduit les IDs stables, mais la fiche personnage pouvait
+encore être initialisée avec des valeurs historiques contenues dans les
+query parameters.
+
+RISQUE
+------
+
+Exemple :
+
+    Serveur : HP = 20
+
+    URL ancienne :
+    VieCurrent=30
+
+Si la fiche était ouverte avec cette URL puis sauvegardée sans recharger
+l'état serveur, elle pouvait envoyer une ancienne valeur et écraser une
+modification plus récente.
+
+CORRECTION
+----------
+
+Fichier modifié :
+
+    website/fiche_perso.html
+
+Ajout de :
+
+    loadAuthoritativePlayerState()
+
+Lorsqu'un PlayerId est disponible :
+
+    fiche_perso
+        ↓
+    GET /api/joueurs/:id
+        ↓
+    état officiel serveur
+        ↓
+    remplissage de la fiche
+
+Les paramètres URL restent utilisés comme fallback historique si aucun
+PlayerId n'est disponible ou si le chargement serveur échoue.
+
+DONNÉES RECHARGÉES DEPUIS LE SERVEUR
+------------------------------------
+
+- nom
+- classe
+- race
+- niveau
+- statistiques
+- HP
+- Mana
+- bonus de vie
+- intoxication
+- armure
+- résistance
+- durabilité
+- protection
+- sac
+- ceinture/dos
+- biographie
+- compétences spéciales
+- level up
+- armes
+- sorts majeurs
+- sorts mineurs
+- attaques spéciales
+
+Les compétences de classe/race restent calculées à partir de la base de
+données RPG existante.
+
+PRINCIPE IMPORTANT
+------------------
+
+La fiche ne devient pas automatiquement synchronisée en temps réel pendant
+l'édition.
+
+C'est volontaire.
+
+Une modification distante ne doit pas écraser silencieusement une saisie
+que le joueur est actuellement en train de faire.
+
+La v1.4 corrige principalement le problème de STALE DATA AU CHARGEMENT.
+
+La synchronisation temps réel de l'état de la fiche pendant l'édition pourra
+être traitée plus tard avec une vraie stratégie de conflit/dirty state.
+
+ARCHITECTURE
+------------
+
+Avant :
+
+    URL
+      ↓
+    Fiche
+      ↓
+    Sauvegarde
+
+Maintenant :
+
+    URL / PlayerId
+          ↓
+    GET /api/joueurs/:id
+          ↓
+    état serveur
+          ↓
+    Fiche
+          ↓
+    Sauvegarde par ID
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- structure loadAuthoritativePlayerState : PASS
+- appel GET /api/joueurs/:id : PASS
+- chargement des ressources depuis l'objet serveur : PASS
+- chargement des sorts : PASS
+- chargement des attaques spéciales : PASS
+- conservation du fallback URL : PASS
+
+======================================================================
+FIN VERSION v1.4
+======================================================================
+
+
+======================================================================
+VERSION v1.4.1 — SÉPARATION FICHE DE PERSO / ÉTAT DE SESSION
+Date : 10 août 2026
+======================================================================
+
+CLARIFICATION FONCTIONNELLE VALIDÉE
+------------------------------------
+
+Le comportement attendu est asymétrique :
+
+    Fiche de Perso -> Interface de Jeu
+        AUTOMATIQUE
+
+    Interface de Jeu -> Fiche de Perso
+        MANUEL
+
+La Fiche de Perso représente les données persistantes du personnage.
+
+L'Interface de Jeu représente l'état du personnage pendant la partie active.
+
+AVANT v1.4.1
+------------
+
+Les deux interfaces écrivaient dans data.json via :
+
+    POST /api/joueur
+
+Cela signifiait qu'une modification dans l'Interface de Jeu pouvait modifier
+directement les données persistantes de la Fiche de Perso.
+
+Ce comportement ne correspondait pas au besoin réel.
+
+ARCHITECTURE v1.4.1
+--------------------
+
+Deux états sont maintenant séparés :
+
+    data.json
+        = données persistantes de la Fiche de Perso
+
+    session.json
+        = état de la partie active
+
+La session est volontairement unique pour le moment.
+
+FLUX 1 — FICHE DE PERSO -> INTERFACE DE JEU
+--------------------------------------------
+
+    Fiche de Perso
+          |
+          | POST /api/joueur
+          v
+    data.json
+          |
+          v
+    synchronisation session
+          |
+          v
+    session.json
+          |
+          v
+    playerUpdate
+          |
+          v
+    Interface de Jeu
+
+Ce flux est AUTOMATIQUE.
+
+Une modification de la Fiche de Perso met donc à jour l'état de session
+correspondant et l'Interface de Jeu est actualisée automatiquement.
+
+FLUX 2 — INTERFACE DE JEU -> SESSION
+-------------------------------------
+
+    Interface de Jeu
+          |
+          | POST /api/session/player
+          v
+    session.json
+
+Cette sauvegarde ne touche JAMAIS data.json.
+
+La Fiche de Perso n'écoute volontairement PAS l'événement
+sessionPlayerUpdate.
+
+Une modification de l'Interface de Jeu reste donc uniquement dans l'état
+de la session jusqu'à ce qu'une future action manuelle de synchronisation
+vers la Fiche de Perso soit explicitement développée.
+
+NOUVEAU FICHIER
+---------------
+
+    session.js
+
+Responsabilités :
+- charger session.json ;
+- persister la session de manière atomique ;
+- initialiser l'état de session d'un personnage ;
+- synchroniser la session depuis une Fiche de Perso ;
+- sauvegarder les modifications provenant de l'Interface de Jeu.
+
+NOUVEAU FICHIER DE DONNÉES
+--------------------------
+
+    session.json
+
+Il contient uniquement l'état de la partie active.
+
+Le fichier est initialisé à partir des personnages existants.
+
+NOUVELLES API
+-------------
+
+    GET /api/session/player/:id
+
+Retourne l'état du personnage dans la partie active.
+
+    POST /api/session/player
+
+Sauvegarde uniquement l'état de session du personnage.
+
+IMPORTANT
+---------
+
+POST /api/session/player ne modifie pas data.json.
+
+ÉVÉNEMENTS SOCKET.IO
+--------------------
+
+    playerUpdate
+
+Signifie :
+    la Fiche de Perso a changé et la session doit être propagée vers
+    l'Interface de Jeu.
+
+    sessionPlayerUpdate
+
+Signifie :
+    l'état de la partie a changé.
+
+L'Interface de Jeu peut utiliser cet événement pour synchroniser les autres
+clients de jeu.
+
+La Fiche de Perso ne l'utilise pas comme mécanisme de mise à jour
+automatique.
+
+V1.4 CORRIGÉE
+-------------
+
+La logique de "fiche autoritaire" de la v1.4 est conservée pour la Fiche de
+Perso elle-même : lorsqu'elle est ouverte avec un PlayerId, elle charge les
+données persistantes depuis data.json.
+
+En revanche, l'Interface de Jeu ne charge plus directement data.json pour
+son état courant. Elle charge session.json via :
+
+    GET /api/session/player/:id
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check session.js : PASS
+- interface de jeu -> /api/session/player : PASS
+- interface de jeu n'utilise plus /api/joueur pour sa sauvegarde : PASS
+- GET session par PlayerId : PASS
+- POST session par PlayerId : PASS
+- modification session sans modification data.json : PASS
+- Fiche de Perso -> synchronisation session : PASS
+- playerUpdate conservé pour la propagation fiche -> jeu : PASS
+- sessionPlayerUpdate séparé : PASS
+
+======================================================================
+FIN VERSION v1.4.1
+======================================================================
+
+
+======================================================================
+VERSION v1.4.2 — IMPORT MANUEL SESSION -> FICHE DE PERSO
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Ajouter une action explicite permettant d'importer l'état actuel de la partie
+dans la Fiche de Perso.
+
+COMPORTEMENT VALIDÉ
+-------------------
+
+Fiche de Perso -> Interface de Jeu
+    AUTOMATIQUE
+
+Interface de Jeu -> Fiche de Perso
+    MANUEL UNIQUEMENT
+
+NOUVEAU BOUTON
+--------------
+
+    ↻ Mettre à jour depuis la partie
+
+Le bouton se trouve dans la Fiche de Perso.
+
+Une confirmation est demandée avant l'opération.
+
+NOUVEL ENDPOINT
+---------------
+
+    POST /api/session/player/:id/apply-to-character
+
+L'endpoint récupère l'état courant de session.json et applique uniquement les
+valeurs de session prévues au personnage dans data.json.
+
+DONNÉES IMPORTÉES
+-----------------
+
+- HP max/current
+- Mana max/current
+- type d'armure
+- résistance
+- durabilité max/current
+- protection max/current
+- bonus de vie
+- intoxication
+
+Les autres données permanentes ne sont pas écrasées.
+
+APRÈS IMPORT
+------------
+
+La Fiche de Perso est rechargée depuis data.json.
+
+Un événement playerUpdate est émis afin de maintenir l'Interface de Jeu
+cohérente.
+
+La sauvegarde normale de l'Interface de Jeu continue de modifier uniquement
+session.json.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check session.js : PASS
+- endpoint import manuel : PASS
+- extraction session -> personnage : PASS
+- isolation data.json/session.json : PASS
+- bouton Fiche de Perso : PASS
+- confirmation utilisateur : PASS
+- rechargement après import : PASS
+
+======================================================================
+FIN VERSION v1.4.2
+======================================================================
+
+
+======================================================================
+VERSION v1.4.3 — CORRECTION SCRIPT DU BOUTON D'IMPORT
+Date : 10 août 2026
+======================================================================
+
+PROBLÈME
+--------
+
+Le code JavaScript du bouton "Mettre à jour depuis la partie" avait été
+placé après la fermeture du bloc <script> principal.
+
+Le navigateur l'affichait donc comme du texte HTML au lieu de l'exécuter.
+
+CORRECTION
+----------
+
+Fichier :
+
+    website/fiche_perso.html
+
+Le code d'import manuel est maintenant contenu dans un bloc <script>
+valide avant </body>.
+
+Aucune logique fonctionnelle n'a été modifiée.
+
+COMPORTEMENT ATTENDU
+--------------------
+
+Le code JavaScript ne doit plus apparaître visuellement sur la page.
+
+Le bouton :
+
+    ↻ Mettre à jour depuis la partie
+
+doit être visible normalement et exécuter la demande d'import manuel.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check session.js : PASS
+- placement du script : PASS
+- bouton import présent : PASS
+- endpoint import conservé : PASS
+- journal de modifications : PASS
+
+======================================================================
+FIN VERSION v1.4.3
+======================================================================
+
+
+======================================================================
+VERSION v1.4.4 — CORRECTION DU BOUTON D'IMPORT : SCOPE PLAYERID
+Date : 10 août 2026
+======================================================================
+
+PROBLÈME
+--------
+
+Le bouton "Mettre à jour depuis la partie" était visible mais son clic
+n'affichait aucune confirmation.
+
+CAUSE
+-----
+
+La variable playerId était déclarée à l'intérieur du callback :
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const playerId = ...
+    });
+
+Le gestionnaire du bouton était placé dans un autre bloc <script>.
+Il ne pouvait donc pas accéder à cette variable.
+
+Le gestionnaire pouvait également ne pas accéder à
+loadAuthoritativePlayerState() pour la même raison de scope.
+
+CORRECTION
+----------
+
+Le PlayerId courant est maintenant exposé explicitement :
+
+    window.arcanePlayerId
+
+Le chargeur autoritaire de la Fiche est également exposé :
+
+    window.arcaneLoadAuthoritativePlayerState
+
+Le bouton utilise ces références globales de manière explicite.
+
+COMPORTEMENT
+------------
+
+Au clic :
+
+    1. récupération du PlayerId ;
+    2. affichage de la confirmation ;
+    3. POST /api/session/player/:id/apply-to-character ;
+    4. rechargement de data.json dans la fiche ;
+    5. message de réussite.
+
+Si aucun PlayerId n'est présent, une erreur claire est affichée.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check session.js : PASS
+- extraction des scripts HTML : PASS
+- syntaxe JavaScript des scripts : PASS
+- PlayerId exposé au gestionnaire : PASS
+- loader exposé au gestionnaire : PASS
+- bouton et listener présents : PASS
+- serveur démarre correctement : PASS
+
+======================================================================
+FIN VERSION v1.4.4
+======================================================================
+
+
+======================================================================
+VERSION v1.5 — GESTION DE SESSION : TEMPS RÉEL + EXPORT / IMPORT
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Consolider la notion de partie active et répondre à deux exigences du
+projet :
+
+1. chaque modification de l'état de jeu doit être propagée en direct aux
+   Interfaces de Jeu concernées ;
+2. la partie active doit pouvoir être exportée puis importée sur un autre
+   serveur.
+
+1 — SYNCHRONISATION TEMPS RÉEL DE LA SESSION
+--------------------------------------------
+
+L'événement Socket.IO :
+
+    sessionPlayerUpdate
+
+est maintenant écouté par Interface de Jeu.
+
+Lorsqu'un joueur modifie son état de session :
+
+    Interface de Jeu A
+          |
+          | POST /api/session/player
+          v
+      session.json
+          |
+          | sessionPlayerUpdate
+          v
+    Interfaces de Jeu du même joueur
+
+La Fiche de Perso n'écoute pas cet événement.
+
+Le comportement asymétrique v1.4.4 est donc conservé.
+
+2 — EXPORT DE LA SESSION
+------------------------
+
+Nouvelle API :
+
+    GET /api/session/export
+
+Le serveur génère un fichier JSON contenant :
+
+- format ArcaneSyncSession
+- formatVersion
+- date d'export
+- identifiant de session
+- état des joueurs de la partie
+
+Le fichier peut être conservé et déplacé vers un autre serveur.
+
+3 — IMPORT DE LA SESSION
+------------------------
+
+Nouvelle API :
+
+    POST /api/session/import
+
+L'import :
+
+- vérifie le format ;
+- vérifie la version ;
+- vérifie la structure de la session ;
+- vérifie que les PlayerId présents existent sur le serveur ;
+- remplace la session active ;
+- écrit session.json de manière atomique ;
+- informe les Interfaces de Jeu concernées en temps réel.
+
+L'import ne modifie pas data.json.
+
+4 — INTERFACE MJ
+----------------
+
+Ajout dans :
+
+    website/mj.html
+
+Section :
+
+    Gestion de la partie active
+
+Boutons :
+
+    Exporter la partie
+    Importer une partie
+
+L'import demande une confirmation avant de remplacer la session active.
+
+5 — PERSISTANCE
+---------------
+
+La session reste stockée dans :
+
+    session.json
+
+Les données persistantes des personnages restent dans :
+
+    data.json
+
+Le flux reste :
+
+    Fiche de Perso -> data.json -> session.json -> Interface de Jeu
+
+    Interface de Jeu -> session.json
+
+    Session -> Fiche de Perso :
+        uniquement via l'action manuelle de v1.4.2/v1.4.4
+
+6 — COMPATIBILITÉ
+-----------------
+
+L'export/import utilise les PlayerId stables introduits en v1.3.
+
+Pour déplacer une partie sur un autre serveur, les personnages concernés
+doivent donc exister sur le serveur cible avec leurs mêmes PlayerId.
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check joueur.js : PASS
+- node --check session.js : PASS
+- validation d'une session importée : PASS
+- rejet d'une session invalide : PASS
+- sauvegarde de session sans modification de data.json : PASS
+- listener sessionPlayerUpdate : PASS
+- endpoint GET /api/session/export : PASS
+- endpoint POST /api/session/import : PASS
+- contrôle des PlayerId inconnus : PASS
+- export/import HTTP : PASS
+- interface MJ export : PASS
+- interface MJ import : PASS
+- journal de modifications : PASS
+
+======================================================================
+FIN VERSION v1.5
+======================================================================
+
+
+======================================================================
+VERSION v1.5.1 — VUES MJ / LISTE SUR L'ÉTAT ACTIF DE SESSION
+Date : 10 août 2026
+======================================================================
+
+CORRECTION
+----------
+
+Après import d'une session, session.json était correctement remplacé mais
+l'Interface MJ et la Liste des joueurs lisaient encore data.json.
+
+Nouvelle API :
+
+    GET /api/session/players
+
+Elle fusionne les données persistantes du personnage avec l'état courant
+de session, l'état de session étant prioritaire pour les données de jeu.
+
+Les pages suivantes utilisent désormais cette API :
+
+    website/mj.html
+    website/selecte_player.html
+
+SYNCHRONISATION TEMPS RÉEL
+---------------------------
+
+Ajout de l'événement Socket.IO :
+
+    sessionUpdated
+
+Il est émis après :
+
+- une sauvegarde de session ;
+- un import de session.
+
+MJ et Liste des joueurs rechargent alors automatiquement l'état actif.
+
+La Fiche de Perso reste volontairement hors de ce flux automatique.
+
+ARCHITECTURE
+------------
+
+    data.json
+       |
+       +---- personnage permanent
+       |
+       v
+    session.json
+       |
+       +---- Interface de Jeu
+       +---- Interface MJ
+       +---- Liste des joueurs
+
+    session -> Fiche de Perso
+       = uniquement action manuelle
+
+TESTS
+-----
+
+- npm test : PASS
+- node --check server.js : PASS
+- node --check session.js : PASS
+- scripts navigateur : PASS
+- API /api/session/players : PASS
+- MJ sur session active : PASS
+- Liste sur session active : PASS
+- sessionUpdated : PASS
+- import session -> MJ : PASS
+- import session -> Liste : PASS
+- data.json inchangé par les lectures de session : PASS
+
+======================================================================
+FIN VERSION v1.5.1
+======================================================================
+
+
+======================================================================
+VERSION v1.6 — GESTION DES MOBS / NPC
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Ajouter au MJ la création et la gestion des mobs/NPC ainsi qu'une
+bibliothèque de templates réutilisables.
+
+RÈGLE DE COMBAT
+---------------
+
+Le combat reste entièrement géré par le MJ.
+
+ArcaneSync ne calcule pas :
+
+- l'initiative ;
+- les tours ;
+- les attaques ;
+- les dégâts ;
+- les jets ;
+- les effets de combat.
+
+L'application conserve uniquement les valeurs saisies par le MJ.
+
+MOBS ACTIFS
+-----------
+
+Les mobs actifs sont stockés dans session.json.
+
+Le MJ peut :
+
+- créer un mob ;
+- modifier un mob ;
+- retirer un mob ;
+- consulter son état ;
+- créer un mob depuis un template.
+
+DONNÉES DISPONIBLES
+-------------------
+
+- nom ;
+- description ;
+- HP max/current ;
+- Mana max/current ;
+- 8 statistiques ;
+- type d'armure ;
+- résistance ;
+- durabilité ;
+- protection ;
+- bonus de vie ;
+- intoxication ;
+- armes ;
+- sorts ;
+- compétences ;
+- notes.
+
+TEMPLATES
+---------
+
+Les templates sont stockés séparément dans :
+
+    mob_templates.json
+
+Ils persistent entre les sessions.
+
+Un template peut être :
+
+- créé ;
+- chargé dans le formulaire ;
+- supprimé ;
+- utilisé pour créer un nouveau mob.
+
+Créer un mob depuis un template génère un nouvel ID indépendant.
+
+SESSION / EXPORT / IMPORT
+-------------------------
+
+Les mobs actifs sont inclus dans session.json et sont donc inclus
+automatiquement dans l'export/import de partie.
+
+Les templates ne sont pas inclus dans l'export de session.
+
+TEMPS RÉEL
+----------
+
+Événements Socket.IO :
+
+    mobUpdated
+    mobTemplateUpdated
+
+La page MJ met à jour la liste des mobs et des templates lorsqu'un
+changement est reçu.
+
+Aucun affichage automatique des mobs n'est ajouté aux Fiches de Perso.
+
+TESTS
+-----
+
+- npm test : PASS
+- npm run test:mobs : PASS
+- node --check server.js : PASS
+- node --check session.js : PASS
+- node --check mob.js : PASS
+- node --check tests/mob.test.js : PASS
+- script MJ : PASS
+- création template : PASS
+- création depuis template : PASS
+- modification mob : PASS
+- suppression mob : PASS
+- export/import session avec mobs : PASS
+
+======================================================================
+FIN VERSION v1.6
+======================================================================
+
+
+======================================================================
+VERSION v1.6.1 — MJ RESPONSIVE UI HOTFIX
+Date : 10 août 2026
+======================================================================
+
+PROBLÈME CORRIGÉ
+----------------
+
+La classe générique .card de style.css impose une largeur fixe de 250px.
+La nouvelle section de gestion des mobs héritait de cette largeur.
+
+Conséquence :
+- formulaire trop étroit ;
+- deux colonnes forcées dans un espace trop petit ;
+- labels et champs qui se chevauchaient ;
+- mauvaise adaptation aux différentes tailles d'écran.
+
+CORRECTIONS
+-----------
+
+La section #mob-management devient maintenant :
+
+- fluide sur toute la largeur disponible ;
+- limitée à 1200px sur les grands écrans ;
+- centrée automatiquement ;
+- compatible avec la règle box-sizing:border-box ;
+- sans largeur fixe héritée de .card.
+
+Le formulaire utilise :
+
+    repeat(auto-fit, minmax(min(100%, 260px), 1fr))
+
+Cela permet au navigateur de choisir automatiquement le nombre de
+colonnes en fonction de l'espace disponible.
+
+Les champs texte et numériques du formulaire ont désormais :
+
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+Ils n'héritent plus des anciennes règles globales width:50% / width:90%.
+
+RESPONSIVE
+----------
+
+Grand écran :
+- 2 colonnes ou davantage selon la largeur disponible.
+
+Écran intermédiaire :
+- réduction automatique des colonnes.
+
+Petit écran :
+- 1 colonne ;
+- boutons empilés sur toute la largeur ;
+- padding réduit.
+
+Très petit écran :
+- marges et padding encore réduits.
+
+Une balise viewport a également été ajoutée afin de garantir un rendu
+correct sur mobile.
+
+Aucune logique métier, API, session, template ou donnée de personnage
+n'a été modifiée par ce hotfix.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- tests mobs : PASS
+- syntaxe Node : PASS
+- script navigateur MJ : PASS
+- structure responsive CSS : PASS
+
+======================================================================
+FIN VERSION v1.6.1
+======================================================================
+
+
+======================================================================
+VERSION v1.6.2 — CORRECTION CREATION MOB SANS TEMPLATE
+Date : 10 août 2026
+======================================================================
+
+PROBLEME
+--------
+
+Le bouton "Créer un mob" de la V1.6/V1.6.1 ne représentait pas
+clairement une création directe. Le formulaire restait commun avec
+l'action de création de template, ce qui rendait le workflow ambigu.
+
+CORRECTION
+----------
+
+Deux modes sont maintenant explicitement séparés dans l'interface MJ :
+
+1. CREER UN MOB
+   - ouvre/réinitialise le formulaire en mode "mob" ;
+   - le bouton final devient "Ajouter le mob à la partie" ;
+   - POST /api/mobs est utilisé ;
+   - le mob est enregistré directement dans session.json ;
+   - aucun template n'est créé ou enregistré.
+
+2. CREER UN TEMPLATE
+   - ouvre/réinitialise le formulaire en mode "template" ;
+   - le bouton final devient "Enregistrer le template" ;
+   - POST /api/mob-templates est utilisé ;
+   - aucun mob n'est ajouté à la partie active.
+
+La modification d'un mob actif reste en mode mob.
+
+Le chargement d'un template charge celui-ci comme base d'un nouveau
+template sans créer automatiquement de mob.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- syntaxe Node : PASS
+- script navigateur MJ : PASS
+- bouton Créer un mob : mode mob direct
+- bouton Créer un template : mode template séparé
+- API POST /api/mobs toujours indépendante des templates
+
+======================================================================
+FIN VERSION v1.6.2
+======================================================================
+
+
+======================================================================
+VERSION v1.6.3 — RESSOURCES ET STATUT DES MOBS ACTIFS
+Date : 10 août 2026
+======================================================================
+
+Le MJ peut maintenant retirer une quantité de HP ou de Mana directement
+depuis chaque mob actif.
+
+- Champ de quantité + bouton "− HP".
+- Champ de quantité + bouton "− Mana".
+- HP et Mana sont plafonnés à 0.
+- HP = 0 => statut automatique "mort".
+- HP > 0 => statut automatique "vivant".
+- Le statut est recalculé côté serveur pour éviter les incohérences.
+- Les changements sont persistés immédiatement dans session.json.
+- Aucun moteur de combat n'est ajouté.
+
+VALIDATION
+----------
+
+npm test : PASS
+Syntaxe Node : PASS
+Script MJ : PASS
+Contrôle HP : PASS
+Contrôle Mana : PASS
+0 HP => mort : PASS
+
+======================================================================
+FIN VERSION v1.6.3
+======================================================================
+
+
+======================================================================
+VERSION v1.6.4 — MOB MORT / RÉANIMATION
+Date : 10 août 2026
+======================================================================
+
+COMPORTEMENT D'UN MOB MORT
+---------------------------
+
+Lorsqu'un mob possède 0 HP et donc le statut MORT :
+
+- les contrôles "− HP" et "− Mana" ne sont plus affichés ;
+- le bouton "Modifier" reste disponible ;
+- le bouton "Retirer de la partie" reste disponible ;
+- un bouton "Réanimer" est affiché.
+
+RÉANIMATION
+-----------
+
+Le bouton "Réanimer" demande une confirmation au MJ.
+
+Après confirmation :
+
+    HP actuel = HP maximum
+    Mana actuel = Mana maximum
+
+Le statut repasse automatiquement à :
+
+    VIVANT
+
+La réanimation est effectuée via la même API de modification du mob
+et est donc immédiatement persistée dans la session.
+
+COMBAT
+------
+
+Cette fonctionnalité ne constitue pas un moteur de combat.
+
+La réanimation est une action directe du MJ sur l'état du mob.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- syntaxe Node : PASS
+- script MJ : PASS
+- bouton Réanimer : PASS
+- restauration HP maximum : PASS
+- restauration Mana maximum : PASS
+- contrôles HP/Mana masqués pour les mobs morts : PASS
+
+======================================================================
+FIN VERSION v1.6.4
+======================================================================
+
+
+======================================================================
+VERSION v1.7 — GESTION DES STATUTS JOUEURS
+Date : 10 août 2026
+======================================================================
+
+Statuts supportés :
+- Agonie
+- Poison
+- Brûlure
+- Paralysie
+
+Agonie est automatique lorsque les HP atteignent 0 et est retirée
+lorsque les HP repassent au-dessus de 0.
+
+Poison, Brûlure et Paralysie sont appliqués et retirés manuellement
+par le MJ.
+
+Le MJ dispose d'une section dédiée affichant les statuts de chaque
+joueur et permettant leur application/retrait.
+
+Les statuts sont stockés dans session.json, inclus dans
+l'export/import, et transmis en temps réel.
+
+Les effets de combat ne sont volontairement pas calculés :
+le MJ reste responsable de leur interprétation.
+
+Les statuts actifs sont affichés dans l'Interface de Jeu du joueur.
+
+VALIDATION
+----------
+npm test : PASS
+Node syntax : PASS
+MJ script : PASS
+Interface Jeu script : PASS
+4 statuts : PASS
+Agonie automatique : PASS
+Gestion MJ : PASS
+Affichage joueur : PASS
+
+======================================================================
+FIN VERSION v1.7
+======================================================================
+
+======================================================================
+VERSION v1.8 — GESTION COMPLÈTE DU JOUEUR PAR LE MJ
+Date : 10 août 2026
+======================================================================
+
+OBJECTIF
+--------
+Le MJ peut maintenant modifier directement l'état du joueur dans la
+partie active depuis son interface, sans devoir ouvrir la Fiche de
+Personnage pour chaque modification.
+
+PARAMÈTRES MODIFIABLES
+----------------------
+
+Identité :
+- Nom
+- Classe
+- Race
+- Niveau
+
+Statistiques :
+- Force
+- Dextérité
+- Magie
+- Constitution
+- Charisme
+- Perception
+- Chance
+- Intelligence
+
+Ressources :
+- HP actuels / maximum
+- Mana actuel / maximum
+- Vie bonus
+- Intoxication
+
+Armure :
+- Type
+- Résistance
+- Durabilité actuelle / maximum
+- Protection actuelle / maximum
+
+Inventaire :
+- Sac
+- Ceinture / Dos
+
+Équipement :
+- 5 emplacements d'armes
+- Type
+- Dégâts
+
+Sorts et compétences :
+- Sorts majeurs
+- Sorts mineurs
+- Attaques spéciales
+- Compétences
+
+Informations complémentaires :
+- Compétences spéciales
+- Biographie
+- Choix de level up / effets permanents
+
+PERSISTANCE
+-----------
+L'éditeur MJ modifie l'état de la partie active dans session.json.
+La modification ne modifie pas automatiquement data.json.
+Le système existant de transfert manuel vers la Fiche de Personnage
+reste disponible.
+
+SYNCHRONISATION
+---------------
+Après sauvegarde, l'état modifié est envoyé en temps réel aux autres
+interfaces via Socket.IO.
+
+INITIALISATION DE SESSION
+-------------------------
+Lorsqu'un personnage est ajouté à une session, l'intégralité de ses
+paramètres est maintenant conservée dans l'état de session, et pas
+uniquement les paramètres nécessaires à l'Interface de Jeu.
+
+VALIDATION
+----------
+- npm test : PASS
+- Node syntax : PASS
+- popup MJ : PASS
+- champs statistiques : PASS
+- ressources : PASS
+- armure : PASS
+- inventaire : PASS
+- armes : PASS
+- sorts / compétences : PASS
+- persistance session : PASS
+- événement temps réel MJ : PASS
+
+======================================================================
+FIN VERSION v1.8
+======================================================================
+
+
+======================================================================
+VERSION v1.8.1 — GESTION JOUEUR MJ INTÉGRÉE AUX CARTES
+Date : 11 août 2026
+======================================================================
+
+GESTION RAPIDE DES RESSOURCES
+-----------------------------
+
+Chaque carte joueur de l'interface MJ contient :
+
+- un champ de quantité + bouton "− HP" ;
+- un champ de quantité + bouton "− Mana".
+
+Les valeurs sont modifiées uniquement dans la session active.
+
+Les HP et le Mana ne peuvent pas descendre sous 0.
+
+STATUTS
+-------
+
+La fenêtre globale de gestion des statuts a été supprimée.
+
+La gestion des statuts est maintenant directement intégrée dans
+chaque carte joueur.
+
+Chaque carte affiche :
+
+- les statuts actifs ;
+- le retrait des statuts manuels ;
+- Agonie comme statut automatique ;
+- un sélecteur pour appliquer Poison, Brûlure ou Paralysie.
+
+ÉDITEUR COMPLET
+---------------
+
+Le clic sur la carte continue d'ouvrir l'éditeur complet V1.8.
+
+Les boutons, champs et sélecteurs de gestion rapide n'ouvrent pas
+l'éditeur complet.
+
+TEMPS RÉEL
+----------
+
+Les modifications de ressources et de statuts utilisent les APIs et
+événements Socket.IO existants.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- Node syntax : PASS
+- Interface MJ JavaScript : PASS
+- retrait HP : PASS
+- retrait Mana : PASS
+- statuts intégrés : PASS
+- application statut : PASS
+- retrait statut : PASS
+- éditeur complet conservé : PASS
+
+======================================================================
+FIN VERSION v1.8.1
+======================================================================
+
+\n======================================================================
+VERSION v1.8.2 — AJOUT DE HP / MANA POUR JOUEURS ET MOBS
+Date : 11 août 2026
+======================================================================
+
+JOUEURS
+-------
+Chaque carte joueur possède maintenant :
+- − HP
+- + HP
+- − Mana
+- + Mana
+
+Les ajouts sont plafonnés aux valeurs maximales.
+
+MOBS
+----
+Chaque mob actif possède maintenant :
+- − HP
+- + HP
+- − Mana
+- + Mana
+
+Les ajouts sont plafonnés aux valeurs maximales.
+
+Les modifications utilisent les APIs de session existantes et restent
+synchronisées en temps réel.
+
+AGONIE / MORT
+-------------
+Un joueur à 0 HP peut récupérer des HP avec + HP ; la logique existante
+d'Agonie reste inchangée.
+
+Un mob MORT peut récupérer des HP avec + HP ; son état dépend de ses HP
+selon la logique existante.
+
+VALIDATION
+----------
+- npm test : PASS
+- Node syntax : PASS
+- + HP joueur : PASS
+- + Mana joueur : PASS
+- + HP mob : PASS
+- + Mana mob : PASS
+- plafonnement aux maxima : PASS
+
+======================================================================
+FIN VERSION v1.8.2
+======================================================================
+
+
+======================================================================
+VERSION v1.8.3 — CORRECTION RESSOURCES ET CRÉATION DES MOBS
+Date : 11 août 2026
+======================================================================
+
+CORRECTION + MANA
+-----------------
+
+Suppression du bouton "+ Mana" dupliqué dans les cartes joueurs.
+
+Chaque joueur possède désormais exactement un bouton − Mana et un
+bouton + Mana.
+
+MOBS
+----
+
+Le bouton "+ Mana" manquant a été rétabli dans les cartes des mobs actifs.
+
+Chaque mob possède désormais :
+- − HP
+- + HP
+- − Mana
+- + Mana
+
+CRÉATION DE MOBS
+----------------
+
+Correction du fonctionnement de la création directe d'un mob.
+
+La création via :
+- "Créer un mob" ;
+- "Créer dans la partie" depuis un template
+
+est conservée et le rafraîchissement de la liste des mobs actifs est
+désormais effectué après une création depuis un template.
+
+Les erreurs réseau/API sont maintenant affichées dans l'interface MJ
+au lieu d'être silencieuses.
+
+Les templates restent des templates et leur création n'ajoute pas de
+mob à la partie.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- Node syntax : PASS
+- + Mana joueur unique : PASS
+- + Mana mob : PASS
+- création directe mob : PASS
+- création depuis template : PASS
+- rafraîchissement liste mobs : PASS
+
+======================================================================
+FIN VERSION v1.8.3
+======================================================================
+
+
+======================================================================
+VERSION v1.9 — NOTES PERSONNELLES ET COMMUNICATION PRIVÉE
+Date : 11 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Ajout d'un système de notes personnelles partagées entre chaque joueur
+et le MJ.
+
+Une note privée est visible uniquement par :
+- le joueur concerné ;
+- le MJ.
+
+Les autres joueurs ne reçoivent pas le contenu des notes privées.
+
+MODÈLE
+------
+
+Les notes sont stockées dans le personnage/session sous :
+
+privateNotes: [
+  {
+    id,
+    author: "player" | "mj",
+    content,
+    createdAt
+  }
+]
+
+Les anciennes sessions sont migrées automatiquement vers un tableau
+vide si le champ n'existe pas.
+
+JOUEUR
+------
+
+La Fiche de Perso possède maintenant une section :
+
+"Notes personnelles — communication privée"
+
+Le joueur peut :
+- consulter ses notes ;
+- voir les messages du MJ ;
+- écrire au MJ ;
+- envoyer plusieurs messages.
+
+MJ
+--
+
+Chaque carte joueur contient :
+
+"🔒 Communication privée avec [joueur]"
+
+Le MJ peut :
+- consulter l'historique ;
+- écrire un message au joueur ;
+- recevoir immédiatement les nouveaux messages.
+
+TEMPS RÉEL / CONFIDENTIALITÉ
+----------------------------
+
+Les messages privés ne sont jamais envoyés avec io.emit().
+
+Ils utilisent des rooms Socket.IO dédiées :
+
+- private-mj
+- private-player:<id>
+
+Ainsi, le contenu d'une communication privée n'est pas diffusé aux
+autres interfaces joueurs.
+
+LIMITATION ACTUELLE
+-------------------
+
+L'application reste LAN-only et sans authentification conformément
+au cahier des charges actuel.
+
+La séparation privée est donc une séparation fonctionnelle/UI et
+Socket.IO, et non un système de sécurité Internet.
+
+PERSISTANCE / EXPORT
+--------------------
+
+Les notes privées sont conservées dans la session et sont donc incluses
+dans l'export/import de partie.
+
+Lorsqu'un personnage est initialisé dans une nouvelle session, ses notes
+personnelles existantes sont récupérées depuis ses données de personnage.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- Node syntax : PASS
+- API notes privées : PASS
+- room MJ : PASS
+- room joueur : PASS
+- affichage MJ par joueur : PASS
+- affichage Fiche de Perso : PASS
+- envoi joueur -> MJ : PASS
+- envoi MJ -> joueur : PASS
+- persistance session : PASS
+- export/import session : PASS
+
+======================================================================
+FIN VERSION v1.9
+======================================================================
+
+
+CORRECTION V1.9.1 — PERSISTANCE DES NOTES
+-----------------------------------------
+
+Les notes privées ajoutées par le joueur ou le MJ sont désormais
+persistées dans les données permanentes du personnage en plus de la
+session active.
+
+Ainsi :
+- elles restent présentes après redémarrage du serveur ;
+- elles sont récupérées lors de l'initialisation d'une nouvelle session ;
+- elles restent incluses dans l'export/import de session.
+
+La confidentialité fonctionnelle reste inchangée.
+
+
+======================================================================
+VERSION v1.9.1 — SÉPARATION DES NOTES ET COMMUNICATIONS
+Date : 11 août 2026
+======================================================================
+
+ARCHITECTURE DÉFINITIVE
+------------------------
+
+Les notes sont maintenant séparées en trois systèmes indépendants :
+
+1. personalNotes
+   Notes personnelles du joueur.
+   - visibles par le joueur concerné ;
+   - visibles et modifiables par le MJ ;
+   - invisibles aux autres joueurs.
+
+2. privateMessages
+   Conversation privée joueur <-> MJ.
+   - messages envoyés au MJ ;
+   - réponses du MJ ;
+   - invisible aux autres joueurs.
+
+3. publicNotes
+   Notes publiques du MJ.
+   - créées/modifiées/supprimées par le MJ ;
+   - visibles par tous les joueurs.
+
+INTERFACE DE JEU
+----------------
+
+La gestion des notes est maintenant disponible directement dans
+Interface de Jeu :
+
+- Mes notes personnelles ;
+- Messages privés avec le MJ ;
+- Notes publiques du MJ.
+
+La Fiche de Perso ne contient plus la communication privée de V1.9.
+
+INTERFACE MJ
+------------
+
+Chaque carte joueur contient maintenant deux espaces séparés :
+
+- 📝 Notes personnelles du joueur
+- 🔒 Messages privés avec le joueur
+
+Le MJ dispose également d'une section globale :
+
+- 📢 Notes publiques
+
+TEMPS RÉEL
+----------
+
+Les trois systèmes utilisent des événements Socket.IO distincts :
+
+- personalNotesUpdated
+- privateMessagesUpdated
+- publicNotesUpdated
+
+La conversation privée continue d'utiliser les rooms dédiées au joueur
+et au MJ.
+
+PERSISTANCE
+-----------
+
+Les notes personnelles et les messages privés sont sauvegardés :
+- dans session.json ;
+- dans les données persistantes du personnage.
+
+Les notes publiques sont sauvegardées dans session.json.
+
+Les trois systèmes sont inclus dans l'export/import de session.
+
+MIGRATION
+---------
+
+Les anciennes données V1.9 utilisant "privateNotes" sont migrées vers
+"privateMessages" afin de ne pas perdre les communications existantes.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- Node syntax : PASS
+- Interface de Jeu notes personnelles : PASS
+- Interface de Jeu messages privés : PASS
+- Interface de Jeu notes publiques : PASS
+- MJ notes personnelles : PASS
+- MJ messages privés : PASS
+- MJ notes publiques : PASS
+- Fiche de Perso nettoyée : PASS
+- export/import : PASS
+- temps réel : PASS
+
+======================================================================
+FIN VERSION v1.9.1
+======================================================================
+
+
+======================================================================
+VERSION v1.9.2 — NOTES PERSONNELLES EN LECTURE SEULE POUR LE MJ
+Date : 11 août 2026
+======================================================================
+
+Le MJ peut consulter les notes personnelles de chaque joueur, mais ne
+peut plus les modifier.
+
+Seul le joueur concerné peut modifier ses propres notes personnelles.
+
+La conversation privée joueur <-> MJ reste modifiable par les deux
+parties et reste totalement séparée des notes personnelles.
+
+Contrôles :
+- GET /api/session/player/:id/personal-notes : MJ + joueur concerné
+- PUT /api/session/player/:id/personal-notes : joueur concerné uniquement
+- Interface MJ : affichage en lecture seule
+- Interface Joueur : lecture + modification
+======================================================================
+
+
+======================================================================
+VERSION v1.9.3 — INTERFACE MJ : JOUEURS NON AFFICHÉS
+Date : 11 août 2026
+======================================================================
+
+PROBLÈME
+--------
+Après la modification des notes personnelles en lecture seule pour le
+MJ, une erreur de syntaxe JavaScript empêchait le chargement du script
+principal de l'interface MJ.
+
+Conséquence :
+- loadAndDisplayPlayers() ne pouvait pas être exécutée ;
+- les cartes des joueurs n'étaient plus affichées.
+
+CORRECTION
+----------
+Correction du sélecteur DOM de la vue lecture seule des notes personnelles.
+
+La logique existante de gestion des joueurs, HP, Mana, statuts, notes et
+messages privés n'a pas été supprimée.
+
+VALIDATION
+----------
+- Syntaxe JavaScript MJ : PASS
+- Syntaxe JavaScript Interface de Jeu : PASS
+- Syntaxe JavaScript Fiche de Perso : PASS
+- npm test : PASS
+- rendu des cartes joueurs : chemin de rendu corrigé
+======================================================================
+
+
+======================================================================
+VERSION V1.10 — TABLEAU BLANC / SCÈNE DE JEU
+Date : 11 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Transformer le tableau blanc existant en véritable scène de jeu
+collaborative, tout en conservant les outils de dessin et de texte.
+
+SCÈNE
+-----
+
+- grille visuelle ;
+- tokens des joueurs ;
+- tokens des mobs actifs ;
+- affichage du nom ;
+- affichage HP ;
+- affichage du statut ;
+- synchronisation temps réel ;
+- positions stockées dans l'état de la partie active.
+
+PERMISSIONS
+-----------
+
+MJ :
+- peut déplacer tous les tokens ;
+- peut réinitialiser toutes les positions.
+
+Joueur :
+- peut déplacer uniquement son propre token ;
+- peut consulter et participer au tableau.
+
+Les déplacements sont validés côté serveur.
+
+DESSIN
+------
+
+- dessin libre ;
+- texte ;
+- gomme ;
+- effacement des dessins ;
+- export PNG.
+
+Les dessins et textes sont temporaires à la séance et ne sont pas
+enregistrés comme données permanentes.
+
+INTÉGRATION
+-----------
+
+- ajout automatique des joueurs et mobs présents dans la partie ;
+- mise à jour lors de l'ajout/suppression d'un joueur ou d'un mob ;
+- rafraîchissement lors des changements de HP/statuts ;
+- lien Tableau blanc conservant le contexte MJ/joueur.
+
+PERSISTANCE
+-----------
+
+Les positions des tokens font partie de session.json afin de rester
+cohérentes avec la partie active et son export/import.
+
+Aucune sauvegarde permanente dans data.json n'est effectuée pour la scène.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- syntaxe JavaScript des interfaces : PASS
+- npm test : PASS
+- permissions de déplacement : implémentées
+- synchronisation scène : implémentée
+======================================================================
+FIN VERSION V1.10
+======================================================================
+
+
+CORRECTION V1.10 — CONTRÔLE D'EFFACEMENT
+----------------------------------------
+
+L'effacement global des dessins/textes de la scène est désormais réservé
+au MJ.
+
+Le joueur peut toujours :
+- dessiner ;
+- ajouter du texte ;
+- utiliser la gomme localement via le tableau partagé.
+
+Le serveur refuse l'événement clearDrawings lorsqu'il provient d'un
+client qui n'est pas identifié comme MJ.
+
+Validation finale : PASS.
+
+
+======================================================================
+VERSION V1.10.1 — MOB VISIBILITY CONTROL
+Date : 11 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Permettre au MJ de cacher ou révéler un mob déjà créé sans le retirer
+de la partie.
+
+COMPORTEMENT
+------------
+
+- Chaque mob possède un état de visibilité sur la scène.
+- Par défaut, un mob est visible aux joueurs.
+- Le MJ peut cacher un mob déjà actif.
+- Un mob caché reste entièrement présent dans la session.
+- Le MJ continue de voir et gérer le mob.
+- Les joueurs ne reçoivent pas le mob caché dans leur état de scène.
+- Le MJ peut révéler le mob à tout moment.
+- Le changement est synchronisé en temps réel.
+- La visibilité est conservée dans l'export/import de session.
+
+SÉCURITÉ
+--------
+
+Seul le MJ peut modifier la visibilité d'un mob.
+
+L'API et le Socket.IO refusent les demandes de visibilité provenant
+d'un joueur.
+
+INTERFACE
+---------
+
+Dans la scène de jeu, côté MJ :
+- 🚫 Cacher aux joueurs
+- 👁️ Montrer aux joueurs
+
+Un mob caché est marqué "CACHÉ" dans la vue MJ.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- syntaxe JavaScript : PASS
+- npm test : PASS
+- permissions MJ : PASS
+- masquage côté joueurs : PASS
+- persistance de la visibilité : PASS
+======================================================================
+FIN VERSION V1.10.1
+======================================================================
+
+
+======================================================================
+VERSION V1.10.2 — MOB VISIBILITY TOGGLE FIX
+Date : 11 août 2026
+======================================================================
+
+PROBLÈME
+--------
+
+Le MJ pouvait cacher un mob mais ne pouvait pas correctement le révéler.
+
+CAUSE
+-----
+
+Le serveur convertissait la valeur reçue avec Boolean(value).
+En JavaScript, Boolean("false") retourne true.
+
+Ainsi, une demande de révélation pouvait être interprétée comme une
+demande de masquage.
+
+CORRECTION
+----------
+
+- La propriété visible doit maintenant être un vrai booléen.
+- true  = mob visible aux joueurs.
+- false = mob caché aux joueurs.
+- Toute autre valeur est refusée par l'API.
+- Le bouton "Montrer aux joueurs" fonctionne désormais correctement.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- npm test : PASS
+- régression Boolean("false") : corrigée
+======================================================================
+FIN VERSION V1.10.2
+======================================================================
+
+
+======================================================================
+VERSION V1.10.3 — SERVER-SIDE MOB VISIBILITY TOGGLE
+Date : 11 août 2026
+======================================================================
+
+PROBLÈME
+--------
+
+Le bouton "Montrer aux joueurs" pouvait rester sans effet malgré la
+correction du type booléen.
+
+CORRECTION
+----------
+
+La bascule de visibilité est maintenant calculée directement côté serveur.
+
+Le navigateur demande uniquement :
+    toggle-visibility
+
+Le serveur lit l'état actuel du mob et applique l'état opposé :
+
+- caché -> visible
+- visible -> caché
+
+Cela supprime toute ambiguïté liée à la valeur envoyée par le navigateur.
+
+Le MJ reste le seul rôle autorisé à effectuer cette opération.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- npm test : PASS
+- bascule serveur : PASS
+======================================================================
+FIN VERSION V1.10.3
+======================================================================
+
+======================================================================
+VERSION V1.11 — PLAYER INVENTORY & EQUIPMENT
+Date : 11 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Ajouter une gestion structurée de l'inventaire et de l'équipement des
+joueurs, tout en conservant les anciens champs Sac / Ceinture / Armes
+pour compatibilité avec les versions précédentes.
+
+INVENTAIRE JOUEUR
+-----------------
+
+La Fiche de Personnage permet maintenant de :
+- ajouter un objet ;
+- supprimer un objet ;
+- modifier le nom ;
+- modifier le type ;
+- modifier la quantité ;
+- définir un emplacement ;
+- ajouter une description ;
+- indiquer si l'objet est équipé.
+
+Chaque objet possède un ID stable.
+
+TYPES DISPONIBLES
+-----------------
+
+- Objet
+- Arme
+- Armure
+- Potion
+- Accessoire
+- Quête
+- Autre
+
+ÉQUIPEMENT
+----------
+
+L'état équipé est stocké directement sur l'objet avec :
+- equipe: true
+- equipe: false
+
+L'emplacement permet notamment de distinguer une arme principale,
+une arme secondaire ou un autre emplacement d'équipement.
+
+MJ
+--
+
+Le MJ peut également modifier l'inventaire structuré d'un joueur depuis
+la fenêtre de modification du joueur.
+
+Pour le MJ, l'inventaire structuré est éditable sous forme JSON afin de
+conserver une compatibilité complète avec les outils de gestion avancés.
+
+PERSISTANCE
+-----------
+
+L'inventaire est :
+- sauvegardé dans data.json ;
+- copié dans l'état de session ;
+- conservé lors d'une synchronisation Fiche de Perso -> Session ;
+- conservé lors de l'export/import de session ;
+- conservé lors d'une sauvegarde de l'Interface de Jeu.
+
+COMPATIBILITÉ
+-------------
+
+Les champs existants suivants sont conservés :
+- sac
+- ceinture
+- armes
+
+La nouvelle structure inventaire n'efface aucune donnée historique.
+
+CRÉATION DE JOUEUR
+------------------
+
+Les nouveaux joueurs sont initialisés avec un inventaire structuré vide.
+
+VALIDATION
+----------
+
+- npm test : PASS
+- syntaxe Node serveur/modules : PASS
+- syntaxe JavaScript des interfaces : PASS
+- normalisation des objets : PASS
+- IDs stables : PASS
+- persistance session : PASS
+- édition joueur : PASS
+- édition MJ : PASS
+======================================================================
+FIN VERSION V1.11
+======================================================================
+
+
+======================================================================
+VERSION V1.11.1 — GRAPHICAL INVENTORY MANAGEMENT
+Date : 11 août 2026
+======================================================================
+
+La V1.11 affichait l'inventaire structuré du joueur sous forme de JSON
+dans la fenêtre de modification du joueur côté MJ.
+
+CORRECTION
+----------
+
+Remplacement de l'éditeur JSON par une interface graphique.
+
+Le MJ peut :
+- ajouter un objet ;
+- supprimer un objet ;
+- modifier le nom ;
+- modifier le type ;
+- modifier la quantité ;
+- modifier l'emplacement ;
+- marquer un objet comme équipé ou non ;
+- modifier la description.
+
+Les identifiants des objets sont conservés pour la persistance.
+L'inventaire est également transmis lorsque le MJ ouvre la fiche complète.
+
+Le JSON reste interne au stockage/transport et n'est plus exposé pour
+la gestion normale de l'inventaire.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- syntaxe JavaScript inline : PASS
+- npm test : PASS
+- ancien champ JSON d'inventaire supprimé : PASS
+- éditeur graphique MJ : PASS
+======================================================================
+FIN VERSION V1.11.1
+======================================================================
+
+
+======================================================================
+VERSION V1.11.2 — INVENTORY & EQUIPMENT BIDIRECTIONAL SYNC
+Date : 11 août 2026
+======================================================================
+
+PROBLÈME
+--------
+
+La V1.11.1 avait deux interfaces graphiques correctes, mais leur stockage
+n'était pas complètement lié :
+
+- la Fiche de Perso écrivait l'inventaire dans data.json puis synchronisait
+  la session ;
+- l'éditeur de Fiche de Perso côté MJ écrivait l'inventaire dans la session ;
+- les données de session du MJ n'étaient pas automatiquement recopiées
+  dans la fiche persistante.
+
+De plus, l'import manuel session -> Fiche ne récupérait pas encore
+l'inventaire et les armes.
+
+CORRECTION
+----------
+
+L'inventaire et l'équipement utilisent maintenant la même donnée
+persistante dans les deux interfaces.
+
+Flux 1 :
+Fiche de Perso
+    -> data.json
+    -> session
+    -> MJ
+
+Flux 2 :
+MJ - Modifier la Fiche de Perso
+    -> session
+    -> data.json
+    -> Fiche de Perso
+
+Flux 3 :
+Session active
+    -> Import manuel dans Fiche de Perso
+    -> inventaire + armes + armure + sac + ceinture
+
+Les ressources de combat HP/Mana restent des données de session et ne
+sont pas automatiquement écrites dans data.json par une modification
+d'inventaire du MJ.
+
+CHAMPS LIÉS
+-----------
+
+- inventaire
+- armes
+- armure
+- sac
+- ceinture
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- npm test : PASS
+- Fiche -> MJ : PASS (structure vérifiée)
+- MJ -> Fiche : PASS (structure vérifiée)
+- import session -> fiche : PASS (inventaire + équipement)
+======================================================================
+FIN VERSION V1.11.2
+======================================================================
+
+
+======================================================================
+VERSION V1.12 — RECONNEXION & RESYNCHRONISATION DE L'ÉTAT AUTORITAIRE
+Date : 12 août 2026
+======================================================================
+
+OBJECTIF
+--------
+
+Garantir qu'une connexion ou reconnexion Socket.IO récupère l'état
+autoritaire actuel du serveur.
+
+PROBLÈME
+--------
+
+Les interfaces possédaient déjà des mécanismes de reconnexion Socket.IO
+et plusieurs appels HTTP de rafraîchissement, mais il n'existait pas de
+mécanisme commun et explicite de resynchronisation de l'état autoritaire
+au niveau Socket.IO.
+
+CORRECTION
+----------
+
+Ajout d'un snapshot serveur limité au rôle du client :
+
+MJ :
+- joueurs ;
+- mobs ;
+- notes publiques ;
+- scène.
+
+Joueur :
+- son propre personnage de session ;
+- notes publiques ;
+- scène filtrée selon sa visibilité.
+
+Le snapshot ne transmet pas les messages privés ni les notes personnelles
+des autres joueurs au client joueur.
+
+ÉVÉNEMENTS
+----------
+
+stateSyncRequest
+    Client -> serveur
+
+stateSync
+    Serveur -> client
+
+stateSyncError
+    Serveur -> client en cas d'échec
+
+Le serveur envoie également automatiquement un snapshot à la connexion.
+
+INTERFACES MODIFIÉES
+--------------------
+
+- Interface de Jeu joueur
+- Interface MJ
+- Tableau / scène
+- Sélection de joueur
+
+COMPORTEMENT
+------------
+
+Connexion / reconnexion
+    ↓
+Demande de snapshot autoritaire
+    ↓
+Serveur
+    ↓
+État officiel actuel
+    ↓
+Interface reconstruite / rechargée
+
+Le client local n'est jamais considéré comme la source de vérité.
+
+SÉCURITÉ / PÉRIMÈTRE
+--------------------
+
+Le snapshot joueur reste limité à son personnage, aux notes publiques
+et à la scène filtrée.
+
+Aucune authentification n'est introduite : le projet reste dans son
+périmètre LAN actuel.
+
+VALIDATION
+----------
+
+- syntaxe Node : PASS
+- syntaxe JavaScript inline : PASS
+- npm test : PASS
+- snapshot MJ : PASS
+- snapshot joueur : PASS
+- reconnexion Interface joueur : PASS
+- reconnexion MJ : PASS
+- reconnexion scène : PASS
+- tests de non-exposition des données privées : structure PASS
+
+======================================================================
+FIN VERSION V1.12
+======================================================================
+
+======================================================================
+VERSION V1.13 - CARTES DE JEU INTERACTIVES (MJ / JOUEUR)
+======================================================================
+
+OBJECTIF
+--------
+
+Doter ArcaneSync d'une veritable table de jeu virtuelle : une carte
+partagee, editee en temps reel par le MJ, avec une vision propre a
+chaque personnage et un brouillard de guerre.
+
+PRINCIPE DIRECTEUR
+------------------
+
+Le serveur est autoritaire et construit une projection differente selon
+le role du destinataire. Une information reservee au MJ n'est pas
+"masquee a l'affichage" : elle n'existe pas dans l'objet serialise
+envoye au joueur.
+
+FICHIERS CREES
+--------------
+
+map.js
+    Bibliotheque de cartes, modele, droits, vision, brouillard.
+
+maps.json
+    Bibliotheque de cartes (cree a la demande).
+
+website/map-core.js
+    Moteur de rendu canvas partage par les deux interfaces.
+
+website/map.html
+    Outil MJ : bibliotheque, palette, inspecteur, brouillard.
+
+website/map_joueur.html
+    Vue joueur : sa carte, son personnage, son champ de vision.
+
+tests/map.test.js
+    Modele, droits, ligne de vue, brouillard, non-exposition MJ.
+
+FICHIERS MODIFIES
+-----------------
+
+session.js
+    + activeMapId (pointeur vers la carte active)
+    + getActiveMapId / setActiveMapId
+    + validation de activeMapId a l'import de session
+
+server.js
+    + API REST /api/maps et /api/map/active
+    + emitMapState() : diffusion ciblee par socket
+    + evenements socket mapRequest / mapMoveToken
+    + map ajoutee au snapshot autoritaire V1.12
+
+website/navbar.js
+    + lien Carte, contextualise MJ ou joueur
+
+website/index.html
+    + bouton Carte de jeu (MJ)
+
+website/interface_jeu.html
+    + lien "Ouvrir ma carte" (contexte PlayerId conserve)
+
+website/selecte_player.html
+    + bouton "Sa carte" sur chaque personnage
+
+package.json
+    + tests/map.test.js dans npm test, script test:map
+
+MODELE DE DONNEES
+-----------------
+
+maps.json
+    { formatVersion, maps: { <mapId>: Map } }
+
+Map
+    id, nom, description
+    grid       { cols, rows, cellSize, showGrid }
+    background { color }
+    tokens{}   entites mobiles, referencant char_* ou mob_*
+    elements{} decor, obstacles, murs, portes, objets, pieges
+    fog        { enabled, mode, autoReveal, revealed[] }
+
+Token
+    id, kind, entityId, x, y, size, visibleToPlayers, locked,
+    vision{range}, color, label, gmNotes
+
+Element
+    id, kind, nom, x, y, w, h, color, icone,
+    blocksMovement, blocksVision, visibleToPlayers,
+    description, gmNotes
+
+Aucune entite n'est dupliquee : un NPC de carte EST un mob de session,
+un personnage de carte EST un char_* de data.json.
+
+SEPARATION DES DONNEES
+----------------------
+
+data.json          fiches de personnage
+session.json       partie active (+ activeMapId)
+mob_templates.json bibliotheque de mobs
+maps.json          bibliotheque de cartes
+
+Une carte survit a la partie : elle est reutilisable et duplicable.
+Seul le choix de la carte active appartient a la session.
+
+VISION
+------
+
+Portee circulaire (distance euclidienne) + ligne de vue par trace de
+Bresenham. Les elements marques blocksVision coupent la vue. L'origine
+et la cible ne bloquent pas : on voit le mur qui nous fait face, jamais
+ce qui se trouve derriere.
+
+Trois modes de brouillard :
+
+    none    aucune restriction
+    vision  champ de vision du personnage du joueur
+    manual  zones peintes par le MJ
+
+En mode vision, les cases vues sont memorisees comme explorees : le
+decor reste connu, mais aucune entite n'est transmise pour une case
+seulement exploree.
+
+Point d'extension prevu pour l'eclairage et la vision nocturne :
+calculerCellulesVisibles accepte une liste d'origines quelconque.
+
+TEMPS REEL
+----------
+
+Socket.IO, deja present. Aucune technologie ajoutee.
+
+REST     mutations structurelles du MJ (convention du projet)
+Socket   deplacement de token, haute frequence
+
+Evenements
+
+    mapRequest         Client -> serveur
+    mapMoveToken       Client -> serveur
+    mapState           Serveur -> client (projection propre au role)
+    mapActionRejected  Serveur -> client
+    mapLibraryUpdated  Serveur -> MJ
+
+emitMapState() parcourt les sockets connectes et envoie a chacun SA
+projection, memoisee par couple (role, joueur). Cela remplace le motif
+V1.10 "emit sans payload puis refetch par chaque client".
+
+DROITS
+------
+
+MJ      tout : creer, editer, deplacer, cacher, reveler
+Joueur  deplacer uniquement son propre personnage, s'il n'est pas
+        verrouille, et uniquement vers une case non obstruee
+
+Le controle est centralise dans refuserSiPasMj() cote REST et dans
+map.deplacerToken() cote socket. Le projet reste en perimetre LAN sans
+authentification : ces deux points sont les seuls a modifier le jour ou
+un vrai controle d'acces sera introduit.
+
+RECONNEXION
+-----------
+
+Le snapshot autoritaire V1.12 transporte desormais la carte filtree.
+Une reconnexion reconstruit la carte depuis l'etat serveur ; l'etat
+local n'est jamais considere comme source de verite.
+
+COMPATIBILITE
+-------------
+
+La scene V1.10 (tableau.html) est inchangee et reste fonctionnelle.
+Le systeme de cartes vit a cote et ne la remplace pas.
+
+VALIDATION
+----------
+
+- syntaxe Node (map.js, session.js, server.js, map-core.js) : PASS
+- npm test (6 suites)                                        : PASS
+- refus 403 sans role MJ                                     : PASS
+- projection MJ complete                                     : PASS
+- projection joueur filtree                                  : PASS
+- absence de gmNotes cote joueur                             : PASS
+- absence de blocksVision cote joueur                        : PASS
+- absence des creatures cachees cote joueur                  : PASS
+- mur coupant la ligne de vue                                : PASS
+- refus de deplacer le token d'un autre joueur               : PASS
+- refus de traverser un mur                                  : PASS
+- recalcul de la vision apres deplacement                    : PASS
+- stateSync contenant la carte filtree                       : PASS
+
+======================================================================
+FIN VERSION V1.13
+======================================================================
+
+======================================================================
+VERSION V1.13.1 - GENERATION DE CARTES PAR TYPE DE LIEU
+======================================================================
+
+OBJECTIF
+--------
+
+Permettre au MJ de choisir un type de lieu (foret, caverne, batiment,
+ruines, ville, plaine) et d'obtenir immediatement une carte jouable,
+qui reste ensuite entierement modifiable a la main.
+
+PRINCIPE DIRECTEUR
+------------------
+
+Un generateur ne produit AUCUN format special : uniquement des
+`elements` standards de map.js. Une carte generee est donc, du point de
+vue du reste du systeme, identique a une carte dessinee a la main. Tous
+les outils existants (poser, effacer, inspecter, redimensionner,
+brouillard, vision) continuent de fonctionner sans adaptation.
+
+FICHIERS CREES
+--------------
+
+mapgen.js
+    Module PUR (aucune E/S, aucune dependance a la session).
+    6 generateurs, materiaux, compactage, garantie de connexite.
+
+tests/mapgen.test.js
+    Catalogue, jouabilite des 6 types, determinisme, bornes,
+    compactage, regeneration, cablage serveur et interface.
+
+FICHIERS MODIFIES
+-----------------
+
+map.js
+    + remplacerDecor()   remplace le decor, conserve les tokens
+    + trouverCaseLibre() placement hors obstacle
+    + casesOccupees()
+    ~ synchroniserTokens() ne place plus un personnage dans un mur
+
+server.js
+    + GET  /api/map/generators
+    + POST /api/maps/generate
+    + POST /api/maps/:mapId/regenerate
+    + require('./mapgen')
+
+website/map.html
+    + panneau "Generer un lieu" (type, taille, densite, graine)
+    + bouton d'ouverture / fermeture des portes dans l'inspecteur
+
+package.json
+    + tests/mapgen.test.js dans npm test, script test:mapgen
+
+TYPES DE LIEUX
+--------------
+
+foret     bruit + lissage cellulaire, clairiere, sentier traversant
+caverne   automate cellulaire, cavite principale conservee
+batiment  decoupage BSP, salles, couloirs, portes, mobilier
+ruines    batiment effondre, murs perces, gravats, vegetation
+ville     trame de rues, maisons avec portes, place de marche
+plaine    espace ouvert, riviere et pont, bosquets epars
+
+DETERMINISME
+------------
+
+La generation utilise un PRNG a graine (mulberry32). Une meme graine et
+des memes parametres redonnent toujours exactement la meme carte. Cela
+permet de retrouver une carte, de comparer des variantes et de tester.
+
+Si aucune graine n'est fournie, une graine stable est derivee du type et
+des dimensions : le resultat reste reproductible.
+
+JOUABILITE GARANTIE
+-------------------
+
+Apres generation, garantirConnexite() ne conserve qu'une seule zone
+praticable : les poches isolees sont comblees. Les points d'apparition
+retournes sont des cases contigues de cette zone, pour que le groupe
+demarre ensemble.
+
+Les portes generees sont OUVERTES : la carte est jouable immediatement.
+Le MJ peut les fermer d'un clic depuis l'inspecteur, ce qui bloque le
+passage ET la ligne de vue ; le champ de vision des joueurs est
+recalcule aussitot.
+
+COMPACTAGE
+----------
+
+Les cases identiques adjacentes sont fusionnees en rectangles (fusion
+horizontale puis verticale). Une caverne passe ainsi de plusieurs
+centaines d'elements d'une case a une soixantaine de rectangles :
+maps.json reste leger et le decor reste manipulable a la main.
+
+REGENERATION
+------------
+
+POST /api/maps/:mapId/regenerate remplace le decor d'une carte existante.
+
+    Tokens                conserves
+    Tokens dans un mur    repositionnes sur un point d'apparition
+    Memoire d'exploration effacee (elle decrivait un decor disparu)
+    Dimensions            conservees par defaut
+
+DROITS
+------
+
+Les trois routes de generation passent par refuserSiPasMj(). L'interface
+joueur n'expose aucun outil de generation et ne connait pas ces routes.
+
+VALIDATION
+----------
+
+- syntaxe Node (mapgen.js, map.js, server.js)          : PASS
+- syntaxe du script inline de map.html                 : PASS
+- npm test (7 suites)                                  : PASS
+- 6 types x 3 graines : une seule zone connexe         : PASS
+- points d'apparition jamais dans un obstacle          : PASS
+- determinisme a graine egale                          : PASS
+- bornes de dimensions                                 : PASS
+- compactage en rectangles effectif                    : PASS
+- refus 403 sans role MJ                               : PASS
+- personnages places hors des murs (donjon genere)     : PASS
+- brouillard de vision sur carte generee               : PASS
+- regeneration : tokens conserves, fog reinitialise    : PASS
+- absence de fuite blocksVision / gmNotes cote joueur  : PASS
+
+======================================================================
+FIN VERSION V1.13.1
+======================================================================
+
+======================================================================
+VERSION V1.13.2 - FUSION DU TABLEAU BLANC ET DE LA CARTE
+======================================================================
+
+OBJECTIF
+--------
+
+Porter le dessin libre et l'ecriture du tableau blanc V1.10 sur la carte
+de jeu, pour que le MJ puisse annoter le terrain pendant la partie.
+
+CE QUI CHANGE PAR RAPPORT AU TABLEAU BLANC V1.10
+------------------------------------------------
+
+                    Tableau blanc V1.10      Annotations de carte V1.13.2
+Persistance         aucune                   sauvegardees avec la carte
+Reconnexion         tout est perdu           resynchronise (snapshot V1.12)
+Coordonnees         pixels d'un canvas fige  coordonnees de grille
+Visibilite          tout le monde voit tout  calque MJ / calque partage
+Brouillard          sans effet               traces decoupes par la vision
+Reseau              un emit par pixel        apercu + un enregistrement
+
+Le tableau blanc historique (tableau.html, evenements draw / text /
+clearDrawings) reste inchange et fonctionnel.
+
+FICHIERS CREES
+--------------
+
+tests/annotations.test.js
+    Modele, droits, calques, decoupage par le brouillard, persistance.
+
+FICHIERS MODIFIES
+-----------------
+
+map.js
+    + map.annotations{} et map.drawing{playersAllowed}
+    + normaliserAnnotation() / annotationValide()
+    + ajouterAnnotation / supprimerAnnotation / viderAnnotations
+    + setDrawingConfig
+    + casesConnuesJoueur / segmentAutorisePour
+    + annotationsPourJoueur (decoupage par le brouillard)
+    ~ updateMap et remplacerDecor ramenent les annotations dans la grille
+
+server.js
+    + POST   /api/maps/:mapId/annotations
+    + DELETE /api/maps/:mapId/annotations/:annotationId
+    + DELETE /api/maps/:mapId/annotations        (effacement en masse)
+    + PUT    /api/maps/:mapId/drawing            (autorisation joueurs)
+    + socket mapDrawStream -> mapDrawPreview     (apercu filtre)
+
+website/map-core.js
+    + pointFromEvent()  coordonnees de grille fractionnaires
+    + rendu des traces et des textes, epaisseur suivant le zoom
+    + annotationAt()    test de proximite pour la gomme
+    + demarrerTrace / prolongerTrace / terminerTrace
+    + pushPreview / purge automatique des apercus orphelins
+
+website/map.html
+    + outils Dessiner et Ecrire
+    + couleur, epaisseur, calque (partage / MJ seulement)
+    + autorisation des annotations joueurs
+    + effacement cible (toutes / les miennes / celles des joueurs)
+    ~ la gomme est contextuelle : annotation, puis decor
+
+website/map_joueur.html
+    + barre d'outils d'annotation, affichee si le MJ l'autorise
+    + effacement de ses propres traces
+
+package.json
+    + tests/annotations.test.js dans npm test, script test:annotations
+
+MODELE
+------
+
+Annotation
+    id, type ('trait' | 'texte'), author ('mj' | char_*),
+    visibleToPlayers, color, size,
+    points[] en coordonnees de grille fractionnaires,
+    text (type 'texte'), createdAt
+
+Map.drawing
+    playersAllowed  le MJ ouvre ou ferme l'annotation aux joueurs
+
+DECOUPAGE PAR LE BROUILLARD
+---------------------------
+
+Un trace qui traverse une zone inconnue est DECOUPE cote serveur : seuls
+les fragments situes dans une zone connue du personnage sont serialises.
+Le joueur ne peut donc pas deduire la partie cachee depuis la charge
+utile reseau.
+
+    zone connue = cases visibles maintenant + cases explorees par le groupe
+
+Deux exceptions volontaires :
+    - l'auteur voit toujours ses propres annotations en entier ;
+    - le MJ voit tout.
+
+APERCU EN DIRECT
+----------------
+
+Pendant le trace, chaque segment part en mapDrawStream : aucune ecriture
+disque, simple apercu. Le serveur ne relaie un segment a un joueur que
+si TOUS ses points sont dans une zone qu'il connait, et jamais si le
+trace appartient au calque MJ.
+
+Au relachement du pointeur, le trace complet est enregistre en une seule
+requete POST, puis diffuse par emitMapState comme le reste de l'etat.
+
+DROITS
+------
+
+MJ       tracer, ecrire, effacer tout, choisir le calque, autoriser les
+         joueurs
+Joueur   uniquement si le MJ l'autorise ; son trace est toujours partage
+         avec la table ; il ne peut effacer que les siens
+
+Un joueur qui tenterait d'envoyer author:'mj' ou visibleToPlayers:false
+voit ces champs ecrases par le serveur.
+
+VALIDATION
+----------
+
+- syntaxe Node (map.js, server.js, map-core.js)           : PASS
+- syntaxe des scripts inline (map.html, map_joueur.html)  : PASS
+- npm test (8 suites)                                     : PASS
+- refus d'annotation joueur sans autorisation             : PASS
+- author et calque forces cote serveur pour un joueur     : PASS
+- suppression du trace d'autrui refusee                   : PASS
+- effacement en masse cible par perimetre                 : PASS
+- calque MJ absent de la charge utile joueur              : PASS
+- texte hors champ de vision absent du payload            : PASS
+- trace traversant correctement decoupe                   : PASS
+- apercu direct : zone inconnue non relayee               : PASS
+- apercu direct : zone connue relayee                     : PASS
+- apercu direct : calque MJ jamais relaye                 : PASS
+- apercu direct : segment a extremite cachee non relaye   : PASS
+- annotations conservees apres regeneration du decor      : PASS
+- annotations ramenees dans la grille apres reduction     : PASS
+- tableau blanc V1.10 toujours fonctionnel                : PASS
+
+======================================================================
+FIN VERSION V1.13.2
+======================================================================
+
+======================================================================
+VERSION V1.13.3 - LISIBILITE DE L'INTERFACE DE CARTE
+======================================================================
+
+CONSTAT
+-------
+
+La page de carte MJ etait trop chargee : six panneaux empiles dans la
+colonne de gauche, beaucoup de texte explicatif, et une police
+decorative (Uncial Antiqua) utilisee jusque dans les libelles de champs.
+La carte elle-meme, seul element vraiment utile, occupait une place
+reduite.
+
+CORRECTIONS
+-----------
+
+1. Typographie
+   Uncial Antiqua est desormais reservee aux titres. L'interface utilise
+   une police systeme, corps 13 px. Gain de lisibilite immediat sur les
+   libelles, les listes et l'inspecteur.
+
+2. Colonnes laterales fixes et defilantes
+   Les deux colonnes sont en position:sticky avec leur propre
+   ascenseur (max-height: 100vh). La page ne s'allonge plus au rythme
+   du panneau le plus charge, et la carte reste toujours visible.
+
+3. Barre d'outils compacte
+   Huit outils en icones sur deux rangees, avec info-bulle. L'outil
+   actif est nomme juste en dessous, suivi d'une consigne d'une ligne.
+
+4. Options contextuelles
+   Seules les options de l'outil actif sont affichees (data-panel) :
+   palette de decor, modele de creature, reglages d'annotation, ou
+   rappel du brouillard. Les autres reglages sont replies dans des
+   sections <details> : Cartes, Generer un lieu, Brouillard, Grille.
+
+5. Texte reduit
+   Les paragraphes d'explication sont remplaces par des info-bulles
+   (title) et des consignes d'une ligne.
+
+6. Repere permanent
+   Le nom et les dimensions de la carte active sont affiches dans
+   l'en-tete.
+
+7. Acces depuis l'interface MJ
+   mj.html recoit un lien « Ouvrir la carte de jeu », pendant exact du
+   lien « Ouvrir ma carte » deja present sur l'Interface de Jeu.
+
+FICHIERS MODIFIES
+-----------------
+
+website/map.html
+    feuille de style et balisage refondus ; setTool() pilote desormais
+    l'intitule, la consigne et le panneau d'options.
+    Aucun identifiant DOM supprime : la logique metier est inchangee.
+
+website/map_joueur.html
+    meme traitement typographique et memes proportions, pour la
+    coherence entre les deux interfaces.
+
+website/mj.html
+    + lien vers la carte de jeu
+
+VALIDATION
+----------
+
+- scripts inline (map.html, map_joueur.html)              : PASS
+- 71 identifiants DOM attendus par le script, tous presents: PASS
+- conteneurs HTML equilibres                              : PASS
+- chaque bouton d'outil a son entree dans OUTILS           : PASS
+- chaque panneau contextuel est reference, aucun orphelin  : PASS
+- npm test (8 suites)                                      : PASS
+- pages servies (index, mj, map, map_joueur, tableau,
+  interface_jeu, map-core.js, navbar.js)                   : PASS
+- generation + annotation toujours fonctionnelles          : PASS
+
+======================================================================
+FIN VERSION V1.13.3
+======================================================================
+
+======================================================================
+VERSION V1.13.4 - TABLE DE JEU : MISE EN PAGE MJ, BIOMES, PROPRIETES
+======================================================================
+
+1. INTERFACE MJ — CAUSE DU GRAND ESPACE VIDE
+--------------------------------------------
+
+Diagnostic : style.css definit
+
+    .card { width: 250px; text-align: center; cursor: pointer; }
+
+Cette regle vient des vignettes de personnage. Or mj.html declare ses
+panneaux en <section class="card">. Ces sections heritaient donc d'une
+largeur FIXE de 250 px : elles se tassaient a gauche et laissaient tout
+le reste de l'ecran inutilise. Seuls #mob-management et #status-management
+neutralisaient deja la regle (ajout V1.6.1), d'ou l'alternance colonne
+etroite / bloc centre visible a l'ecran.
+
+Correction (website/mj.html) :
+    - conteneur .mj-page (max-width 1560 px, centre) ;
+    - .mj-page section.card neutralise width / text-align / cursor et
+      l'effet de survol scale(1.05) herite des vignettes ;
+    - bandeau .mj-top : « Gestion de la partie » et « Notes publiques »
+      cote a cote en grille auto-fit ;
+    - liste des joueurs enfin encapsulee dans une section ;
+    - en-tete compact portant le lien vers la carte ;
+    - Uncial Antiqua reservee aux titres, comme sur les pages de carte.
+
+2. BROUILLARD DE GUERRE ACTIF PAR DEFAUT
+----------------------------------------
+
+map.js / normaliserFog :
+    enabled : `input.enabled !== false`  (au lieu de `=== true`)
+    mode    : defaut 'vision'            (au lieu de 'none')
+
+Semantique de migration : une carte ayant explicitement enregistre
+`enabled: false` conserve son choix ; une carte neuve ou anterieure sans
+champ fog demarre protegee. Un joueur ne recoit donc jamais la carte
+entiere par simple effet de bord de sa creation.
+
+server.js : PUT /api/maps/:mapId/fog ne transmet plus que les champs
+reellement fournis. Une cle presente mais `undefined` ecrasait
+silencieusement le reglage existant lors de la fusion.
+
+3. TYPE DE LIEU ET PALETTES CONTEXTUELLES
+-----------------------------------------
+
+map.js : nouveau champ `map.type` (chaine libre). map.js ne depend pas
+de mapgen.js : c'est server.js qui compose.
+
+mapgen.js :
+    - une soixantaine de materiaux, chacun rattache a une categorie ;
+    - PALETTES : liste des materiaux par biome ;
+    - PALETTE_UNIVERSELLE toujours disponible ;
+    - getPalette(type) -> groupes par categorie ;
+    - getMateriau(id)  -> descripteur d'element.
+
+server.js :
+    GET  /api/map/palette?type=...
+    POST /api/maps/:mapId/elements accepte `brush` : le SERVEUR resout
+         le pinceau. Un client qui enverrait blocksVision:false sur un
+         arbre est ignore.
+
+website/map.html : la palette devient une galerie groupee par categorie,
+rechargee des que le type de la carte change. Le MJ peut aussi declarer
+le type d'une carte dessinee a la main (« Grille et fond »).
+
+Ajouter un biome = une entree dans GENERATEURS + une dans PALETTES.
+
+4. GENERATION ENRICHIE
+----------------------
+
+Bruit de valeur lisse (2 octaves) : la densite varie DOUCEMENT dans
+l'espace. C'est le remede principal a l'effet « poivre et sel » — on
+obtient des bosquets et des clairieres, pas une pluie uniforme.
+
+Tailles par defaut environ doublees :
+    foret 40x28, caverne 44x30, batiment 40x28, ruines 40x28,
+    ville 46x32, plaine 42x28, desert 42x28
+
+Nouveau biome : desert (cordons de dunes orientes, oasis, ruines
+ensablees, cactus, ossements).
+
+Par biome :
+    foret     clairieres multiples amenagees, ruisseau avec gues,
+              sentier serpentant, sous-bois module par le bruit
+    caverne   chambres forees et reliees, lac souterrain, cristaux
+    batiment  BSP profondeur 5, salles THEMATIQUES (corps de garde,
+              reserve, chapelle, bibliotheque, dortoir, cellules,
+              salle du tresor), piliers, tapis, torches
+    ruines    effondrements modules par le bruit, colonnes brisees
+    ville     avenue suivant une rue existante, ilots de tailles
+              variables, jardins et puits, mobilier urbain
+    plaine    riviere, bosquets, parcelles cultivees avec murets
+
+Correction ville : l'avenue ecartait des rangees entieres d'ilots et
+laissait une large bande vide en travers de la carte. Elle suit
+desormais un sillon de rue existant et se contente de rogner les ilots
+qu'elle effleure (91 -> 219 elements sur une grille 64x22).
+
+Resultats mesures (graine « demo ») :
+    elements        109 a 281   (contre 44 a 103 en V1.13.1)
+    types distincts  9 a 17     (contre 5 a 8)
+    generation des 7 biomes : 49 ms
+
+5. PROPRIETES DES PERSONNAGES ET MONSTRES
+-----------------------------------------
+
+website/map.html : modale contextuelle, ouverte par double-clic sur un
+token, par le bouton de l'inspecteur ou par la liste « Sur la carte ».
+Elle n'existe que pendant l'edition et rend ensuite tout l'espace a la
+carte.
+
+Contenu : statuts, PV et PM (jauge, saisie directe, pas rapides
+-5 / -1 / +1 / +5 / Max), position, visibilite joueurs, verrouillage.
+Boutons Appliquer / Annuler ; fermeture par Echap ou clic hors modale.
+
+Aucune API nouvelle : la modale reutilise les routes metier existantes.
+
+    creature   PUT  /api/mobs/:id           (mob.js + session.js)
+    personnage POST /api/session/player     (session.js, ne touche
+                                             jamais data.json)
+    token      PUT  /api/maps/:id/tokens/:t (map.js)
+
+Ces trois routes diffusaient deja leur evenement temps reel et
+emitMapState() : la synchronisation est acquise sans code supplementaire.
+
+VALIDATION
+----------
+
+- syntaxe Node (map.js, mapgen.js, server.js)              : PASS
+- scripts inline (map.html, map_joueur.html)               : PASS
+- structure mj.html equilibree, .mj-page/.mj-top presents  : PASS
+- npm test (8 suites)                                      : PASS
+- brouillard actif par defaut sur carte neuve              : PASS
+- choix explicite `enabled:false` preserve                 : PASS
+- joueur sans reglage : 40 cases visibles sur 1120,
+  12 elements recus sur 278                                : PASS
+- palette forestiere : 7 groupes, decors coherents         : PASS
+- cactus absent de la palette donjon                       : PASS
+- pinceau inconnu refuse (400)                             : PASS
+- proprietes du pinceau imposees par le serveur            : PASS
+- 7 biomes x 3 graines : connexite, variete >= 8 types,
+  occupation > 18 %, zone jouable > 20 %                   : PASS
+- deux graines : moins de 35 % d'elements communs          : PASS
+- generation des 7 biomes < 2 s                            : PASS
+- PV/PM creature modifies et diffuses (mapState pousse)    : PASS
+- PV/PM personnage modifies via l'API de session           : PASS
+- barres de vie de la carte a jour immediatement           : PASS
+
+RESTE A FAIRE
+-------------
+
+- Le role reste declaratif (perimetre LAN assume depuis V1.12).
+  Points d'insertion uniques : refuserSiPasMj() et le handshake socket.
+- PUT /api/mobs/:id et POST /api/session/player n'exigent toujours pas
+  le role MJ : regles anterieures, conservees pour ne pas casser
+  l'interface MJ existante.
+- Les ecritures disque ne sont pas serialisees (pas de verrou).
+
+======================================================================
+FIN VERSION V1.13.4
+======================================================================
+
+======================================================================
+VERSION V1.13.5 - STABILISATION : PERSISTANCE, MISE EN PAGE, MODELE
+======================================================================
+
+Lot issu de l'audit technique. Perimetre arbitre avec l'utilisateur :
+stabilisation, correction du vide, modele mob, code mort, et durcissement
+des SEULES routes destructrices. Hors perimetre : un fichier par carte,
+onglet Bestiaire, durcissement des 13 autres routes, extraction du JS.
+
+----------------------------------------------------------------------
+1. PERSISTANCE - ECRITURE DIFFEREE ET FUSIONNEE          (storage.js)
+----------------------------------------------------------------------
+
+MESURE AVANT : maps.json pesait 1,5 Mo. Chaque mutation le reecrivait
+INTEGRALEMENT et de facon SYNCHRONE : 58,8 ms (8,2 ms de stringify +
+50,6 ms d'ecriture). Un glisser de token sur dix cases bloquait la
+boucle d'evenements 588 ms, pendant lesquelles aucune autre requete
+n'etait servie.
+
+FICHIER CREE : storage.js
+    creerDepot(chemin, {delaiMs}) -> ecrire / ecrireDifferee / flush /
+                                     annuler / enAttente
+    flushAll() et annulerTout() au niveau module.
+
+Trois proprietes importantes :
+
+  a) FUSION. ecrireDifferee REMPLACE le contenu en attente au lieu de
+     l'empiler : dix mutations rapprochees produisent une ecriture.
+
+  b) SERIALISATION PARESSEUSE. ecrireDifferee accepte une FONCTION,
+     evaluee seulement au vidage. Sans cela on aurait serialise le
+     megaoctet dix fois pour ne l'ecrire qu'une : la moitie du cout
+     serait restee sur le chemin critique. Le gain est passe de x5 a x9
+     grace a ce seul point.
+
+  c) COHERENCE. Le differe ne rend PAS les mutations asynchrones. La
+     mutation memoire reste strictement synchrone ; seul le vidage
+     disque est repousse. Les handlers Express ne contiennent aucun
+     await : deux requetes ne peuvent donc pas s'entrelacer.
+
+     NOTE : le rapport d'audit classait « lost update » en CRITIQUE.
+     C'etait INEXACT et cela a ete corrige avant implementation : le bug
+     n'est pas exploitable tant que les handlers restent synchrones.
+     C'est precisement la contrainte que respecte ce design.
+
+FICHIERS MODIFIES :
+
+  map.js       ecrireMaps(maps, {differee}). Chemins HAUTE FREQUENCE en
+               differe : deplacerToken, revelerCellules, ajouterElement,
+               ajouterAnnotation, rafraichirExploration.
+               Structurel en immediat : createMap, deleteMap, updateMap,
+               remplacerDecor, duplicateMap, setFogConfig,
+               synchroniserTokens, viderAnnotations.
+               Nouvel export : flush().
+
+  session.js   ecrireSession delegue au depot. SYNCHRONE inchangee.
+  joueur.js    ecrireJoueurs   idem.
+  mob.js       ecrireTemplates idem.
+               Le motif .tmp + rename etait duplique a l'identique dans
+               ces quatre modules : une seule implementation desormais.
+
+MESURE APRES (carte active reelle, glisser de 10 cases) :
+    mutations memoire  23,8 ms  (2,4 ms par case)
+    vidage disque      43,4 ms  (UNE ecriture)
+    TOTAL              67,2 ms  contre 588,0 ms  -> gain x8,8
+
+REGRESSION RENCONTREE ET CORRIGEE PENDANT L'IMPLEMENTATION
+    Les tests restaurent leurs fichiers de donnees eux-memes, hors du
+    depot. Le gestionnaire 'exit' vidait ensuite le contenu en attente
+    PAR-DESSUS cette restauration : une carte de test avait ainsi
+    ressuscite dans maps.json. D'ou la primitive annuler()/annulerTout(),
+    appelee dans le finally des trois suites concernees. Les deux
+    comportements sont desormais couverts par tests/storage.test.js.
+
+----------------------------------------------------------------------
+2. PURGE DES DOUBLONS ET GARDE-FOU                          (map.js)
+----------------------------------------------------------------------
+
+CONSTAT : 15 cartes pour 12 signatures distinctes. Quatre
+« Ville / Village — NIMT8V » strictement identiques, creees par clics
+repetes sans aucun retour visuel.
+
+  signatureCarte(map)  empreinte SHA-1 du CONTENU : type, grille, fond,
+                       et decor trie. Volontairement independante du nom
+                       et de l'identifiant : renommer une carte ne doit
+                       pas la rendre « differente ».
+
+  createMap(donnees, {force}) refuse un doublon et DESIGNE la carte
+                       existante. Le serveur repond 409 avec son id.
+  duplicateMap()       passe force:true : dupliquer est une intention
+                       explicite.
+
+PURGE PONCTUELLE : sauvegarde maps.json.backup-<horodatage> conservee,
+3 exemplaires supprimes, 12 cartes restantes verifiees octet a octet
+identiques a la sauvegarde. activeMapId toujours resolu.
+Taille : 1533 Ko -> 1231 Ko.
+
+----------------------------------------------------------------------
+3. CORRECTION DU GRAND ESPACE VIDE            (map-core.js + 2 pages)
+----------------------------------------------------------------------
+
+CAUSE STRUCTURELLE, identifiee dans le code :
+
+  a) resize() dimensionnait le canvas A PARTIR DE LA LARGEUR SEULE :
+         dispo = rect.width - 4 ; hauteur = dispo * ratio
+     Une carte 40x28 dans une colonne de ~1380 px produisait un canvas
+     de pres de 1000 px de haut. La page debordait du viewport, tandis
+     que les colonnes laterales - dimensionnees par leur contenu -
+     s'arretaient bien avant : d'ou la large bande vide sur le cote.
+     Le defaut avait EMPIRE en V1.13.4, quand les tailles par defaut
+     ont double (26x18 -> 40x28).
+
+  b) `if (!state.map) return;` laissait le canvas sur ses attributs HTML
+     600x400 dans un conteneur pleine largeur quand aucune carte n'etait
+     active : un grand rectangle vide.
+
+  c) La page suivait le flux du document, sans coque a hauteur verrouillee.
+
+CORRECTIONS :
+
+  website/map-core.js
+      resize() ajuste sur les DEUX dimensions :
+          Math.min(dispoL/logicalWidth(), dispoH/logicalHeight()) * zoom
+      Sans carte : le canvas est dimensionne au conteneur et efface.
+      Nouveaux setZoom()/getZoom() : ajustee (1) ou agrandie, le
+      conteneur prenant alors le relais en defilement.
+      ResizeObserver sur le conteneur : la carte se readapte aussi quand
+      un panneau s'ouvre, sans que la fenetre bouge.
+
+  website/map.html et website/map_joueur.html
+      Coque a hauteur verrouillee, identique sur les deux interfaces :
+          body           100dvh, overflow hidden, colonne flex
+          .map-container flex:1, min-height:0
+          .map-layout    flex:1, min-height:0
+          .col           height:100%, overflow-y:auto
+          .canvas-panel  colonne flex, min-height:0
+          .canvas-wrap   flex:1, min-height:0, overflow:auto, centre
+      min-height:0 est indispensable : sans lui un enfant flex refuse de
+      se reduire sous sa taille de contenu et le debordement reapparait.
+      Sous 1360 px (900 px cote joueur), retour au flux de document.
+      Bouton « Ajustee / Agrandie » dans la barre de la carte.
+
+----------------------------------------------------------------------
+4. MODELE MOB : CATEGORIE, ICONE, FILIATION, NUMEROTATION   (mob.js)
+----------------------------------------------------------------------
+
+CONSTAT dans les donnees : mob_templates.json vide, et trois
+« Nouvelle creature » a 0/0 PV en session, indiscernables.
+
+Trois champs suffisent a separer les trois niveaux sans rien dupliquer :
+
+    TEMPLATE  mob_templates.json  mobtpl_*  templateId vide
+    INSTANCE  session.mobs        mob_*     templateId -> son modele
+    TOKEN     map.tokens          mob:<id>  ni stats ni PV, juste la place
+
+  categorie   bete | humanoide | mort-vivant | elementaire | construct |
+              aberration | autre     (defaut : autre)
+  icone       emoji, deduit de la categorie si absent
+  templateId  filiation, sans copie du modele
+
+  nommerInstance(nomBase, mobsExistants)
+              « Gobelin », puis « Gobelin #2 », « Gobelin #3 »…
+
+  createMobFromTemplate(id, overrides, {mobsExistants})
+              clone profond + templateId + numerotation.
+
+server.js : les DEUX points de creation d'instance numerotent desormais
+    POST /api/mob-templates/:id/spawn
+    POST /api/maps/:mapId/spawn-mob   (avec ou sans modele)
+
+COMPATIBILITE : les mobs deja en session n'ont pas ces champs.
+lireSession() ne les re-normalise pas ; les sites de lecture utilisent
+des valeurs de repli. Aucune migration de fichier.
+
+INDEPENDANCE VERIFIEE PAR TEST : blesser « Gobelin #1 » ne touche ni les
+autres instances ni le modele ; modifier le modele n'altere pas les
+instances deja creees.
+
+----------------------------------------------------------------------
+5. ROLE MJ SUR LES ROUTES DESTRUCTRICES                  (server.js)
+----------------------------------------------------------------------
+
+Trois routes pouvaient detruire des donnees sans aucun controle :
+
+    POST   /api/session/import              REMPLACE la partie entiere
+    DELETE /api/joueurs/delete/:id
+    DELETE /api/joueurs/delete-by-name/:nom  (shim sans appelant)
+
+Elles passent desormais par refuserSiPasMj(). Les DEUX seuls appelants
+ont ete adaptes dans le meme lot :
+    website/selecte_player.html   le fetch DELETE n'envoyait ni en-tete
+                                  ni corps ; il transmet le role et
+                                  remonte desormais les erreurs.
+    website/mj.html               role ajoute au corps de l'import.
+
+Les 13 autres routes non protegees restent inchangees : les toucher
+casserait l'interface MJ (8 appels mutants) et sortait du perimetre.
+
+----------------------------------------------------------------------
+6. CODE MORT
+----------------------------------------------------------------------
+
+  server.js         GET /api/map/element-kinds retiree : plus aucun
+                    appelant depuis les palettes par biome (V1.13.4).
+                    KINDS_ELEMENT reste dans map.js, normaliserElement
+                    s'en sert.
+  website/mj.html   13 regles CSS #status-management retirees : aucun
+                    element correspondant dans le DOM (divergence
+                    journal / code relevee a l'audit).
+
+                    ATTENTION - incident corrige : une suppression ligne
+                    a ligne avait emporte deux lignes appartenant a des
+                    selecteurs multi-lignes, cassant la regle
+                    #mob-management.mob-manager. Repare et verifie :
+                    accolades CSS equilibrees (90/90), aucun selecteur
+                    orphelin, regle max-width presente.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+NOUVEAU : tests/storage.test.js  (9e suite, enregistree dans npm test)
+    atomicite, differe non ecrit avant vidage, fusion de 10 mutations en
+    1 ecriture, serialisation paresseuse, vidage par minuteur, ecriture
+    immediate annulant l'attente, annulerTout(), vidage a l'arret.
+    Les scenarios touchant au minuteur ou a l'arret tournent dans un
+    processus fils : une attente active bloquerait la boucle d'evenements
+    et empecherait le minuteur qu'elle pretend observer.
+
+ENRICHIS :
+    tests/mob.test.js    categories, icones, filiation, numerotation,
+                         independance instances / modele.
+    tests/map.test.js    garde-fou doublon (refus + designation de la
+                         carte existante, duplication toujours permise),
+                         controle de role sur les 3 routes destructrices,
+                         transmission du role par les 2 appelants,
+                         code mort absent, coque 100dvh et budget de
+                         hauteur dans resize().
+    tests/map.test.js et tests/annotations.test.js : flush() avant toute
+                         relecture disque, annulerTout() dans le finally.
+
+AUCUN TEST EXISTANT SUPPRIME.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- node --check : storage, map, mapgen, session, joueur, mob, server,
+  map-core                                                    : PASS
+- scripts inline map.html / map_joueur.html (vm.Script)        : PASS
+- 80 identifiants DOM statiques de map.html, aucun manquant    : PASS
+- mj.html : accolades CSS 90/90, 4 sections equilibrees        : PASS
+- npm test : 9 suites                                          : PASS
+- purge : 12 cartes, identiques octet a octet a la sauvegarde  : PASS
+- garde-fou doublon en conditions reelles (409 + message)      : PASS
+- routes destructrices sans role : 403 / 403 / 403             : PASS
+- import AVEC role : 200 (le controle laisse passer le MJ)     : PASS
+- element-kinds : 404 ; palette : 200                          : PASS
+- 9 pages et scripts servis en 200                             : PASS
+- projection joueur sur carte reelle : 22 Ko contre 78 Ko cote
+  MJ, 31 cases visibles sur 1120, aucune fuite de gmNotes /
+  blocksVision / visibleToPlayers / playerVision               : PASS
+- socket : mapMoveToken -> mapState pousse, position correcte  : PASS
+- socket : modification de PV -> mobUpdated + sceneUpdated +
+  mapState pousses                                             : PASS
+- performance : 588,0 ms -> 67,2 ms sur un glisser de 10 cases : PASS
+
+INCIDENT PENDANT LA VALIDATION
+    Un test d'import de session envoye AVEC le role MJ a reellement
+    remplace la partie active : activeMapId perdu. Etat restaure depuis
+    session.json.backup-<horodatage>, verifie identique octet a octet
+    (4 joueurs avec leurs PV, 4 mobs, carte active resolue). Les
+    sauvegardes prises en debut de lot sont conservees.
+
+ETAT DES DONNEES A LA LIVRAISON
+    session.json  identique a la sauvegarde initiale
+    maps.json     12 cartes (3 doublons purges), contenu identique a la
+                  sauvegarde pour les 12 conservees
+    data.json     inchange
+
+RESTE A FAIRE (hors perimetre de ce lot)
+    - un fichier par carte + migration (mutation a 57 Ko au lieu de 1,2 Mo)
+    - onglet Bestiaire et routes de duplication de template
+    - durcissement des 13 routes mutantes restantes
+    - extraction du JS des pages (map.html : 1091 lignes inline)
+
+======================================================================
+FIN VERSION V1.13.5
+======================================================================
+
+======================================================================
+VERSION V1.13.6 - BESTIAIRE ET POSE DE DECOR PAR LOT
+======================================================================
+
+Repond a deux demandes de la specification initiale (§4.2 et §5) restees
+sans implementation, et branche la pose de decor par lot.
+
+NOTE DE DEROULEMENT
+    Cette implementation a ete interrompue puis reprise. A la reprise, le
+    back-end etait complet mais website/map.html contenait le balisage des
+    onglets SANS la logique JavaScript : deux onglets inertes. Ce manque
+    etait le premier point a combler, il l'a ete.
+
+----------------------------------------------------------------------
+1. BESTIAIRE - BIBLIOTHEQUE DE CREATURES
+----------------------------------------------------------------------
+
+TROIS NIVEAUX, AUCUNE DUPLICATION DE DONNEES
+
+    MODELE    mob_templates.json  mobtpl_*  templateId vide
+              definition reutilisable
+
+    INSTANCE  session.mobs        mob_*     templateId -> son modele
+              PV/PM propres a CETTE creature
+
+    TOKEN     maps.json           mob:<id>  ni stats ni PV
+              position et visibilite sur une carte
+
+Les champs categorie / icone / templateId avaient ete poses en V1.13.5 ;
+cette version les exploite enfin.
+
+REGLE ASSUMEE : modifier un modele n'affecte JAMAIS les instances deja
+creees. Une instance est independante des sa naissance. C'est le
+comportement decrit dans la specification, verifie par test, et rappele
+au MJ dans le message de confirmation apres enregistrement.
+
+mob.js
+    + duplicateMobTemplate(id, nom)
+          Gobelin -> Gobelin Archer. Clone profond, nouvel identifiant,
+          templateId laisse vide : un duplicata est un MODELE, pas une
+          instance. Nom par defaut « <nom> (copie) ».
+    + templateDepuisMob(mob, nom)
+          Sens inverse : promeut une creature ajustee en jeu au rang de
+          modele reutilisable. templateId remis a vide.
+
+server.js
+    + GET  /api/mob-categories
+    + POST /api/mob-templates/:id/duplicate     (role MJ)
+    + POST /api/mob-templates/from-mob/:mobId   (role MJ)
+
+    Les routes existantes suffisaient pour le reste :
+      POST /api/mob-templates/:id/spawn      -> ajouter a la partie
+      POST /api/maps/:id/spawn-mob           -> ajouter ET placer
+      POST /api/maps/:id/tokens              -> placer une instance
+
+website/map.html
+    Colonne droite en TROIS ONGLETS, reflet exact des trois niveaux :
+      Sur la carte   tokens          (liste existante)
+      En jeu         instances       PV/PM courants, badge « sur la carte »
+      Bestiaire      modeles         bibliotheque du MJ
+
+    Bestiaire : recherche, editeur (nom, categorie, icone, PV max,
+    Mana max, description, notes MJ), et cinq actions par modele —
+    ajouter a la partie, ajouter et placer, modifier, dupliquer,
+    supprimer.
+
+    En jeu : placer sur la carte, modifier PV/PM (via la modale, quand la
+    creature est posee), promouvoir au bestiaire, retirer de la partie.
+
+    Un modele est enregistre a PLEINE ressource (current = max) : c'est
+    l'instance qui encaissera les degats.
+
+----------------------------------------------------------------------
+2. PLACEMENT AUTOMATIQUE PERTINENT                          (map.js)
+----------------------------------------------------------------------
+
+placerToken() sans coordonnees cherchait la premiere case libre par
+balayage : resultat 0,0, soit le coin superieur gauche, souvent hors du
+champ de vision du groupe.
+
+    + candidatsAutourDeLAction(map)
+          Vise le barycentre des personnages — la ou se joue la scene —
+          et elargit par anneaux successifs. A defaut de personnage, le
+          centre de la carte.
+
+Verifie : creature posee exactement sur le barycentre du groupe (9,3),
+case praticable, sans superposition.
+
+----------------------------------------------------------------------
+3. POSE DE DECOR PAR LOT
+----------------------------------------------------------------------
+
+AVANT : validerPeinture bouclait sur les cases et envoyait UNE requete
+HTTP par case. Un mur de trente cases coutait trente allers-retours,
+trente mutations et trente diffusions temps reel.
+
+map.js
+    + ajouterElements(mapId, liste)   une seule mutation, ecriture
+                                      differee (chemin haute frequence)
+
+server.js
+    + POST /api/maps/:mapId/elements/batch   (role MJ, 2000 cases max)
+          Le pinceau est resolu par le SERVEUR, comme pour la pose
+          unitaire : un client qui enverrait blocksVision:false sur un
+          arbre est ignore.
+
+website/map.html
+    validerPeinture n'envoie plus qu'UNE requete pour tout le trace.
+
+Mesure : 30 cases posees en 1 requete, 30 elements crees.
+Avant : 30 requetes + 30 mutations + 30 diffusions.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/mob.test.js  (enrichi)
+    duplication : identifiant distinct, nom par defaut, templateId vide,
+    categorie reprise ; modifier le duplicata laisse l'original intact ;
+    duplication d'un modele inconnu refusee ;
+    promotion : templateId remis a vide, identifiant mobtpl_*,
+    promotion d'un mob absent refusee.
+
+tests/map.test.js  (enrichi)
+    pose par lot : N elements en une mutation, identifiants uniques,
+    lot vide et lot mal forme refuses ;
+    placement automatique : case praticable, sans superposition, a moins
+    de 6 cases du groupe ;
+    cablage : les 4 nouvelles routes presentes, role MJ exige sur les
+    deux routes de bestiaire ;
+    interface : onglets presents ET logique presente (un onglet inerte
+    serait detecte), boucle historique « une requete par case » absente ;
+    cloisonnement : l'interface joueur n'expose ni best-list, ni
+    mob-templates, ni elements/batch.
+
+AUCUN TEST EXISTANT SUPPRIME.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- node --check : mob.js, map.js, server.js                    : PASS
+- script inline de map.html (vm.Script)                       : PASS
+- 94 identifiants DOM statiques, aucun manquant                : PASS
+- conteneurs HTML equilibres (58 div, 2 aside, 4 details)      : PASS
+- npm test : 9 suites                                          : PASS
+
+Parcours complet sur serveur reel :
+- creer « Gobelin » (PV 12, humanoide), templateId vide        : PASS
+- dupliquer en « Gobelin Archer », identifiant distinct        : PASS
+- modifier l'archer (PV 8) : Gobelin reste a 12                : PASS
+- ajouter 3 instances : Gobelin, Gobelin #2, Gobelin #3        : PASS
+- chaque instance porte templateId -> le modele                : PASS
+- blesser #1 (PV 3) : #2 et #3 a 12, modele a 12               : PASS
+- placer une instance sans coordonnees : case praticable, sur
+  le barycentre du groupe                                      : PASS
+- promouvoir une instance : modele avec templateId vide         : PASS
+- pose par lot de 30 cases en 1 requete, 30 elements           : PASS
+- pinceau inconnu en lot refuse (400)                          : PASS
+- projection joueur : 22 Ko contre 86 Ko cote MJ, aucune fuite
+  de gmNotes / blocksVision / visibleToPlayers / playerVision /
+  templateId / categorie                                       : PASS
+- temps reel : mobUpdated + sceneUpdated + mapState pousses     : PASS
+
+ETAT DES DONNEES A LA LIVRAISON
+    mob_templates.json  restaure a vide : les creatures de test ne
+                        deviennent pas les donnees du MJ
+    session.json        identique a la sauvegarde
+    maps.json           12 cartes, identique a la sauvegarde
+    Sauvegardes conservees : *.pre-bestiaire et *.backup-<horodatage>
+
+RESTE A FAIRE
+    - un fichier par carte + migration (mutation a 57 Ko au lieu de 1,2 Mo)
+    - durcissement des 13 routes mutantes restantes
+    - extraction du JS des pages (map.html : plus de 1300 lignes inline)
+    - sources de lumiere, initiative, combat
+
+======================================================================
+FIN VERSION V1.13.6
+======================================================================
+
+======================================================================
+VERSION V1.13.7 - APERCU DE GENERATION, OBSOLESCENCE, SAUVEGARDES
+======================================================================
+
+Trois sujets, nes d'une remarque de l'utilisateur et d'un incident.
+
+----------------------------------------------------------------------
+1. GENERER N'ENREGISTRE PLUS RIEN
+----------------------------------------------------------------------
+
+CONSTAT (remonte par l'utilisateur) : generer une carte l'ecrivait
+immediatement dans la bibliotheque. Les donnees le confirmaient : 15
+cartes, dont 4 « Ville / Village — NIMT8V » strictement identiques, nees
+de clics repetes sur « Creer ».
+
+server.js
+    + POST /api/map/generate-preview   (role MJ)
+          Route PURE : ne touche ni maps.json, ni la session, ni la carte
+          active, et n'emet aucun evenement. Elle expose simplement le
+          resultat de mapGen.genererCarte().
+
+website/map.html
+    Le bouton devient « Generer un apercu ». Le brouillon s'affiche sur
+    le canvas sous le bandeau « APERCU — non enregistre », avec trois
+    choix : Conserver et charger / Autre variante / Abandonner.
+
+    L'apercu ne vit QUE dans le navigateur du MJ. « Conserver » passe par
+    POST /api/maps, qui applique au passage le controle anti-doublon.
+    « Abandonner » redemande simplement l'etat officiel au serveur.
+
+    Sept garde-fous refuserSiApercu() bloquent l'edition tant que le
+    brouillon n'est pas conserve : un apercu n'a pas d'identifiant, et
+    toute mutation viserait /api/maps/null/... Le gestionnaire mapState
+    ignore par ailleurs les evenements pendant l'apercu, sinon le
+    brouillon disparaitrait au premier deplacement d'un joueur.
+
+VERIFIE : 5 apercus successifs, maps.json et session.json inchanges
+OCTET A OCTET. Apercu sans role MJ : 403.
+
+----------------------------------------------------------------------
+2. GARDE-FOU D'OBSOLESCENCE                        (map.js, storage.js)
+----------------------------------------------------------------------
+
+INCIDENT : pendant ce travail, maps.json a ete ENTIEREMENT VIDE
+(38 octets, soit exactement ecrireMaps({})). Les 12 cartes ont ete
+restaurees depuis une sauvegarde manuelle.
+
+L'incident N'A PAS PU ETRE REPRODUIT : ni les suites de tests isolees,
+ni npm test, ni npm test avec un serveur actif ne le declenchent. Le
+mecanisme, en revanche, est identifiable : un module dont la vue memoire
+ne reflete plus le fichier ecrase au premier enregistrement tout ce
+qu'il ignore.
+
+map.js
+    + noterMtime() / fichierModifieAilleurs()
+          La date de modification de maps.json est memorisee au
+          chargement et rafraichie apres CHAQUE ecriture faite par le
+          module lui-meme. Si elle change sans lui, la vue est perimee :
+          l'ecriture est REFUSEE et tracee.
+          Cout : un fs.statSync par ecriture, quelques microsecondes.
+
+storage.js
+    + option apresEcriture sur creerDepot()
+    + methode surEcriture() sur le depot
+
+          Les depots sont memoises par chemin : sans cette methode, le
+          rappel serait reste lie a la PREMIERE instance du module, et
+          une instance rechargee n'aurait rien su de ses propres
+          ecritures — elle se serait auto-bloquee. C'est exactement le
+          defaut rencontre a la premiere tentative, corrige ici.
+
+VERIFIE : un tiers ecrase maps.json, le module perime tente d'ecrire ->
+refus, et le fichier n'est pas re-ecrase.
+
+----------------------------------------------------------------------
+3. SAUVEGARDES TOURNANTES                          (storage.js, server.js)
+----------------------------------------------------------------------
+
+Le garde-fou ci-dessus bloque le mecanisme le plus probable, mais pas ce
+qu'on n'a pas su expliquer. Les sauvegardes, elles, rendent toute perte
+REVERSIBLE.
+
+storage.js
+    + sauvegarderRotation(chemin, { generations = 5, dossier })
+    + sauvegarderFichiers(chemins, options)
+
+    Deux details font la difference :
+      - aucune rotation si la derniere sauvegarde est IDENTIQUE au
+        fichier courant : redemarrer dix fois ne consomme pas dix
+        generations ;
+      - un fichier corrompu n'occupe donc qu'un seul emplacement au lieu
+        d'evincer toutes les bonnes versions au fil des redemarrages ;
+      - un fichier absent ou vide ne produit rien : il ne doit surtout
+        pas chasser une generation valable.
+
+server.js
+    + sauvegarderDonnees() appele au demarrage, sur data.json,
+      session.json, maps.json et mob_templates.json.
+      Enveloppe dans un try/catch : une sauvegarde ratee ne doit jamais
+      empecher la partie de commencer.
+
+    NOTE : lors de la premiere tentative, sauvegarderFichiers etait
+    appele SANS avoir ete importe. Le try/catch a evite le crash mais a
+    rendu la panne silencieuse — le serveur demarrait en journalisant
+    « Rotation impossible » et aucune sauvegarde n'etait creee. Un test
+    verifie desormais que server.js importe bien la fonction.
+
+Les copies sont rangees dans sauvegardes/, pas a la racine.
+Les copies de travail manuelles ont ete deplacees — non supprimees —
+dans sauvegardes/manuelles/ : 2820 Ko qui encombraient la racine.
+
+VERIFIE SUR LES DONNEES REELLES
+    demarrage                      -> 4 fichier(s) archive(s)
+    redemarrage sans changement    -> 0 fichier(s), aucune generation
+    apres modification d'une carte -> 1 fichier(s), l'ancienne en .2
+    RESTAURATION : maps.json vide a 38 octets, restaure depuis
+    sauvegardes/maps.json.1 -> 12 cartes recuperees, activeMapId resolu.
+
+C'est le seul point qui compte vraiment : la perte subie plus tot dans
+la session serait desormais reparable en une commande.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/storage.test.js  (enrichi)
+    fichier absent ou vide -> aucune sauvegarde ;
+    premiere rotation -> .1 ; rotation sans changement -> false et aucune
+    generation ; decalage .1 -> .2 ; plafond respecte, la plus ancienne
+    disparait ; traitement par lot n'archive que ce qui a change ;
+    assertion statique : server.js importe sauvegarderFichiers et appelle
+    sauvegarderDonnees() — l'oubli qui vient de se produire serait
+    desormais detecte.
+
+tests/map.test.js  (enrichi au tour precedent, conserve)
+    garde-fou d'obsolescence : une ecriture depuis une vue perimee est
+    refusee et le fichier n'est pas re-ecrase.
+
+AUCUN TEST EXISTANT SUPPRIME. 9 suites.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- node --check : storage.js, map.js, server.js                : PASS
+- script inline de map.html (vm.Script)                        : PASS
+- identifiants DOM de map.html, aucun manquant                 : PASS
+- npm test : 9 suites                                          : PASS
+- apercu : 5 generations, fichiers inchanges octet a octet     : PASS
+- apercu sans role MJ : 403                                    : PASS
+- ecriture depuis une vue perimee refusee                      : PASS
+- rotation : 4 fichiers au demarrage                           : PASS
+- rotation : 0 fichier si rien n'a change                      : PASS
+- rotation : decalage .1 -> .2 apres modification              : PASS
+- RESTAURATION reelle depuis sauvegardes/maps.json.1           : PASS
+- 12 cartes, activeMapId resolu, aucun residu de test          : PASS
+
+RESTE A FAIRE
+    - un fichier par carte + migration (mutation a 57 Ko au lieu de 1,2 Mo)
+    - annuler la derniere action (Ctrl+Z sur la carte active)
+    - outil de mesure, ordre d'initiative, statuts sur les creatures
+    - sources de lumiere, memoire d'exploration par personnage
+    - durcissement des 13 routes mutantes restantes
+    - extraction du JS des pages (map.html : plus de 1400 lignes inline)
+
+    A NOTER : le projet n'a pas de .gitignore et node_modules y est
+    versionne. Si un depot Git est utilise, sauvegardes/ devrait y
+    figurer — hors perimetre de ce lot.
+
+======================================================================
+FIN VERSION V1.13.7
+======================================================================
+
+======================================================================
+VERSION V1.13.8 - MESURE, STATUTS DE CREATURES, SOURCES DE LUMIERE
+======================================================================
+
+Trois ajouts demandes, choisis parce qu'ils sont visibles immediatement a
+la table et qu'AUCUN ne touche a la persistance. Le code necessaire
+existait deja : chacun se branche sur un mecanisme en place plutot que
+d'en creer un second.
+
+----------------------------------------------------------------------
+1. OUTIL DE MESURE                             (map-core.js, map.html)
+----------------------------------------------------------------------
+
+Entierement CLIENT. Aucune requete ne part pendant une mesure : c'est un
+outil de lecture, local au poste du MJ.
+
+website/map-core.js
+    + state.mesure = { depart, arrivee }
+    + demarrerMesure / prolongerMesure / terminerMesure
+    + dessinerMesure()  appelee dans render() apres les annotations
+          Ligne pointillee, pastille aux deux extremites, etiquette sur
+          fond clair : « 5.4 cases   D 4 x 3 ».
+
+    La distance affichee est EUCLIDIENNE, a une decimale. Ce choix n'est
+    pas cosmetique : le moteur de vision utilise Math.hypot. Une regle
+    qui compterait autrement mentirait sur la portee reelle. Le delta en
+    cases est affiche a cote pour lever toute ambiguite.
+
+website/map.html
+    + outil « Mesurer », avec ses gestionnaires pointer.
+
+    PLACE AVANT refuserSiApercu() dans la chaine de traitement. Un apercu
+    n'a pas d'identifiant et toute MUTATION doit etre bloquee ; mesurer ne
+    mute rien. On doit pouvoir jauger un brouillon avant de le conserver.
+
+----------------------------------------------------------------------
+2. STATUTS SUR LES CREATURES     (session.js, mob.js, map.js, server.js)
+----------------------------------------------------------------------
+
+Les personnages avaient quatre statuts ; les creatures n'avaient qu'un
+`statut` en chaine unique (vivant / mort), qui traduit les PV. Les deux
+coexistent desormais : le second reste inchange.
+
+AUCUN SECOND CATALOGUE. Les creatures reutilisent STATUTS_JOUEUR et
+normaliserStatutsJoueur. Un statut ajoute une fois vaudra pour les deux.
+
+session.js
+    + ajouterStatutMob(id, statutId) / retirerStatutMob(id, statutId)
+          Calquees sur les fonctions joueur. Refusent : creature inconnue,
+          statut hors catalogue, statut deja applique, retrait d'un statut
+          absent.
+
+          EXCEPTION EXPLICITE : l'agonie est refusee aux creatures. Elle
+          traduit un personnage tombe a 0 PV que l'on peut encore
+          stabiliser ; pour une creature, statut 'mort' joue deja ce role.
+          Accepter les deux aurait cree deux verites sur le meme fait.
+
+mob.js       normaliserMob() conserve `statuts` (tableau, vide par defaut).
+             La VALIDATION reste dans session.js, comme pour les joueurs.
+map.js       entiteAffichable(), branche mob : + statuts.
+server.js    + POST   /api/mobs/:id/statuses
+             + DELETE /api/mobs/:id/statuses/:statutId
+             buildMapEntities() transmet desormais statuts.
+             Diffusion : mobUpdated + emitMapState().
+website/map.html
+             Pastilles cliquables dans la modale de proprietes, pour les
+             deux types d'entite. Catalogue charge une fois.
+
+GARDE MJ. Les deux routes sont protegees par refuserSiPasMj. La section
+« MOBS / NPC — gestion uniquement par le MJ » porte cette intention en
+clair depuis l'origine ; deux routes mutantes ouvertes l'auraient
+contredite. Aucune page joueur ne les appelle. Le client MJ transmet deja
+role dans le corps de CHAQUE requete, DELETE comprise : rien a adapter.
+
+VISIBILITE : les statuts d'une creature VISIBLE parviennent aux joueurs,
+exactement comme le fait deja son etat vivant/mort. Une creature masquee
+reste masquee avec tout ce qu'elle porte.
+
+----------------------------------------------------------------------
+3. SOURCES DE LUMIERE                        (map.js, mapgen.js, client)
+----------------------------------------------------------------------
+
+PROPRIETE DE SURETE QUI GOUVERNE TOUTE L'ETAPE : tant qu'aucun element ne
+porte de lumiere, le resultat doit etre RIGOUREUSEMENT identique a
+l'ancien. C'est ce qui garantit qu'aucune suite ne bouge et que la
+projection joueur reste intacte.
+
+map.js
+    + PORTEE_VUE_ECLAIREE = 30
+    + originesLumiere(map)    elements dont lightRange > 0
+    + visionEffective(map, originesPerso)
+
+          1. `propre` = vision naturelle, INCHANGEE ;
+          2. aucune lumiere OU aucune origine -> renvoyer `propre`, fin ;
+          3. sinon `eclairees` = cellules atteintes par les sources,
+             `portee` = cellules en ligne de vue dans un rayon de 30 ;
+          4. renvoyer propre U (eclairees ^ portee).
+
+          Le modele est intuitif : on voit LOIN ce qui est eclaire ET
+          degage, et on voit DE PRES meme dans le noir. Un mur coupe les
+          deux, puisque les deux ensembles passent par la ligne de vue.
+
+    + visionDuPersonnage(map, playerId) / visionDuGroupe(map)
+
+    FACTORISATION : le calcul de vision etait duplique sur QUATRE sites
+    (casesConnuesJoueur, rafraichirExploration, projectionMj,
+    projectionJoueur). Tous passent maintenant par ces deux fonctions ;
+    seul le moteur appelle encore calculerCellulesVisibles directement.
+    Sans cela, les lumieres auraient eclaire trois sites sur quatre.
+
+    normaliserElement() : + lightRange, entier 0-40, 0 = pas une source.
+
+    LE CHAMP EST OMIS QUAND IL VAUT 0. Ecrire "lightRange":0 sur chaque
+    element de decor ajoutait 75 Ko a maps.json (1306 Ko) pour ne rien
+    dire ; les 12 cartes ont ete repassees par la normalisation et le
+    fichier est revenu a 1232 Ko. Meme traitement dans mapgen.
+
+mapgen.js
+    + PORTEES_LUMIERE : torche 5, brasero 6, feu 6, lampadaire 5,
+      cristal 3, lichen 2.
+
+      Le LICHEN merite un mot : le generateur de cavernes ne place
+      AUCUN des autres materiaux lumineux de sa palette. Sans lui, une
+      caverne naissait entierement noire — precisement le biome ou
+      l'eclairage compte le plus. Il s'appelle « Lichen luminescent » :
+      lui donner une portee faible (2) etait la reponse fidele.
+
+      Resultat par biome (graine LUMTEST) : ville 21, ruines 20,
+      batiment 17, caverne 6, foret 1, plaine 0, desert 0.
+      Plaine et desert restent sans source : ce sont des exterieurs.
+
+website/map.html    + champ « Portee de lumiere » dans l'inspecteur.
+website/map-core.js + halo radial discret autour des sources, cote MJ.
+
+NON-EXPOSITION : lightRange n'est JAMAIS transmis au joueur, pour la
+raison exacte qui vaut deja pour blocksVision — connaitre la position des
+sources hors de sa vue renseignerait sur la carte. Seul l'EFFET (les
+cases visibles) lui parvient.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/map.test.js   (enrichi)
+    neutralite : sans source, visionDuPersonnage donne exactement le meme
+      ensemble que le calcul historique, et originesLumiere renvoie vide ;
+    une torche hors de portee naturelle mais en ligne de vue elargit la
+      vision ;
+    la meme torche derriere un mur ne revele RIEN — le compte revient
+      exactement a sa valeur sans lumiere ;
+    lightRange absent de la projection joueur, present cote MJ.
+
+tests/mob.test.js   (enrichi)
+    statuts conserves par normaliserMob, liste vide par defaut ;
+    catalogue partage avec les personnages ;
+    refus : statut deja applique, statut hors catalogue, creature
+      inconnue, AGONIE sur une creature, retrait d'un statut absent.
+
+AUCUN TEST EXISTANT SUPPRIME. 9 suites, 10 assertions finales.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- npm test : 9 suites / 10 PASS                                : PASS
+- node --check : map.js, mob.js, session.js, server.js,
+  mapgen.js, storage.js, map-core.js                           : PASS
+- script inline map.html (1608 l.) et map_joueur.html (372 l.)
+  compiles via vm.Script                                       : PASS
+- identifiants DOM : 100/100 et 14/14 references resolues      : PASS
+- NEUTRALITE mesuree sur la carte active reelle, 4 personnages :
+  31/33/52/100 cases avant et apres, a l'identique             : PASS
+- torche a 12 cases en ligne degagee : 23 -> 72 cases          : PASS
+- meme torche, mur interpose : retour a 23 cases               : PASS
+- PROJECTION JOUEUR : ni gmNotes, ni blocksVision, ni
+  visibleToPlayers, ni playerVision, ni lightRange ; un element
+  lumineux hors de vue n'est pas transmis du tout              : PASS
+- cout : 60x60, 923 elements, 46 sources -> 2,0 ms par vision
+  de personnage, 2,9 ms par vision de groupe, 2,6 ms par
+  getMapForViewer                                              : PASS
+- 12 cartes, activeMapId resolu, aucun residu __TEST           : PASS
+
+----------------------------------------------------------------------
+4. PORT CONFIGURABLE                                        (server.js)
+----------------------------------------------------------------------
+
+server.listen(PORT) avec PORT = process.env.PORT || 3000.
+
+Le defaut est INCHANGE : rien ne bouge pour la partie. Le besoin est venu
+du controle final : une instance MJ tournait sur le port 3000 avec un
+client connecte. La couper pour verifier deux routes aurait interrompu une
+partie ; une seconde instance sur un autre port ne coute rien.
+
+CONTROLE DE BOUT EN BOUT, instance de test sur le port 3100, sur les
+seuls chemins de REFUS — aucun n'ecrit, session.json verifie identique
+avant/apres (empreinte 28abc44d850c) :
+    POST   sans role MJ           -> 403
+    DELETE sans role MJ           -> 403
+    POST   creature inconnue      -> 400
+    POST   statut hors catalogue  -> 400
+    POST   agonie sur creature    -> 400  « ne s'applique qu'aux personnages »
+    GET    /api/statuses          -> 200  catalogue complet
+
+RESTE A FAIRE
+    - alleger mapState : 78 Ko dont 70 Ko de decor (90 %) renvoyes a
+      chaque changement de PV. N'envoyer que {tokens, vision} diviserait
+      le trafic par dix. LA PLUS RENTABLE DES PISTES RESTANTES.
+    - un fichier par carte + migration (mutation a 57 Ko au lieu de 1,2 Mo)
+    - ordre d'initiative
+    - annuler la derniere action (Ctrl+Z sur la carte active)
+    - memoire d'exploration par personnage (aujourd'hui partagee)
+    - durcissement des 13 routes mutantes restantes
+    - extraction du JS inline de map.html (1608 lignes)
+    - trancher entre le tableau blanc V1.10 et les annotations de carte
+    - plusieurs parties simultanees (session.json est un singleton)
+
+======================================================================
+FIN VERSION V1.13.8
+======================================================================
+
+======================================================================
+VERSION V1.13.9 - ISOLATION DES DONNEES DE TEST
+======================================================================
+
+Un seul sujet, mais c'est la cause structurelle des deux pires incidents
+de developpement.
+
+----------------------------------------------------------------------
+LE PROBLEME
+----------------------------------------------------------------------
+
+Les chemins des fichiers de donnees etaient figes sur __dirname dans
+quatre modules. Chaque suite de tests ecrivait donc DANS LA PARTIE EN
+COURS, et ne s'en protegeait que par une sauvegarde au debut et une
+restauration dans un finally.
+
+Ce filet a cede DEUX FOIS :
+
+  - un test de permission d'import a reellement remplace session.json,
+    faisant perdre activeMapId (restaure depuis une sauvegarde) ;
+  - une carte « __TEST_ANNOT__ » est reapparue APRES la restauration,
+    ecrite par le vidage differe declenche a l'arret du processus.
+
+Le second cas dit tout : un finally ne protege de rien contre une
+ecriture qui arrive apres lui. Et l'effacement complet de maps.json,
+jamais reproduit ni explique, appartient exactement a cette famille.
+
+----------------------------------------------------------------------
+1. UN SEUL POINT DE RESOLUTION                            (storage.js)
+----------------------------------------------------------------------
+
+storage.js
+    + dossierDonnees()      process.env.ARCANESYNC_DATA_DIR, sinon la
+                            racine du projet. Cree le dossier au besoin.
+    + cheminDonnees(...)    assemble un chemin dans ce dossier.
+
+    Defaut STRICTEMENT INCHANGE : sans la variable, tout se passe comme
+    avant. Les sauvegardes tournantes suivent d'elles-memes, puisque
+    sauvegarderRotation() deduit son dossier de celui du fichier.
+
+Rebranchement, sans aucune autre modification :
+    map.js       maps.json
+    session.js   session.json
+    mob.js       mob_templates.json
+    joueur.js    data.json
+    server.js    tableau.json, database/game_database.json, et la liste
+                 des fichiers sauvegardes au demarrage
+
+Il ne reste PLUS AUCUN path.join(__dirname, '<donnees>.json') dans le
+code applicatif.
+
+NOTE : la variable est lue au CHARGEMENT des modules appelants. Elle
+doit donc etre posee avant tout require — c'est precisement le role du
+module ci-dessous.
+
+----------------------------------------------------------------------
+2. LE BAC A SABLE                                  (tests/_donnees.js)
+----------------------------------------------------------------------
+
+Nouveau module, requis EN PREMIER par les six suites concernees.
+
+    - cree un dossier temporaire par processus (mkdtemp) ;
+    - l'AMORCE avec une copie des fichiers reels : les suites gardent
+      exactement leurs attentes actuelles, memes cartes, meme session ;
+    - pose ARCANESYNC_DATA_DIR ;
+    - a l'arret : annule les ecritures en attente PUIS supprime le
+      dossier.
+
+    L'ordre du menage n'est pas anodin. Ce gestionnaire est enregistre
+    avant ceux de storage.js (installes a la creation du premier depot),
+    donc il s'execute avant eux : sans annulerTout() prealable, le
+    vidage de storage tenterait d'ecrire dans un dossier disparu.
+
+Les neuf constantes de chemin des suites passent par bacDonnees.chemin().
+Les lectures de FICHIERS SOURCE (server.js, *.html) restent evidemment
+pointees sur le depot reel : ce sont des assertions statiques.
+
+storage.test.js n'avait pas besoin d'etre converti : il s'isolait deja
+lui-meme par mkdtemp. C'est le modele que les cinq autres rejoignent.
+
+----------------------------------------------------------------------
+3. LA GARDE                                     (tests/storage.test.js)
+----------------------------------------------------------------------
+
+Une protection qu'on peut oublier ne protege pas. Deux controles
+statiques parcourent tous les fichiers tests/*.test.js :
+
+    1. aucun ne doit construire un chemin vers un fichier de donnees a
+       la racine du projet ;
+    2. toute suite chargeant un module qui persiste (map, session, mob,
+       joueur) doit requerir ./_donnees, et le requerir AVANT tout autre
+       require.
+
+VERIFIE QUE LA GARDE MORD : deux fichiers de test volontairement fautifs
+ont ete introduits puis retires.
+    chemin vers maps.json a la racine   -> refus, message explicite
+    require d'un module avant le bac    -> refus, message explicite
+
+----------------------------------------------------------------------
+PREUVE
+----------------------------------------------------------------------
+
+La suite qui passe et des fichiers intacts ne prouvent RIEN : c'est ce
+que produisait deja la restauration. La preuve est ailleurs.
+
+A. TEST DESTRUCTEUR SANS RESTAURATION
+   Un test jetable a supprime les 13 cartes, vide maps.json et
+   session.json, et s'est arrete SANS rien restaurer.
+       vu par le module    : 13 cartes -> 0
+       maps.json REEL      : 1305 Ko, 13 cartes    INTACT
+       session.json REEL   : activeMapId resolu    INTACT
+
+B. SERVEUR COMPLET SUR DONNEES ISOLEES
+   ARCANESYNC_DATA_DIR=<bac> PORT=3100 node server.js
+       demarrage : 4 fichiers archives DANS LE BAC
+       POST /api/mobs/<id>/statuses -> 200, statut applique
+       session.json du bac  : 2bd8586e7302 -> 7c05505d7fef  (modifie)
+       session.json REEL    : 2bd8586e7302 -> 2bd8586e7302  INTACT
+
+   C'est un effet de bord qui compte autant que l'objectif : on peut
+   desormais lancer une instance complete, muter reellement, et verifier
+   de bout en bout SANS TOUCHER A LA PARTIE. Combine au PORT configurable
+   de V1.13.8, le serveur du MJ n'a meme plus a etre coupe.
+
+----------------------------------------------------------------------
+CORRECTION AU JOURNAL
+----------------------------------------------------------------------
+
+Les entrees precedentes annoncent « 9 suites ». C'est FAUX : il y a SEPT
+fichiers de tests, qui produisent aujourd'hui ONZE assertions PASS. Le
+chiffre a ete repris d'entree en entree sans etre verifie. Il est corrige
+ici et ne doit plus etre recopie.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- node --check : storage.js, map.js, session.js, mob.js, joueur.js,
+  server.js, et les 7 fichiers de tests                        : PASS
+- npm test : 7 fichiers / 11 assertions                        : PASS
+- les 5 fichiers de donnees reels sont IDENTIQUES a l'octet
+  apres une execution complete                                 : PASS
+- test destructeur sans restauration : donnees reelles intactes: PASS
+- serveur complet sur donnees isolees, mutation reelle         : PASS
+- la garde refuse un chemin racine et un require mal ordonne   : PASS
+- aucun bac a sable laisse derriere apres execution            : PASS
+- sauvegardes/ non pollue par les tests                        : PASS
+- le serveur du port 3000 n'a pas ete coupe                    : PASS
+
+RESTE A FAIRE
+    - alleger mapState : 87,8 Ko cote MJ dont 72,8 Ko d'elements (83 %),
+      50,8 Ko cote joueur dont 44,1 Ko (87 %), renvoyes a chaque
+      changement de PV depuis 35 sites d'appel. LA PLUS RENTABLE.
+    - durcir les 13 routes MJ sans controle de role (mobs, bestiaire,
+      scene, statuts joueur, apply-to-character) ; mj.html doit d'abord
+      transmettre son role sur 9 appels.
+    - aucun test de la couche HTTP : 51 routes mutantes, 0 couverture.
+      Le bac a sable rend ce harnais possible sans risque.
+    - un fichier par carte + migration
+    - ordre d'initiative
+    - annuler la derniere action, memoire d'exploration par personnage
+    - extraction du JS inline de map.html (1608 lignes)
+    - plusieurs parties simultanees (session.json est un singleton)
+
+    A NOTER : le controle d'acces MJ reste DECLARATIF — le role est lu
+    dans la requete et dans le handshake Socket.IO. Choix assume par
+    l'equipe (perimetre LAN, confiance mutuelle). A garder en tete : la
+    separation des projections est solide, mais le selecteur ne l'est pas.
+
+======================================================================
+FIN VERSION V1.13.9
+======================================================================
+
+======================================================================
+VERSION V1.13.10 - L'OEIL DU JOUEUR
+======================================================================
+
+Demande de l'utilisateur : depuis l'inspection d'un personnage, voir la
+carte de SON point de vue.
+
+----------------------------------------------------------------------
+LE PRINCIPE, QUI COMMANDE TOUT LE RESTE
+----------------------------------------------------------------------
+
+La vue n'est PAS reconstituee cote MJ. Elle est DEMANDEE au serveur, qui
+la produit par le chemin habituel du joueur.
+
+C'est le seul point qui compte. Une reconstitution — filtrer la
+projection MJ, redessiner un brouillard approchant — divergerait tot ou
+tard, en silence, de ce que le joueur voit reellement. Le MJ prendrait
+alors des decisions sur une carte qui n'existe nulle part.
+
+----------------------------------------------------------------------
+1. UNE ROUTE DE LECTURE                                    (server.js)
+----------------------------------------------------------------------
+
+    + GET /api/map/vue-joueur/:playerId          (role MJ)
+
+    Trois lignes utiles : verifier le role, verifier que le personnage
+    existe, appeler getActiveMapForViewer('player', playerId) — la
+    fonction qui sert deja les joueurs.
+
+    Aucune ecriture, aucune diffusion. Reservee au MJ : la projection
+    d'un personnage revele sa position et ce qu'il percoit.
+
+----------------------------------------------------------------------
+2. LE MODE DE LECTURE SEULE                       (website/map.html)
+----------------------------------------------------------------------
+
+    + etat vueJoueur, activerVueJoueur(), rafraichirVueJoueur(),
+      quitterVueJoueur()
+    + bouton « Son point de vue » dans la modale, POUR LES PERSONNAGES
+      seulement (une creature n'a pas de projection)
+    + bandeau bleu « Vue de <nom> » avec sortie explicite
+
+    LA GARDE D'EDITION EST ETENDUE, PAS DUPLIQUEE. refuserSiApercu()
+    couvrait deja les sept points de mutation du client MJ ; elle refuse
+    desormais aussi pendant la vue joueur. Sans cela, le MJ aurait pu
+    peindre du decor en croyant regarder la carte d'un joueur — et
+    l'aurait peint sur la vraie.
+
+    TEMPS REEL. Pendant l'observation, mapState ne remplace plus la vue
+    par la projection MJ : il redemande LA MEME vue, a jour. Le MJ suit
+    donc en direct ce que le personnage decouvre quand il avance ou
+    qu'une lumiere s'allume — au lieu de regarder un instantane fige.
+
+----------------------------------------------------------------------
+PREUVE
+----------------------------------------------------------------------
+
+Instance isolee (ARCANESYNC_DATA_DIR + PORT=3100, V1.13.9) : le serveur
+du MJ n'a pas ete coupe et aucune donnee reelle n'a ete touchee.
+
+Comparaison avec une VRAIE connexion Socket.IO du joueur, etablie en
+transport polling — du HTTP, donc sans installer de client :
+
+    MJ demande la vue        -> 200, 13 Ko
+    le joueur recoit         -> 13 Ko sur sa propre socket
+    IDENTIQUE                -> OUI, OCTET POUR OCTET
+    sans role MJ             -> 403
+    personnage inconnu       -> 404
+    fuites (gmNotes, blocksVision, visibleToPlayers, playerVision,
+            lightRange) dans la vue servie au MJ -> AUCUNE
+
+L'egalite octet pour octet est la propriete recherchee : ce que le MJ
+regarde EST ce que le joueur recoit, pas une approximation.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/map.test.js  (enrichi)
+    la route existe, porte refuserSiPasMj, appelle
+      getActiveMapForViewer('player', ...) — donc ne reconstitue rien —,
+      refuse un personnage inconnu et NE DIFFUSE RIEN ;
+    le client porte l'etat vueJoueur et le bouton de la modale ;
+    la garde d'edition refuse pendant la vue joueur ;
+    mapState rafraichit la vue observee au lieu de la remplacer.
+
+    NOTE : la premiere version de ces assertions lisait une fenetre fixe
+    de 900 caracteres apres le debut de la route. Elle debordait sur la
+    route suivante et a signale un emitMapState qui n'appartenait pas a
+    la route testee. La fenetre est desormais bornee a la route reelle.
+    Une assertion qui lit trop large ment dans les deux sens.
+
+12 assertions PASS. Aucun test existant supprime.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- npm test : 7 fichiers / 12 assertions                        : PASS
+- node --check : server.js                                     : PASS
+- script inline de map.html compile (vm.Script)                : PASS
+- identifiants DOM : 104 references, 113 id, aucun manquant    : PASS
+- vue MJ identique OCTET POUR OCTET a la socket du joueur      : PASS
+- 403 sans role MJ, 404 personnage inconnu                     : PASS
+- aucune fuite MJ dans la vue servie                           : PASS
+- les 5 fichiers de donnees reels sont intacts                 : PASS
+- port 3100 libere, serveur du port 3000 jamais coupe          : PASS
+
+NOTE DE CONCEPTION
+    Le lancer de des a ete propose puis ECARTE par l'equipe : le jet
+    physique reste manuel, c'est un choix de table, pas un oubli. Ne pas
+    le reproposer.
+
+RESTE A FAIRE
+    - alleger mapState : sur la plus grande carte, 88,6 Ko cote MJ et
+      53,6 Ko cote joueur renvoyes a chaque changement de PV, dont ~85 %
+      de decor inchange. LA PLUS RENTABLE.
+    - durcir les 13 routes MJ sans controle de role
+    - harnais de test HTTP (51 routes mutantes, 0 couverture)
+    - un fichier par carte, ordre d'initiative, annuler la derniere
+      action, memoire d'exploration par personnage
+    - extraction du JS inline de map.html
+    - plusieurs parties simultanees : ARCANESYNC_DATA_DIR (V1.13.9) est
+      le mecanisme qui manquait. Reste a choisir le dossier a
+      l'execution plutot qu'au demarrage.
+
+======================================================================
+FIN VERSION V1.13.10
+======================================================================
+
+======================================================================
+VERSION V1.13.11 - ALLEGEMENT, PORTES, AURA, RECHERCHE DE CARTES
+======================================================================
+
+Quatre sujets valides par l'utilisateur.
+
+----------------------------------------------------------------------
+1. ALLEGEMENT DE mapState             (allegement.js, server.js, client)
+----------------------------------------------------------------------
+
+CONSTAT MESURE. Chaque mutation renvoyait la projection ENTIERE a tous
+les clients :
+
+    Foret — GERRX8 (309 elements)     MJ 88,6 Ko   joueur 53,6 Ko
+    Batiment / Donjon (128 elements)  MJ 38,6 Ko   joueur 13,3 Ko
+
+dont ~85 % de decor qui n'avait pas bouge. Avec cinq postes, un seul
+point de degats faisait passer ~300 Ko sur le reseau.
+
+Ce n'est PAS un probleme de processeur : la serialisation d'une
+projection coute 0,25 ms. C'est le reseau, et les postes en Wi-Fi.
+
+LE PIEGE EVITE. Un simple « numero de version du decor » serait FAUX
+pour un joueur : son ensemble d'elements GRANDIT quand il explore, et
+son drapeau `remembered` bascule, sans qu'aucun decor n'ait change. La
+seule reference sure est le CONTENU REELLEMENT ENVOYE a ce
+destinataire-la. D'ou une empreinte par champ.
+
+allegement.js  (nouveau, pur, sans etat)
+    CHAMPS_LOURDS = elements, vision, playerVision, fog, annotations
+    empreintes(projection)          SHA-1 court par champ present
+    alleger(projection, avant)      -> { payload, empreintes }
+
+    `tokens` en est volontairement ABSENT : moins de 2 Ko, et c'est
+    precisement ce qui change a chaque mutation. L'empreindre couterait
+    a chaque envoi sans rien economiser.
+
+    Un champ ABSENT de la projection n'est pas empreint : le declarer
+    « inchange » ferait conserver au client une valeur jamais recue.
+
+    Module a part parce que server.js ouvre un port des qu'on le charge :
+    rien de ce qu'il contient n'est testable. Meme raison que storage.js.
+
+server.js
+    emitMapState() applique l'allegement PAR SOCKET. La memoire est
+    portee par le socket (socket.data.allegement), jamais par le cache
+    par role : deux postes n'en sont pas au meme point. Le repere est
+    invalide des que la carte, le role ou le personnage change.
+    LES 35 SITES D'APPEL NE SONT PAS TOUCHES.
+
+    DEUX PORTES DE SORTIE, sans lesquelles le mecanisme se piege :
+      - mapRequest EFFACE les empreintes avant d'emettre. C'est
+        l'echappatoire d'un client qui n'a pas pu fusionner ; sans elle
+        il redemanderait un etat allege, indefiniment.
+      - stateSync efface aussi : il porte sa propre copie complete, et
+        les deux pages peuvent l'ecarter (role ou personnage different).
+
+website/map-core.js
+    setMap() fusionne les champs listes dans `reprises`, et RETOURNE
+    false quand la fusion est impossible (aucun etat, ou autre carte).
+
+website/map.html, map_joueur.html
+    Un refus de fusion declenche `mapRequest`. Sans ce retour, un client
+    afficherait une carte amputee sans le savoir.
+
+RESULTAT MESURE SUR UNE VRAIE SOCKET (transport polling) :
+    premier envoi                    39 Ko   complet
+    apres un point de vie            2,6 Ko  -> GAIN 93,3 %
+                                     repris : elements, playerVision,
+                                              fog, annotations
+    fusion                           memes champs, decor identique
+    apres fermeture des portes       37 Ko   elements RENVOYE (attendu)
+    mapRequest                       39 Ko   complet (porte de sortie OK)
+
+LE CAS QUI CONDAMNE UN COMPTEUR DE VERSION, verifie separement :
+    joueur, etat initial             13 Ko   52 elements connus
+    apres deplacement de 6 cases     13,6 Ko elements RENVOYE
+    -> le decor connu du joueur a change alors qu'aucun element n'a
+       bouge. L'empreinte par contenu le voit ; un compteur ne l'aurait
+       pas vu, et le joueur aurait garde un decor incomplet.
+
+----------------------------------------------------------------------
+2. PORTES                                  (map.js, server.js, client)
+----------------------------------------------------------------------
+
+CORRECTION A MA PROPRE PROPOSITION. J'avais presente l'ouverture des
+portes comme une idee neuve. ELLE EXISTAIT DEJA : l'inspecteur d'element
+affiche un bouton « Ouvrir / Fermer » pour tout element de kind `porte`,
+qui bascule blocksMovement et blocksVision. Verifie sur un mur perce :
+93 cases visibles porte ouverte, 81 fermee, 93 rouverte.
+
+Ce qui manquait vraiment, et qui est fait ici :
+
+  a) ON NE VOYAIT PAS L'ETAT. Une porte ouverte et une porte fermee se
+     ressemblaient trait pour trait ; seul leur nom changeait dans
+     l'inspecteur. map-core.js dessine desormais un battant en travers
+     du passage quand elle est fermee, rabattu sur le cote quand elle
+     est ouverte. Cote joueur aussi : blocksMovement est deja transmis
+     pour les elements connus, donc rien de special a faire.
+
+  b) UNE COMMANDE D'ENSEMBLE. Un donjon genere compte 19 portes, toutes
+     ouvertes. Les fermer une a une rendait la fonctionnalite theorique.
+        map.js    + basculerPortes(mapId, fermer)
+        server.js + POST /api/maps/:mapId/portes   (role MJ)
+        map.html  + boutons « Fermer » / « Ouvrir »
+     Un appel sans effet est refuse proprement plutot que compte comme
+     un succes.
+
+     Verifie : 19 portes basculees, 137 cases visibles portes ouvertes,
+     133 fermees, 137 rouvertes.
+
+CHOIX ASSUME : les cartes generees gardent leurs portes OUVERTES. Les
+fermer d'office aurait risque de contredire la garantie de connexite du
+generateur, qui raisonne sur les cases praticables. Le MJ ferme ce qu'il
+veut, en un clic.
+
+----------------------------------------------------------------------
+3. AURA DE PORTEE                      (map-core.js, map.html)
+----------------------------------------------------------------------
+
+Cercle de portee autour du jeton selectionne, ACTIVABLE par case a
+cocher, avec un nombre de cases reglable de 1 a 60.
+
+    Repere de LECTURE, purement local : rien n'est envoye au serveur et
+    l'aura n'apparait sur aucun autre poste.
+
+    Mesure depuis le CENTRE du jeton et tenant compte de sa TAILLE : une
+    creature 2x2 atteint plus loin qu'une 1x1. Distance euclidienne,
+    comme l'outil de mesure et comme le moteur de vision — trois
+    geometries differentes se contrediraient a l'ecran.
+
+    L'aura IGNORE les murs, volontairement : c'est une portee, pas une
+    ligne de vue. Le champ de vision est deja rendu ailleurs.
+
+    Le champ de saisie ne s'active qu'avec la case cochee : un nombre
+    modifiable sans effet visible passerait pour une panne.
+
+    Pose sur la carte MJ uniquement, conformement au perimetre valide.
+
+----------------------------------------------------------------------
+4. RECHERCHE DANS LA BIBLIOTHEQUE                        (map.html)
+----------------------------------------------------------------------
+
+Champ de filtre au-dessus du selecteur de cartes, sur le modele de celui
+du bestiaire. Filtre sur le nom ET sur le type.
+
+    Le nom d'une carte generee porte son biome ET sa graine
+    (« Foret — GERRX8 ») : chercher « foret » ou une graine suffit, sans
+    champ supplementaire.
+
+    LA CARTE ACTIVE RESTE TOUJOURS LISTEE, meme hors filtre. Sans cela,
+    taper trois lettres la ferait disparaitre du selecteur et le bouton
+    « Charger » viserait une autre carte.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/allegement.test.js  (nouveau, 8e suite)
+    empreinte stable a contenu egal, differente sinon ;
+    tokens jamais empreint ; champ absent jamais empreint NI annonce
+      comme repris ;
+    premier envoi complet ; second envoi sans changement -> champs
+      lourds retires et listes dans reprises ;
+    FUSION FIDELE : l'etat reconstitue egale la projection complete ;
+    un seul champ modifie -> lui seul revient ;
+    le gain est verifie chiffre, pas suppose ;
+    LE PIEGE : projection joueur dont seul `remembered` bascule -> le
+      decor DOIT etre renvoye ;
+    assertions statiques sur les deux portes de sortie du serveur, sur
+      le refus de fusion inter-cartes, et sur le rattrapage des deux
+      pages.
+
+    NOTE : deux assertions de cette suite etaient fautives a la premiere
+    ecriture. L'une exigeait le champ `vision` d'une projection MJ, qui
+    n'en porte pas. L'autre comparait deux JSON.stringify alors que la
+    fusion reinsere les champs repris en fin d'objet : meme contenu,
+    ordre de cles different. Corrigees par une comparaison a cles
+    triees. Le code n'etait pas en cause dans les deux cas.
+
+13 assertions PASS sur 8 fichiers. Aucun test existant supprime.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- npm test : 8 fichiers / 13 assertions                        : PASS
+- node --check : allegement.js, map.js, server.js, map-core.js : PASS
+- scripts inline de map.html et map_joueur.html (vm.Script)    : PASS
+- identifiants DOM : 118 id, aucune reference manquante        : PASS
+- allegement de bout en bout, vraie socket : 39 -> 2,6 Ko      : PASS
+- fusion fidele au complet                                     : PASS
+- decor modifie -> elements renvoye                            : PASS
+- joueur qui explore -> elements renvoye                       : PASS
+- mapRequest rend toujours un etat complet                     : PASS
+- portes : 19 basculees, vision 137 -> 133 -> 137              : PASS
+- les 5 fichiers de donnees reels sont intacts                 : PASS
+- port 3100 libere, serveur du port 3000 jamais coupe          : PASS
+
+RESTE A FAIRE
+    - durcir les 13 routes MJ sans controle de role ; mj.html doit
+      d'abord transmettre son role sur 9 appels
+    - harnais de test HTTP (51 routes mutantes, 0 couverture)
+    - un fichier par carte + migration
+    - ordre d'initiative
+    - image de fond : `background` ne gere qu'une couleur. Le plus gros
+      manque fonctionnel restant.
+    - copier/coller de zone, raccourcis clavier, verrouillage du decor
+    - annuler la derniere action, memoire d'exploration par personnage
+    - extraction du JS inline de map.html
+    - plusieurs parties simultanees : ARCANESYNC_DATA_DIR est le
+      mecanisme qui manquait ; reste a choisir le dossier a l'execution
+
+======================================================================
+FIN VERSION V1.13.11
+======================================================================
+
+======================================================================
+VERSION V1.13.12 - PORTES COTE JOUEUR, ET AURA UTILISABLE
+======================================================================
+
+Deux retours d'usage sur V1.13.11.
+
+----------------------------------------------------------------------
+1. LES JOUEURS OUVRENT LES PORTES     (map.js, server.js, les deux pages)
+----------------------------------------------------------------------
+
+Jusqu'ici seul le MJ ouvrait une porte. Un joueur arrive devant une
+porte devait la lui demander, ce qui vidait la fonctionnalite de son
+interet a la table.
+
+LE CHEMIN : SOCKET, PAS ROUTE REST
+
+On suit exactement le modele du deplacement de jeton — la seule action
+de joueur mutante qui existait :
+
+server.js
+    + socket.on('mapTogglePorte', ({ elementId }) => ...)
+
+    Le role et le personnage sont lus dans le HANDSHAKE, jamais dans le
+    message. Un client ne peut donc pas s'annoncer autrement qu'il ne
+    s'est connecte. Aucune route REST n'est ouverte aux joueurs.
+
+    Succes -> rafraichirExploration() PUIS emitMapState(). L'ordre
+    compte : ouvrir une porte degage une ligne de vue, et sans ce
+    recalcul prealable la piece revelee n'entrerait dans la memoire du
+    groupe qu'au mouvement suivant.
+
+L'AUTORISATION, ENTIEREMENT SERVEUR
+
+map.js
+    + basculerPorte(mapId, elementId, { role, playerId })
+
+      1. l'element existe et son kind est 'porte' ;
+      2. pour un joueur : son jeton est SUR la carte ;
+      3. adjacence — Chebyshev <= 1 entre le rectangle de la porte et
+         celui du jeton (taille du jeton comprise). Pas de controle de
+         ligne de vue en plus : etre a portee de bras suffit, et une
+         porte adjacente est de toute facon visible ;
+      4. la porte n'est pas VERROUILLEE ;
+      5. bascule blocksMovement ET blocksVision, et le nom.
+
+      Le MJ ouvre n'importe quelle porte, de n'importe ou, verrouillee
+      ou non.
+
+L'ORDRE DES CONTROLES N'EST PAS ARBITRAIRE. Le verrou est verifie EN
+DERNIER. Son message revele une information de MJ : il ne doit parvenir
+qu'a quelqu'un qui a reellement la main sur la poignee, jamais a un
+joueur qui sonderait la carte a distance. La premiere version testait le
+verrou en premier ; un personnage meme absent de la carte apprenait
+qu'une porte etait verrouillee. Corrige.
+
+LE VERROU, SANS LEQUEL LE MJ PERD UN POUVOIR
+
+Ouvrir les portes aux joueurs retire au MJ un veto qu'il avait
+implicitement — lui seul les manoeuvrait. On le lui rend explicitement :
+
+map.js     normaliserElement() gagne `verrouillee`, OMIS quand il est
+           faux, comme lightRange en V1.13.8. Le decor d'une carte
+           generee compte des centaines d'elements qui n'ont rien d'une
+           porte.
+map.html   case « Verrouillee » dans l'inspecteur, pour les portes.
+
+`verrouillee` N'EST JAMAIS TRANSMIS AU JOUEUR. Savoir a l'avance qu'une
+porte resistera est une information de MJ ; le joueur l'apprend en
+essayant.
+
+LES GESTES
+
+map_joueur.html  un clic sur une porte ADJACENTE la manoeuvre. Place
+                 APRES la prise du jeton : un personnage pose sur la
+                 case d'une porte doit rester deplacable. Le controle
+                 d'adjacence cote client n'est qu'un confort : la seule
+                 autorisation qui compte est celle du serveur.
+map.html         DOUBLE-CLIC sur une porte. Le simple clic reste la
+                 selection — le MJ doit pouvoir inspecter une porte sans
+                 la manoeuvrer.
+
+----------------------------------------------------------------------
+2. L'AURA ETAIT MUETTE           (map-core.js, map.html, map_joueur.html)
+----------------------------------------------------------------------
+
+Remontee de l'utilisateur : « je ne vois pas la possibilite d'activer
+l'aura, ni cote joueur ni cote MJ ». Le diagnostic donne DEUX causes
+distinctes, et une seule etait une absence.
+
+  a) COTE JOUEUR : elle n'existait pas. map_joueur.html n'avait aucune
+     option d'affichage. J'avais restreint la pose a la carte MJ.
+     -> case « Aura de portee » et sa portee ajoutees a la barre
+        d'outils du joueur.
+
+  b) COTE MJ : elle existait et etait bien servie — verifie par requete
+     sur l'instance du port 3000, qui renvoyait bien opt-aura dans le
+     HTML. MAIS dessinerAura() sortait immediatement si aucun jeton
+     n'etait selectionne. COCHEE SANS SELECTION, LA CASE NE PRODUISAIT
+     RIEN ET PASSAIT POUR UNE PANNE.
+
+     C'est un defaut d'ergonomie de ma part, pas une absence de
+     fonctionnalite. Deux correctifs :
+
+     map-core.js  l'aura s'ancre sur le jeton selectionne ET, a defaut,
+                  sur le jeton propre du spectateur (map.self.tokenId).
+                  Celui qui coche « aura de portee » veut d'abord
+                  connaitre LA SIENNE : c'est le repli naturel. Un
+                  joueur voit donc immediatement quelque chose.
+                + auraAncree() : l'interface peut dire POURQUOI rien
+                  n'apparait.
+
+     map.html     le MJ n'a pas de jeton propre. Sans selection,
+                  l'interface affiche « selectionnez un jeton » a cote
+                  de la case. UNE OPTION QUI NE FAIT RIEN DOIT DIRE
+                  POURQUOI.
+
+     Le libelle passe de « Aura » a « Aura de portee », et le champ de
+     saisie est regroupe DANS le libelle plutot que pose isolement en
+     fin de barre a flex-wrap.
+
+----------------------------------------------------------------------
+UN DOUBLON QUI AURAIT CASSE LA SELECTION DE DECOR
+----------------------------------------------------------------------
+
+En ajoutant un elementAt(x, y) a l'API du moteur de rendu, j'ai cree un
+DOUBLON : elementAt(cell) existait deja et etait exporte plus haut dans
+le meme litteral d'objet. La derniere cle l'emporte — map.html appelait
+donc renderer.elementAt(cell) avec un objet la ou ma version attendait
+deux nombres, et le MJ n'aurait plus pu selectionner un element de
+decor.
+
+Ni node --check ni la compilation vm.Script ne detectent une cle
+dupliquee : c'est legal en mode non strict. Trouve en relisant
+l'appelant avant d'ecrire le geste MJ. Le doublon a ete retire et le
+code joueur utilise la fonction existante.
+
+Un controle de cles dupliquees dans l'API publique du moteur a ete
+ajoute a la verification.
+
+----------------------------------------------------------------------
+TESTS
+----------------------------------------------------------------------
+
+tests/map.test.js  (enrichi)
+    un joueur ferme une porte adjacente -> la vision DIMINUE ; il la
+      rouvre -> la vision revient EXACTEMENT a sa valeur d'origine ;
+    porte a huit cases -> refus, et l'etat de la porte est inchange ;
+    le MJ ouvre la meme porte lointaine -> succes ;
+    un mur n'est pas une porte, pour le joueur comme pour le MJ ;
+    porte verrouillee -> refus au joueur, succes au MJ ;
+    joueur ABSENT de la carte -> refus dont le message NE REVELE PAS le
+      verrou ;
+    `verrouillee` absent de la projection joueur, present cote MJ ;
+    `verrouillee` omis du stockage quand il est faux ;
+    l'aura s'ancre sur le jeton du spectateur ; l'interface joueur porte
+      bien la case et le declencheur de porte.
+
+    NOTE : ce bloc a d'abord echoue sur `mapStore is not defined`. La
+    suite principale declare son module DANS son try et vide son cache
+    dans son finally ; un bloc ajoute au niveau module doit le
+    recharger. Le code n'etait pas en cause.
+
+14 assertions PASS sur 8 fichiers. Aucun test existant supprime.
+
+----------------------------------------------------------------------
+PREUVE DE BOUT EN BOUT
+----------------------------------------------------------------------
+
+Instance isolee (ARCANESYNC_DATA_DIR + PORT=3100), vraie socket JOUEUR
+en transport polling. Le serveur du port 3000 n'a jamais ete coupe.
+
+    porte adjacente          -> FERMEE, bascule effective
+    elements renvoye         -> OUI (le decor a change : l'allegement
+                                reste correct sur une mutation joueur)
+    porte a neuf cases       -> refus « Vous etes trop loin de cette
+                                porte », etat inchange
+    porte verrouillee        -> refus « Cette porte est verrouillee »,
+                                etat inchange
+    fuites cote joueur       -> AUCUNE (verrouillee, gmNotes,
+                                blocksVision, visibleToPlayers,
+                                playerVision, lightRange)
+
+    NOTE DE METHODE : la premiere version de cette preuve creait les
+    portes en appelant map.js depuis un SECOND PROCESSUS. Le serveur, qui
+    tient son propre etat en memoire, n'en savait rien — et le garde-fou
+    d'obsolescence de V1.13.7 a ensuite refuse ses ecritures, exactement
+    comme il doit. La preuve passe desormais INTEGRALEMENT par le
+    serveur : creation, lecture, bascule, menage.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- npm test : 8 fichiers / 14 assertions                        : PASS
+- node --check : map.js, server.js, map-core.js, allegement.js : PASS
+- scripts inline de map.html et map_joueur.html (vm.Script)    : PASS
+- identifiants DOM : 120 et 17, aucune reference manquante     : PASS
+- aucune cle dupliquee dans l'API du moteur de rendu           : PASS
+- bascule joueur sur vraie socket, refus a distance et verrou  : PASS
+- l'allegement renvoie le decor apres une mutation joueur      : PASS
+- non-exposition : verrouillee jamais transmis                 : PASS
+- les 5 fichiers de donnees reels sont intacts                 : PASS
+- port 3100 libere, serveur du port 3000 jamais coupe          : PASS
+
+RESTE A FAIRE
+    - image de fond : `background` ne gere qu'une couleur. Le plus gros
+      manque fonctionnel restant.
+    - durcir les 13 routes MJ sans controle de role
+    - harnais de test HTTP (51 routes mutantes, 0 couverture)
+    - un fichier par carte, ordre d'initiative
+    - copier/coller de zone, raccourcis clavier, verrouillage du decor
+    - annuler la derniere action, memoire d'exploration par personnage
+    - extraction du JS inline de map.html
+    - plusieurs parties simultanees
+
+
+----------------------------------------------------------------------
+V1.13.12b - CORRECTIF : L AURA N ETAIT PAS CENTREE SUR LE JETON
+----------------------------------------------------------------------
+
+Remonte par l utilisateur : « l aura de portee n est pas centree sur le
+joueur ».
+
+CAUSE. dessinerAura() calculait son centre en multipliant la case par
+cellSize, sans passer par px(). Or px() ajoute la GOUTTIERE — la marge
+de 22 px ou sont ecrits les reperes de colonnes et de lignes. Le cercle
+etait donc decale de 22 px vers le haut ET vers la gauche, soit 31 px en
+diagonale : jamais centre sur le jeton, quelle que soit la portee.
+
+Tout le reste du rendu passe par px() ou pointVersPx(). L aura etait la
+seule exception, et c est exactement ce qui se voyait.
+
+CORRECTIF
+    map-core.js  cx = px(token.x + taille / 2)
+                 cy = px(token.y + taille / 2)
+
+    Cette formule est RIGOUREUSEMENT celle de dessinerToken() :
+        px(token.x) + (taille * cellSize) / 2
+    developpee, elle donne le meme resultat. Le centre de l aura et
+    celui du jeton sont donc calcules a l identique, par construction.
+
+    Verifie numeriquement, jeton 1x1 en (7,4), cellSize 40 :
+        centre du jeton      (322, 202)
+        aura AVANT correctif (300, 180)  ecart 31,1 px
+        aura APRES correctif (322, 202)  ecart 0,0 px
+
+AU PASSAGE. L etiquette « N cases » se place au-dessus du cercle. Sur
+une grande portee, le haut du cercle sort du canvas et l etiquette avec
+lui. Elle est desormais ramenee a l interieur : elle porte le chiffre,
+c est elle qu on vient lire.
+
+TEST DE NON-REGRESSION  (tests/map.test.js)
+    le centre de l aura doit etre calcule avec px() ;
+    AUCUNE coordonnee de case ne doit etre convertie sans px() dans
+      dessinerAura — c est la faute exacte, formulee en interdit ;
+    les deux formules sont reproduites et COMPAREES au centre calcule
+      par dessinerToken(), seule reference qui fasse foi. Un ecart non
+      nul echoue le test.
+
+VALIDATION
+    - npm test : 8 fichiers / 14 assertions                    : PASS
+    - node --check map-core.js                                 : PASS
+    - scripts inline des deux pages (vm.Script)                : PASS
+    - ecart mesure entre centre du jeton et centre de l aura   : 0 px
+======================================================================
+FIN VERSION V1.13.12
+======================================================================

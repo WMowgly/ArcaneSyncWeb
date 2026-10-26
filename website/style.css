@@ -326,3 +326,154 @@ button {
   transform: translateY(0);
   box-shadow: 1px 1px 3px #3b2f1e44;
 }
+/* v1.4.2 — import manuel de l'état de partie */
+#import-session-btn {
+  margin: 8px 0;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+/* V1.8 — éditeur complet du joueur côté MJ */
+.modal-mj-player {
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.modal-mj-player h2 {
+  text-align: left;
+}
+
+.mj-player-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.mj-player-summary p {
+  background: #f5f0df;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 0;
+  text-align: left;
+}
+
+.mj-popup-actions,
+.mj-edit-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.mj-edit-form,
+.mj-player-edit-form {
+  width: 100%;
+}
+
+.mj-edit-section {
+  border: 1px solid #d2c29b;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0;
+  background: #fffdf5;
+}
+
+.mj-edit-section h3 {
+  margin-top: 0;
+}
+
+.mj-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mj-edit-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mj-edit-weapon {
+  margin-bottom: 8px;
+}
+
+.mj-edit-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.mj-edit-section input,
+.mj-edit-section textarea,
+.mj-edit-section select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #b9aa86;
+  border-radius: 5px;
+  font: inherit;
+}
+
+.mj-edit-section textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.mj-edit-section textarea[name="spells"],
+.mj-edit-section textarea[name="sorts_mineurs"],
+.mj-edit-section textarea[name="attaques_speciales"],
+.mj-edit-section textarea[name="competences"] {
+  min-height: 160px;
+  font-family: Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.mj-edit-help {
+  font-size: 0.9em;
+  color: #665c47;
+}
+
+
+.mj-inventory-toolbar{display:flex;justify-content:flex-start;margin:8px 0 12px;}
+.mj-inventory-add{border:1px solid #8b5e3c;border-radius:6px;padding:8px 12px;background:#b79ac7;color:#20150e;font:inherit;font-weight:700;cursor:pointer;}
+.mj-inventory-table-wrapper{width:100%;overflow-x:auto;border:1px solid #d2c29b;border-radius:8px;background:#fffdf5;}
+.mj-inventory-table{width:100%;min-width:900px;border-collapse:collapse;}
+.mj-inventory-table th,.mj-inventory-table td{border-bottom:1px solid #d2c29b;padding:7px;vertical-align:middle;text-align:left;}
+.mj-inventory-table th{background:#f5ead0;font-weight:700;}
+.mj-inventory-table input,.mj-inventory-table select,.mj-inventory-table textarea{width:100%;box-sizing:border-box;padding:6px;border:1px solid #b9aa86;border-radius:5px;background:#fffbea;font:inherit;}
+.mj-inventory-table textarea{min-height:58px;resize:vertical;}
+.mj-inventory-equipped-cell{text-align:center!important;}
+.mj-inventory-equipped{width:20px!important;height:20px;}
+.mj-inventory-remove{border:1px solid #8b5e3c;border-radius:5px;padding:6px 9px;background:#eadfcf;color:#3b2415;font:inherit;cursor:pointer;}
+.mj-inventory-legacy-fields{margin-top:12px;}
+
+.mj-edit-message {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  font-weight: 700;
+}
+
+.mj-edit-message.success {
+  color: #2e7d32;
+}
+
+.mj-edit-message.error {
+  color: #a52a2a;
+}
+
+@media (max-width: 800px) {
+  .mj-player-summary,
+  .mj-edit-grid,
+  .mj-edit-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-mj-player {
+    max-width: 96vw;
+    padding: 15px;
+  }
+}

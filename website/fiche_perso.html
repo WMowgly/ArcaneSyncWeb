@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Fiche de Personnage</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css"/> 
+  <link rel="stylesheet" href="style.css"/>
+  <script src="/socket.io/socket.io.js"></script> 
   <style>
     body {
       font-family: 'Uncial Antiqua', cursive;
@@ -61,6 +62,15 @@
       display: flex;
       flex-direction: column;
     }
+    #inventory-editor { overflow-x: auto; }
+    #inventory-table { width: 100%; border-collapse: collapse; min-width: 850px; }
+    #inventory-table th, #inventory-table td { border: 1px solid #8b5e3c; padding: 6px; vertical-align: top; }
+    #inventory-table input, #inventory-table select, #inventory-table textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+    #inventory-table textarea { min-height: 52px; resize: vertical; }
+    .inventory-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .inventory-equipped { white-space: nowrap; text-align:center; }
+    .inventory-empty { text-align:center; opacity:.75; padding:14px; }
+
 
     label {
       font-weight: bold;
@@ -325,8 +335,7 @@
   .description-content.visible {
     display: block;
   }
-  
-  </style>
+</style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -406,6 +415,25 @@
             </div>
         </div>
     
+        <!-- V1.11 : Inventaire structuré et équipement -->
+        <div class="section">
+            <h2>Inventaire & équipement</h2>
+            <p>Ajoutez les objets, gérez leurs quantités et indiquez directement ceux qui sont équipés.</p>
+            <div id="inventory-editor">
+                <table id="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th><th>Type</th><th>Quantité</th><th>Emplacement</th><th>Équipé</th><th>Description</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-body"></tbody>
+                </table>
+            </div>
+            <div class="inventory-actions">
+                <button type="button" id="add-inventory-item">+ Ajouter un objet</button>
+            </div>
+        </div>
+
         <!-- Section Armes -->
         <div class="section">
             <h2>Armes</h2>
@@ -559,7 +587,13 @@
   </div>
 
   <div style="text-align: center;">
-    <button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
+<button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
+    <button
+      id="import-session-btn"
+      type="button"
+      title="Importe l'état actuel de la partie dans cette fiche de personnage">
+      ↻ Mettre à jour depuis la partie
+    </button>
   </div>
 
   <script src="navbar.js"></script>
@@ -630,6 +664,8 @@
 
 window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé async ici
   const params = new URLSearchParams(window.location.search);
+  const playerId = params.get('PlayerId') || '';
+  window.arcanePlayerId = playerId;
   
   // Fonction utilitaire pour récupérer les valeurs des paramètres
   function getParamValue(key, defaultValue = '') {
@@ -793,6 +829,122 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
     console.error('Erreur lors du chargement des armes:', error);
   }
 
+  // -------------------------------------------------------------------
+  // Source de vérité : après l'initialisation historique par URL, si un
+  // PlayerId est disponible, on recharge l'état officiel depuis le serveur.
+  // Cela évite qu'une URL ancienne puisse réécrire des données plus récentes.
+  // -------------------------------------------------------------------
+  async function loadAuthoritativePlayerState() {
+    if (!playerId) {
+      console.warn('Aucun PlayerId disponible : utilisation des paramètres historiques de l\'URL.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/joueurs/${encodeURIComponent(playerId)}`);
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const joueur = await response.json();
+
+      // Identité
+      fillField('player_name', joueur.nom || '');
+      fillField('player_class', joueur.classe || '');
+      fillField('player_race', joueur.race || '');
+      fillField('player_level', joueur.niveau ?? 1);
+
+      // Ressources
+      fillField('player_hp', joueur.hp?.max ?? 0);
+      fillField('player_hp_current', joueur.hp?.current ?? 0);
+      fillField('player_mana', joueur.mana?.max ?? 0);
+      fillField('player_mana_current', joueur.mana?.current ?? 0);
+      fillField('player_vie_bonus', joueur.bonus_vie ?? 0);
+      fillField('player_intox', joueur.intox ?? 0);
+
+      // Statistiques
+      fillField('stat_force', joueur.stats?.force ?? 0);
+      fillField('stat_dexterite', joueur.stats?.dexterite ?? 0);
+      fillField('stat_magie', joueur.stats?.magie ?? 0);
+      fillField('stat_constitution', joueur.stats?.constitution ?? 0);
+      fillField('stat_charisme', joueur.stats?.charisme ?? 0);
+      fillField('stat_perception', joueur.stats?.perception ?? 0);
+      fillField('stat_chance', joueur.stats?.chance ?? 0);
+      fillField('stat_intelligence', joueur.stats?.intelligence ?? 0);
+
+      // Armure
+      fillField('def_protection_max', joueur.armure?.protection?.max ?? 0);
+      fillField('def_protection', joueur.armure?.protection?.current ?? 0);
+      fillField('player_dura_max', joueur.armure?.durabilite?.max ?? 0);
+      fillField('player_dura_current', joueur.armure?.durabilite?.current ?? 0);
+      fillField('eq_armure', joueur.armure?.type || '');
+      fillField('eq_resistance', joueur.armure?.resistance || '');
+
+      // Inventaire / notes / informations complémentaires
+      fillField('eq_sac', joueur.sac || '');
+      fillField('eq_ceinture', joueur.ceinture || '');
+      renderInventory(Array.isArray(joueur.inventaire) ? joueur.inventaire : []);
+      fillField('bio', joueur.bio || '');
+      fillField('skills_speciales', joueur.skills_speciales || '');
+      fillField('levelup', joueur.levelup || '');
+
+      // Armes : le modèle actuel prévoit cinq emplacements.
+      const armes = Array.isArray(joueur.armes) ? joueur.armes : [];
+      for (let index = 0; index < 5; index++) {
+        const arme = armes[index] || {};
+        fillField(`weapon_type_${index + 1}`, arme.type || '');
+        fillField(`weapon_dmg_${index + 1}`, arme.degats || '');
+      }
+
+      // Sorts majeurs.
+      const sortsContainer = document.getElementById('sorts-container');
+      sortsContainer.innerHTML = '';
+      for (const sort of (Array.isArray(joueur.spells) ? joueur.spells : [])) {
+        await createSortElement(sort, sortsContainer, false);
+      }
+
+      // Sorts mineurs.
+      const sortsMineursContainer = document.getElementById('sorts-mineurs-container');
+      sortsMineursContainer.innerHTML = '';
+      for (const sort of (Array.isArray(joueur.sorts_mineurs) ? joueur.sorts_mineurs : [])) {
+        await createSortElement(sort, sortsMineursContainer, true);
+      }
+
+      // Attaques spéciales.
+      const attacksContainer = document.getElementById('attack-special-container');
+      attacksContainer.innerHTML = '';
+      for (const attack of (Array.isArray(joueur.attaques_speciales) ? joueur.attaques_speciales : [])) {
+        const attackRow = await createAttackElement(attack);
+        if (attackRow) {
+          attacksContainer.appendChild(attackRow);
+        }
+      }
+
+      // L'état serveur devient maintenant la base de la prochaine sauvegarde.
+      params.set('PlayerId', joueur.id);
+      updateArmorState();
+
+      console.log('État officiel du personnage chargé depuis le serveur :', joueur.id);
+    } catch (error) {
+      // Ne pas bloquer l'utilisateur si une ancienne URL peut encore servir
+      // de fallback. La sauvegarde pourra signaler une erreur si nécessaire.
+      console.error('Impossible de charger l\'état officiel du personnage:', error);
+    }
+  }
+
+  window.arcaneLoadAuthoritativePlayerState = loadAuthoritativePlayerState;
+
+  document.getElementById('add-inventory-item')?.addEventListener('click', () => {
+    document.getElementById('inventory-body')?.appendChild(createInventoryRow());
+  });
+
+  let initialInventory = [];
+  try { initialInventory = params.get('Inventaire') ? JSON.parse(params.get('Inventaire')) : []; } catch { initialInventory = []; }
+  renderInventory(initialInventory);
+
+  await loadAuthoritativePlayerState();
+
   // Ajout des logs pour le débogage
   console.log('Chargement des données terminé');
   console.log('Compétences spéciales:', getParamValue('Skills speciales'));
@@ -835,7 +987,7 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
 
     // Collecte des attaques spéciales
     const attaquesSpeciales = [];
-    document.querySelectorAll('#attacks-container .sort-row').forEach((row, index) => {
+    document.querySelectorAll('#attack-special-container .sort-row').forEach((row, index) => {
       const nom = row.querySelector('.attack_name')?.value;
       if (nom) {
         attaquesSpeciales.push({
@@ -893,6 +1045,7 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
       skills_speciales: document.getElementById('skills_speciales').value || '',
       levelup: document.getElementById('levelup').value || '',
       armes: getArmes(),
+      inventaire: getInventaire(),
       attaques_speciales: getSpecialAttacks()
   };
 
@@ -904,8 +1057,9 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        nom: donnees.nom,              // Format attendu par l'API
-        nouvellesDonnees: donnees     // Format attendu par l'API
+        id: playerId || undefined,
+        nom: playerId ? undefined : donnees.nom, // compatibilité anciennes URLs
+        nouvellesDonnees: donnees
       })
     });
 
@@ -913,10 +1067,20 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
 
     const result = await response.json();
     console.log('Sauvegarde réussie:', result);
+
+    // Le serveur renvoie toujours l'ID officiel du personnage.
+    // On le conserve dans l'URL pour les prochaines ouvertures.
+    const savedPlayerId = result.playerId || playerId;
+    if (savedPlayerId) {
+      params.set('PlayerId', savedPlayerId);
+    }
     alert('Données sauvegardées avec succès !');
 
     // Construire la nouvelle URL avec le nom du personnage
     const urlParams = new URLSearchParams();
+      if (savedPlayerId) {
+        urlParams.set('PlayerId', savedPlayerId);
+      }
       urlParams.set('Nom', donnees.nom);
       urlParams.set('Classe', donnees.classe);
       urlParams.set('Race', donnees.race);
@@ -953,6 +1117,7 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
       urlParams.set('Sorts mineurs', JSON.stringify(donnees.sorts_mineurs));
       urlParams.set('Competences', JSON.stringify(donnees.competences));
       urlParams.set('Armes', JSON.stringify(donnees.armes));
+      urlParams.set('Inventaire', JSON.stringify(donnees.inventaire));
       urlParams.set('Attaques speciales', JSON.stringify(donnees.attaques_speciales));
 
       // Autres
@@ -1048,6 +1213,54 @@ function getCompetences() {
   });
   
   return competences;
+}
+
+function escapeInventoryHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function createInventoryRow(item = {}) {
+  const id = item.id || (window.crypto?.randomUUID ? crypto.randomUUID() : `item_${Date.now()}_${Math.random().toString(16).slice(2)}`);
+  const row = document.createElement('tr');
+  row.dataset.itemId = id;
+  row.innerHTML = `
+    <td><input type="text" class="inventory-name" value="${escapeInventoryHtml(item.nom || '')}" placeholder="Nom"></td>
+    <td><select class="inventory-type">
+      ${['Objet','Arme','Armure','Potion','Accessoire','Quête','Autre'].map(type => `<option value="${type}" ${item.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+    </select></td>
+    <td><input type="number" class="inventory-quantity" min="1" value="${Math.max(1, Number(item.quantite) || 1)}"></td>
+    <td><input type="text" class="inventory-slot" value="${escapeInventoryHtml(item.emplacement || '')}" placeholder="Ex. arme principale"></td>
+    <td class="inventory-equipped"><input type="checkbox" class="inventory-equipped-check" ${item.equipe ? 'checked' : ''}></td>
+    <td><textarea class="inventory-description" placeholder="Description">${escapeInventoryHtml(item.description || '')}</textarea></td>
+    <td><button type="button" class="remove-inventory-item">Supprimer</button></td>`;
+  row.querySelector('.remove-inventory-item').addEventListener('click', () => row.remove());
+  return row;
+}
+
+function renderInventory(items) {
+  const body = document.getElementById('inventory-body');
+  if (!body) return;
+  body.innerHTML = '';
+  (Array.isArray(items) ? items : []).forEach(item => body.appendChild(createInventoryRow(item)));
+}
+
+function getInventaire() {
+  const body = document.getElementById('inventory-body');
+  if (!body) return [];
+  return [...body.querySelectorAll('tr')].map(row => ({
+    id: row.dataset.itemId || (window.crypto?.randomUUID ? crypto.randomUUID() : `item_${Date.now()}_${Math.random().toString(16).slice(2)}`),
+    nom: row.querySelector('.inventory-name')?.value.trim() || '',
+    type: row.querySelector('.inventory-type')?.value || 'Objet',
+    quantite: Math.max(1, parseInt(row.querySelector('.inventory-quantity')?.value, 10) || 1),
+    emplacement: row.querySelector('.inventory-slot')?.value.trim() || '',
+    equipe: Boolean(row.querySelector('.inventory-equipped-check')?.checked),
+    description: row.querySelector('.inventory-description')?.value || ''
+  })).filter(item => item.nom);
 }
 
 function getArmes() {
@@ -1375,5 +1588,76 @@ window.addEventListener('DOMContentLoaded', () => {
 });*/
 
   </script>
+
+<script>
+// -------------------------------------------------------------------
+  // IMPORT MANUEL : état de la partie -> Fiche de Perso
+  // -------------------------------------------------------------------
+  async function importerEtatPartieDansFiche() {
+    const playerId = window.arcanePlayerId || '';
+
+    if (!playerId) {
+      alert("Impossible d'importer l'état de la partie : PlayerId manquant.");
+      return;
+    }
+
+    const confirmation = window.confirm(
+      "Importer l'état actuel de la partie dans cette Fiche de Perso ?\n\n" +
+      "Cette action remplacera les valeurs HP, Mana, armure, durabilité, " +
+      "protection, bonus de vie et intoxication enregistrées dans la fiche.\n\n" +
+      "Cette action est volontaire et ne se fait jamais automatiquement."
+    );
+
+    if (!confirmation) return;
+
+    const button = document.getElementById('import-session-btn');
+
+    try {
+      if (button) {
+        button.disabled = true;
+        button.textContent = "↻ Import en cours...";
+      }
+
+      const response = await fetch(
+        `/api/session/player/${encodeURIComponent(playerId)}/apply-to-character`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || `Erreur HTTP ${response.status}`);
+      }
+
+      // Recharger la fiche depuis data.json après l'import.
+      if (typeof window.arcaneLoadAuthoritativePlayerState === 'function') {
+        await window.arcaneLoadAuthoritativePlayerState();
+      }
+
+      alert("L'état actuel de la partie a été importé dans la Fiche de Perso.");
+    } catch (error) {
+      console.error("Erreur lors de l'import de l'état de partie:", error);
+      alert(`Erreur lors de l'import : ${error.message}`);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "↻ Mettre à jour depuis la partie";
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const importButton = document.getElementById('import-session-btn');
+    if (importButton) {
+      importButton.addEventListener('click', importerEtatPartieDansFiche);
+    }
+  });
+</script>
+
+
+
 </body>
 </html>

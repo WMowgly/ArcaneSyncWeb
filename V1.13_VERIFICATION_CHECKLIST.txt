@@ -1,0 +1,248 @@
+ArcaneSync V1.13 - Cartes de jeu interactives (MJ / Joueur)
+==========================================================================
+
+OBJECTIF
+--------
+Disposer d'une carte de jeu partagée, modifiable en temps réel par le MJ,
+avec une vision propre à chaque personnage et sans jamais transmettre au
+client joueur une information qu'il n'a pas le droit de connaître.
+
+PRE-REQUIS
+----------
+- [ ] npm test : les 8 suites passent.
+- [ ] Serveur démarré (npm start).
+- [ ] Au moins deux personnages existants.
+
+1. BIBLIOTHEQUE DE CARTES (MJ)
+------------------------------
+- [ ] Ouvrir map.html.
+- [ ] Créer une carte, vérifier qu'elle apparaît dans la liste.
+- [ ] Cliquer « Charger » : la carte devient active (★).
+- [ ] Modifier la grille (colonnes / lignes / taille de case) et enregistrer.
+- [ ] Vérifier que les tokens restent dans les limites après réduction.
+- [ ] Dupliquer une carte, vérifier que le décor est conservé.
+- [ ] Supprimer une carte ; si c'était l'active, vérifier qu'aucune carte
+      n'est active et qu'aucune page ne plante.
+
+2. GRILLE ET COORDONNEES
+------------------------
+- [ ] La grille s'affiche avec les numéros de colonnes et de lignes.
+- [ ] Le survol affiche « Case : X , Y » cohérent avec les règles.
+- [ ] Décocher « Grille » / « Coordonnées » masque bien les repères.
+
+3. ELEMENTS, OBSTACLES, DECOR (MJ)
+----------------------------------
+- [ ] Outil « Poser » + type Mur : tracer un mur au pinceau.
+- [ ] Poser un décor, un objet, un piège.
+- [ ] Sélectionner un élément : l'inspecteur affiche ses propriétés.
+- [ ] Modifier nom, taille, couleur, « bloque le déplacement »,
+      « bloque la vision » et enregistrer.
+- [ ] Outil « Effacer » : supprimer un élément.
+- [ ] Marquer un élément « non visible par les joueurs » : il apparaît
+      en pointillés rouges côté MJ.
+
+4. CREATURES / NPC (MJ)
+-----------------------
+- [ ] Outil « Créature » + template : cliquer une case crée la créature
+      et la place.
+- [ ] Vérifier que la créature apparaît AUSSI dans la gestion des mobs
+      de l'interface MJ (mj.html) — c'est la même entité.
+- [ ] Modifier les PV du mob depuis mj.html : la barre de vie sur la
+      carte se met à jour immédiatement.
+- [ ] Glisser la créature sur la carte : elle se déplace.
+- [ ] « Cacher » la créature depuis la liste « Sur la carte ».
+- [ ] Supprimer le token d'une créature (bouton ✖).
+
+5. INTERFACE JOUEUR
+-------------------
+- [ ] Ouvrir map_joueur.html?PlayerId=<id> (ou depuis l'Interface de Jeu).
+- [ ] Le personnage du joueur est affiché avec son cercle de portée.
+- [ ] Le panneau « Mon personnage » affiche PV, position, portée, statuts.
+- [ ] Glisser son personnage : il se déplace, le MJ le voit bouger.
+- [ ] Utiliser les flèches du clavier : déplacement case par case.
+- [ ] Tenter de traverser un mur : refus affiché, position restaurée.
+- [ ] Tenter de déplacer un autre personnage : impossible.
+
+6. VISION ET BROUILLARD DE GUERRE
+---------------------------------
+- [ ] MJ : activer le brouillard, mode « Vision des personnages ».
+- [ ] Joueur : les zones non vues sont noires.
+- [ ] Joueur : se déplacer révèle de nouvelles zones.
+- [ ] Joueur : les zones déjà explorées restent grisées (décor connu,
+      mais AUCUNE créature affichée).
+- [ ] Placer une créature derrière un mur : le joueur ne la voit pas.
+- [ ] Déplacer la créature à découvert : elle apparaît chez le joueur.
+- [ ] MJ : cocher « Vue des joueurs » pour prévisualiser leur champ.
+- [ ] Modifier la portée de vue d'un personnage dans l'inspecteur et
+      vérifier l'effet côté joueur.
+- [ ] Deux joueurs séparés par un mur ne se voient pas mutuellement.
+- [ ] Mode « Zones peintes » : outils Masquer / Révéler fonctionnels.
+- [ ] « Tout re-masquer » remet la carte dans le noir côté joueur.
+
+7. NON-EXPOSITION DES DONNEES MJ  (CRITIQUE)
+--------------------------------------------
+Onglet Réseau du navigateur, côté JOUEUR uniquement :
+- [ ] Aucun champ `gmNotes` dans les charges utiles reçues.
+- [ ] Aucun champ `blocksVision` (révélerait la structure des murs).
+- [ ] Aucun champ `visibleToPlayers`.
+- [ ] Aucune trace du nom d'une créature cachée.
+- [ ] Aucune trace d'un élément marqué non visible.
+- [ ] Aucune trace de `playerVision` (aperçu réservé au MJ).
+- [ ] Les cases hors du champ de vision ne figurent pas dans `vision.visible`.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+8. DROITS
+---------
+- [ ] Un appel POST /api/maps sans "role":"mj" renvoie 403.
+- [ ] Un joueur ne peut pas déplacer un token qui n'est pas le sien.
+- [ ] Un token verrouillé par le MJ ne peut plus être déplacé par le joueur.
+- [ ] Le MJ peut placer un token dans un mur, pas le joueur.
+
+9. TEMPS REEL ET RECONNEXION
+----------------------------
+- [ ] Deux navigateurs (MJ + joueur) : chaque action MJ apparaît
+      immédiatement chez le joueur.
+- [ ] Couper le réseau du poste joueur.
+- [ ] Pendant la coupure, le MJ déplace des créatures et révèle des zones.
+- [ ] Rétablir le réseau : la carte du joueur se remet à l'état serveur.
+- [ ] Vérifier qu'une créature cachée pendant la coupure reste cachée.
+- [ ] Rafraîchir la page joueur : aucun état local périmé n'est réutilisé.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+10. REGRESSION (fonctionnalités antérieures)
+--------------------------------------------
+- [ ] Création / modification / suppression de joueur.
+- [ ] Fiche de Perso et Interface de Jeu.
+- [ ] HP / Mana / statuts depuis le MJ.
+- [ ] Notes personnelles, messages privés, notes publiques.
+- [ ] Inventaire et équipement.
+- [ ] Mobs et templates de mobs.
+- [ ] Tableau blanc / scène V1.10 (inchangée).
+- [ ] Export / import de session (contient désormais activeMapId).
+- [ ] Snapshot de reconnexion V1.12.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+REMARQUES
+---------
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+
+==========================================================================
+V1.13.1 - GENERATION DE CARTES PAR TYPE DE LIEU
+==========================================================================
+
+11. GENERATION
+--------------
+- [ ] Le panneau « Générer un lieu » liste 6 types.
+- [ ] Changer de type ajuste la taille par défaut et la description.
+- [ ] Cliquer 🎲 change la graine.
+- [ ] « Créer une carte générée » produit une carte chargée pour la table.
+- [ ] La carte générée s'affiche correctement (décor, murs, portes).
+- [ ] Générer deux fois avec LA MEME graine donne la MEME carte.
+- [ ] Générer avec une graine différente donne une carte différente.
+- [ ] Faire varier la densité change visiblement le décor.
+- [ ] Générer chacun des 6 types au moins une fois.
+
+12. JOUABILITE DES CARTES GENEREES
+----------------------------------
+- [ ] Aucun personnage n'apparaît à l'intérieur d'un mur.
+- [ ] Le groupe démarre groupé, pas éparpillé.
+- [ ] Toutes les zones sont atteignables (pas de pièce murée).
+- [ ] Les portes générées sont franchissables.
+- [ ] Sélectionner une porte : le bouton « Fermer la porte » apparaît.
+- [ ] Fermer une porte bloque le passage ET la vue côté joueur.
+- [ ] Rouvrir la porte rétablit passage et vue immédiatement.
+
+13. MODIFICATION D'UNE CARTE GENEREE
+------------------------------------
+- [ ] Sélectionner un mur généré : l'inspecteur affiche ses propriétés.
+- [ ] Renommer, redimensionner, recolorer un élément généré.
+- [ ] Supprimer un élément généré avec l'outil « Effacer ».
+- [ ] Poser de nouveaux éléments par-dessus le décor généré.
+- [ ] Placer des créatures sur une carte générée.
+- [ ] Enregistrer la grille : la carte reste cohérente.
+
+14. REGENERATION
+----------------
+- [ ] Placer des créatures et déplacer les personnages.
+- [ ] Activer le brouillard, explorer quelques zones.
+- [ ] Cliquer « Régénérer le décor actif », confirmer.
+- [ ] Le décor change entièrement.
+- [ ] Les personnages ET les créatures sont conservés.
+- [ ] Aucun token n'est resté coincé dans un obstacle.
+- [ ] Les zones explorées sont remises à zéro.
+- [ ] Les joueurs connectés voient le nouveau décor immédiatement.
+
+15. DROITS SUR LA GENERATION
+----------------------------
+- [ ] POST /api/maps/generate sans "role":"mj" renvoie 403.
+- [ ] POST /api/maps/:id/regenerate sans "role":"mj" renvoie 403.
+- [ ] Un type de lieu inconnu renvoie 400.
+- [ ] La page joueur n'expose aucun contrôle de génération.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+==========================================================================
+V1.13.2 - ANNOTATIONS DE CARTE (TABLEAU BLANC FUSIONNE)
+==========================================================================
+
+16. DESSIN ET ECRITURE (MJ)
+---------------------------
+- [ ] Outil « Dessiner » : tracer à main levée sur la carte.
+- [ ] Le tracé apparaît en direct sur un second navigateur.
+- [ ] Au relâchement, le tracé devient définitif et identique partout.
+- [ ] Outil « Écrire » : poser un texte, il reste lisible sur tout fond.
+- [ ] Changer couleur et épaisseur ; vérifier l'effet.
+- [ ] La gomme efface l'annotation sous le curseur.
+- [ ] La gomme sur une zone sans annotation efface bien le décor.
+- [ ] Changer la taille de case : les annotations restent en place.
+
+17. CALQUES ET VISIBILITE
+-------------------------
+- [ ] Calque « Partagé » : le joueur voit le tracé.
+- [ ] Calque « MJ seulement » : le joueur ne le voit PAS.
+- [ ] Un tracé MJ apparaît en pointillés dans la vue MJ.
+- [ ] Onglet Réseau côté joueur : aucune trace du calque MJ.
+
+18. DECOUPAGE PAR LE BROUILLARD
+-------------------------------
+- [ ] Activer le brouillard en mode « Vision des personnages ».
+- [ ] Tracer une longue ligne d'une zone connue vers l'inconnu.
+- [ ] Côté joueur : seule la partie connue apparaît.
+- [ ] Onglet Réseau : les points cachés ne sont PAS dans la charge utile.
+- [ ] Poser un texte dans une zone non explorée : le joueur ne le reçoit pas.
+- [ ] Faire explorer la zone : la suite du tracé apparaît alors.
+- [ ] Dessiner en direct dans une zone inconnue du joueur : aucun aperçu
+      ne doit apparaître chez lui pendant le tracé.
+
+19. ANNOTATIONS DES JOUEURS
+---------------------------
+- [ ] Sans autorisation : aucune barre d'outils côté joueur.
+- [ ] MJ : cocher « Autoriser les joueurs à annoter ».
+- [ ] La barre d'outils apparaît immédiatement chez le joueur.
+- [ ] Le joueur trace ; le MJ et les autres joueurs le voient.
+- [ ] Le tracé du joueur porte son nom dans la vue MJ.
+- [ ] Le joueur peut effacer son propre tracé.
+- [ ] Le joueur NE PEUT PAS effacer un tracé du MJ ni d'un autre joueur.
+- [ ] Décocher l'autorisation : la barre d'outils disparaît côté joueur.
+
+20. PERSISTANCE ET EFFACEMENT
+-----------------------------
+- [ ] Rafraîchir la page : les annotations sont toujours là.
+- [ ] Couper puis rétablir le réseau : elles reviennent à l'identique.
+- [ ] Changer de carte puis revenir : chaque carte garde ses annotations.
+- [ ] Régénérer le décor : les annotations sont conservées.
+- [ ] Effacer « les miennes » : les tracés des joueurs subsistent.
+- [ ] Effacer « celles des joueurs » : les tracés MJ subsistent.
+- [ ] Effacer « toutes » : la carte est nette.
+
+21. NON-REGRESSION DU TABLEAU BLANC
+-----------------------------------
+- [ ] tableau.html fonctionne toujours (dessin, texte, gomme, effacer).
+- [ ] La scène V1.10 et ses tokens sont inchangés.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL

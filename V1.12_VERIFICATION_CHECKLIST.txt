@@ -1,0 +1,83 @@
+ArcaneSync V 1.12 - Reconnexion & Resynchronisation de l'État Autoritaire
+==========================================================================
+
+OBJECTIF
+--------
+Après une coupure réseau ou une reconnexion Socket.IO, chaque interface
+doit récupérer l'état officiel actuel du serveur.
+
+1. INTERFACE JOUEUR
+-------------------
+- [ ] Ouvrir l'Interface de Jeu d'un joueur.
+- [ ] Vérifier que le personnage est correctement affiché.
+- [ ] Modifier une valeur depuis le MJ (ex. HP).
+- [ ] Vérifier que le joueur reçoit immédiatement la modification.
+- [ ] Couper temporairement la connexion réseau du poste joueur.
+- [ ] Attendre la perte de connexion.
+- [ ] Modifier une autre valeur depuis le MJ pendant la coupure.
+- [ ] Rétablir la connexion réseau.
+- [ ] Vérifier que l'Interface de Jeu récupère la nouvelle valeur serveur.
+- [ ] Vérifier que les statuts sont également à jour.
+- [ ] Vérifier que les notes publiques sont à jour.
+- [ ] Vérifier que les messages privés restent accessibles au joueur.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+2. INTERFACE MJ
+--------------
+- [ ] Ouvrir l'interface MJ.
+- [ ] Vérifier que tous les joueurs sont affichés.
+- [ ] Couper temporairement la connexion réseau du poste MJ.
+- [ ] Pendant la coupure, modifier l'état d'un joueur depuis un autre client.
+- [ ] Rétablir la connexion.
+- [ ] Vérifier que les cartes joueurs reflètent l'état actuel.
+- [ ] Vérifier HP/Mana.
+- [ ] Vérifier les statuts.
+- [ ] Vérifier l'inventaire/équipement si visible dans l'éditeur.
+- [ ] Vérifier les notes publiques.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+3. TABLEAU / SCÈNE
+------------------
+- [ ] Ouvrir la scène de jeu.
+- [ ] Déplacer un token avec le MJ.
+- [ ] Couper puis rétablir la connexion d'un client.
+- [ ] Vérifier que les positions actuelles sont récupérées.
+- [ ] Vérifier qu'un mob caché reste caché pour un joueur après reconnexion.
+- [ ] Vérifier que le MJ voit toujours le mob caché.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+4. RESYNCHRONISATION AUTORITAIRE
+--------------------------------
+- [ ] Vérifier qu'un rafraîchissement/reconnexion ne restaure pas une
+      ancienne valeur locale par-dessus la valeur serveur.
+- [ ] Vérifier que le serveur reste la source de vérité.
+- [ ] Vérifier qu'aucune donnée privée d'un autre joueur n'est envoyée
+      dans le snapshot joueur.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+5. RÉGRESSION
+-------------
+- [ ] Création de joueur fonctionne.
+- [ ] Modification de joueur fonctionne.
+- [ ] Gestion MJ fonctionne.
+- [ ] HP/Mana MJ fonctionne.
+- [ ] Statuts fonctionne.
+- [ ] Notes personnelles fonctionne.
+- [ ] Messages privés fonctionne.
+- [ ] Inventaire/équipement fonctionne.
+- [ ] Mobs fonctionne.
+- [ ] Templates de mobs fonctionne.
+- [ ] Visibilité des mobs fonctionne.
+- [ ] Export/import de session fonctionne.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+REMARQUES
+---------
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________

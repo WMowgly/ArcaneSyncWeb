@@ -5,10 +5,25 @@
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
   <h1>Interface de Jeu</h1>
+
+  <!-- V1.13 : accès direct à la carte du joueur, contexte conservé. -->
+  <p style="text-align:center;margin:0 0 14px">
+    <a id="lien-ma-carte" href="map_joueur.html">🗺️ Ouvrir ma carte</a>
+  </p>
+  <script>
+    (function () {
+      const id = new URLSearchParams(window.location.search).get('PlayerId');
+      if (id) {
+        document.getElementById('lien-ma-carte').href =
+          `map_joueur.html?PlayerId=${encodeURIComponent(id)}`;
+      }
+    })();
+  </script>
 
   <div class="section">
     <h2>Interface de Jeu</h2>
@@ -94,6 +109,36 @@
       </div>
 
     </div><!-- fin du grid -->
+    <div class="player-status-section">
+      <h3>Statuts</h3>
+      <div id="player-statuses"><span>Aucun statut actif.</span></div>
+    </div>
+
+    <section class="section notes-panel" id="personal-notes-panel">
+      <h2>📝 Mes notes personnelles</h2>
+      <p>Ces notes sont personnelles à votre personnage. Le MJ peut les consulter et les modifier.</p>
+      <textarea id="personal-notes-input" class="notes-textarea" placeholder="Écrire vos notes de partie..."></textarea>
+      <div class="notes-actions">
+        <button id="personal-notes-save" class="game-button" type="button">Sauvegarder mes notes</button>
+        <span id="personal-notes-status"></span>
+      </div>
+    </section>
+
+    <section class="section notes-panel" id="private-messages-panel">
+      <h2>🔒 Messages privés avec le MJ</h2>
+      <div id="private-messages-thread" class="notes-thread"><p>Chargement...</p></div>
+      <textarea id="private-message-input" class="notes-textarea" placeholder="Écrire un message privé au MJ..."></textarea>
+      <div class="notes-actions">
+        <button id="private-message-send" class="game-button" type="button">Envoyer au MJ</button>
+        <span id="private-message-status"></span>
+      </div>
+    </section>
+
+    <section class="section notes-panel" id="public-notes-panel">
+      <h2>📢 Notes publiques du MJ</h2>
+      <div id="public-notes-list"><p>Chargement...</p></div>
+    </section>
+
     <div style="text-align: center; margin-top: 30px;">
       <button id="save-btn" class="game-button">
         Sauvegarder
@@ -109,12 +154,112 @@
   <script>
     let params;
 
-    window.addEventListener('DOMContentLoaded', () => {
+
+    function escapeNotesHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+    }
+
+    function formatNotesDate(value) {
+      try { return new Date(value).toLocaleString('fr-FR'); }
+      catch { return value || ''; }
+    }
+
+    function renderPrivateMessages(messages) {
+      const container=document.getElementById('private-messages-thread');
+      if(!messages.length){ container.innerHTML='<p>Aucun message privé avec le MJ.</p>'; return; }
+      container.innerHTML=messages.map(message=>`
+        <div class="note-message note-message-${message.author==='mj'?'mj':'player'}">
+          <div class="note-message-meta"><strong>${message.author==='mj'?'MJ':'Moi'}</strong> — ${escapeNotesHtml(formatNotesDate(message.createdAt))}</div>
+          <div>${escapeNotesHtml(message.content).replace(/\n/g,'<br>')}</div>
+        </div>
+      `).join('');
+      container.scrollTop=container.scrollHeight;
+    }
+
+    function renderPublicNotes(notes) {
+      const container=document.getElementById('public-notes-list');
+      if(!notes.length){ container.innerHTML='<p>Aucune note publique du MJ.</p>'; return; }
+      container.innerHTML=notes.map(note=>`
+        <article class="public-note-card">
+          <h3>${escapeNotesHtml(note.title || 'Note du MJ')}</h3>
+          <div>${escapeNotesHtml(note.content).replace(/\n/g,'<br>')}</div>
+          <small>Dernière modification : ${escapeNotesHtml(formatNotesDate(note.updatedAt))}</small>
+        </article>
+      `).join('');
+    }
+
+    async function loadPersonalNotes() {
+      const playerId=params.get('PlayerId');
+      if(!playerId)return;
+      const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/personal-notes?role=player&playerId=${encodeURIComponent(playerId)}`);
+      const x=await r.json();
+      if(!r.ok)throw new Error(x.message||'Impossible de charger les notes personnelles.');
+      document.getElementById('personal-notes-input').value=x.content||'';
+    }
+
+    async function savePersonalNotes() {
+      const playerId=params.get('PlayerId');
+      const status=document.getElementById('personal-notes-status');
+      const content=document.getElementById('personal-notes-input').value;
+      try{
+        const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/personal-notes`,{
+          method:'PUT',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({role:'player',playerId,content})
+        });
+        const x=await r.json();
+        if(!r.ok)throw new Error(x.message||'Impossible de sauvegarder les notes.');
+        status.textContent='Notes personnelles sauvegardées.';
+        status.style.color='#2e7d32';
+      }catch(e){
+        status.textContent=e.message; status.style.color='#a52a2a';
+      }
+    }
+
+    async function loadPrivateMessages() {
+      const playerId=params.get('PlayerId');
+      if(!playerId)return;
+      const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/private-messages?role=player&playerId=${encodeURIComponent(playerId)}`);
+      const x=await r.json();
+      if(!r.ok)throw new Error(x.message||'Impossible de charger les messages privés.');
+      renderPrivateMessages(x.messages||[]);
+    }
+
+    async function sendPrivateMessage() {
+      const playerId=params.get('PlayerId');
+      const input=document.getElementById('private-message-input');
+      const status=document.getElementById('private-message-status');
+      const content=input.value.trim();
+      if(!content){status.textContent='Le message est vide.';status.style.color='#a52a2a';return;}
+      try{
+        const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/private-messages`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({role:'player',playerId,content})
+        });
+        const x=await r.json();
+        if(!r.ok)throw new Error(x.message||'Impossible d’envoyer le message.');
+        input.value='';
+        renderPrivateMessages(x.messages||[]);
+        status.textContent='Message envoyé au MJ.';
+        status.style.color='#2e7d32';
+      }catch(e){status.textContent=e.message;status.style.color='#a52a2a';}
+    }
+
+    async function loadPublicNotes() {
+      const r=await fetch('/api/session/public-notes');
+      const x=await r.json();
+      if(!r.ok)throw new Error(x.message||'Impossible de charger les notes publiques.');
+      renderPublicNotes(x.notes||[]);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
       params = new URLSearchParams(window.location.search);
       initializeFields();
       setupValidators();
       updateArmorState();
-      
+
       // Pour afficher le nom du joueur dans le titre
       const nom = params.get("Nom");
       if (nom) {
@@ -125,7 +270,209 @@
       if (duraCurrent) {
         duraCurrent.addEventListener('input', updateArmorState);
       }
+
+      // Les paramètres de l'URL servent uniquement à l'initialisation.
+      // L'état officiel est ensuite récupéré depuis le serveur.
+      await refreshSessionFromServer();
+
+      document.getElementById('personal-notes-save')?.addEventListener('click', savePersonalNotes);
+      document.getElementById('private-message-send')?.addEventListener('click', sendPrivateMessage);
+
+      try {
+        await loadPersonalNotes();
+        await loadPrivateMessages();
+        await loadPublicNotes();
+      } catch(error) {
+        console.error('Erreur chargement des notes:', error);
+      }
+
+      // Toute modification provenant d'une autre interface/client doit
+      // immédiatement être répercutée ici.
+      const socket = io({
+        query:{role:'player',playerId:params.get('PlayerId')},
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity
+      });
+
+      // V1.12 : à chaque connexion/reconnexion, le serveur envoie un
+      // snapshot autoritaire limité à ce joueur.
+      socket.on('connect', () => {
+        console.log('V1.12 — connexion/reconnexion établie, demande de resynchronisation.');
+        socket.emit('stateSyncRequest');
+      });
+
+      socket.on('stateSync', async (snapshot) => {
+        if (!snapshot || snapshot.role !== 'player') return;
+        if (snapshot.playerId && snapshot.playerId !== params.get('PlayerId')) return;
+
+        if (snapshot.player) {
+          applySessionState(snapshot.player);
+        }
+
+        try {
+          await loadPersonalNotes();
+          await loadPrivateMessages();
+          await loadPublicNotes();
+        } catch (error) {
+          console.error('Erreur lors de la resynchronisation des données complémentaires:', error);
+        }
+      });
+
+      socket.on('stateSyncError', (event) => {
+        console.error('Resynchronisation impossible:', event?.message || 'Erreur inconnue');
+      });
+
+      // Les changements de session sont propagés uniquement aux
+      // Interfaces de Jeu. La Fiche de Perso n'écoute pas cet événement.
+      socket.on('sessionPlayerUpdate', async (event) => {
+        if (!event || event.playerId !== params.get("PlayerId")) return;
+
+        if (event.session) {
+          applySessionState(event.session);
+        } else {
+          await refreshSessionFromServer();
+        }
+      });
+
+      socket.on('personalNotesUpdated', async (event) => {
+        if(event?.playerId===params.get('PlayerId')) {
+          try { await loadPersonalNotes(); } catch(e) { console.error(e); }
+        }
+      });
+
+      socket.on('privateMessagesUpdated', async (event) => {
+        if(event?.playerId===params.get('PlayerId')) {
+          try { await loadPrivateMessages(); } catch(e) { console.error(e); }
+        }
+      });
+
+      socket.on('publicNotesUpdated', async () => {
+        try { await loadPublicNotes(); } catch(e) { console.error(e); }
+      });
+
+      socket.on('playerUpdate', async (event) => {
+        if (!event) return;
+
+        const sameId = event.playerId && event.playerId === params.get("PlayerId");
+        const sameLegacyName = !event.playerId && event.player === nom;
+
+        if (!sameId && !sameLegacyName) return;
+
+        await refreshSessionFromServer();
+      });
     });
+
+    async function refreshSessionFromServer() {
+      const playerId = params?.get("PlayerId");
+      const playerName = params?.get("Nom");
+
+      if (!playerId && !playerName) return;
+
+      try {
+        let sessionPlayer;
+
+        if (playerId) {
+          const response = await fetch(
+            `/api/session/player/${encodeURIComponent(playerId)}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}`);
+          }
+
+          sessionPlayer = await response.json();
+        } else {
+          // Compatibilité avec les anciennes URLs : on récupère les
+          // personnages pour retrouver l'ID, puis on charge la session.
+          const response = await fetch('/api/joueurs');
+
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}`);
+          }
+
+          const joueurs = await response.json();
+          const joueur = joueurs.find(
+            player => typeof player.nom === 'string' &&
+              player.nom.toLowerCase() === playerName.toLowerCase()
+          );
+
+          if (!joueur) {
+            console.warn(`Joueur introuvable : ${playerName}`);
+            return;
+          }
+
+          params.set("PlayerId", joueur.id);
+
+          const sessionResponse = await fetch(
+            `/api/session/player/${encodeURIComponent(joueur.id)}`
+          );
+
+          if (!sessionResponse.ok) {
+            throw new Error(`Erreur HTTP ${sessionResponse.status}`);
+          }
+
+          sessionPlayer = await sessionResponse.json();
+        }
+
+        applySessionState(sessionPlayer);
+      } catch (error) {
+        console.error('Erreur lors de la synchronisation de session:', error);
+      }
+    }
+
+    function applySessionState(joueur) {
+      document.getElementById('player_name').value = joueur.nom || '';
+      document.getElementById('player_class').value = joueur.classe || '';
+      document.getElementById('player_race').value = joueur.race || '';
+
+      document.getElementById('player_hp').value = joueur.hp?.max ?? 0;
+      document.getElementById('player_hp_current').value = joueur.hp?.current ?? 0;
+      document.getElementById('player_mana').value = joueur.mana?.max ?? 0;
+      document.getElementById('player_mana_current').value = joueur.mana?.current ?? 0;
+
+      document.getElementById('player_dura_max').value = joueur.armure?.durabilite?.max ?? 0;
+      document.getElementById('player_dura_current').value = joueur.armure?.durabilite?.current ?? 0;
+      document.getElementById('player_protection_max').value = joueur.armure?.protection?.max ?? 0;
+      document.getElementById('player_protection_current').value = joueur.armure?.protection?.current ?? 0;
+
+      document.getElementById('player_vie_bonus').value = joueur.bonus_vie ?? 0;
+      document.getElementById('player_intox').value = joueur.intox ?? 0;
+      const statusesContainer=document.getElementById('player-statuses');
+      if(statusesContainer){
+        const statuts=Array.isArray(joueur.statuts)?joueur.statuts:[];
+        statusesContainer.innerHTML=statuts.length
+          ? statuts.map(statut=>`<span class="player-status-badge ${statut.id==='agonie'?'agony':''}">${statut.nom}</span>`).join('')
+          : '<span>Aucun statut actif.</span>';
+      }
+
+      // Garder l'URL cohérente avec l'état officiel.
+      if (joueur.id) {
+        params.set("PlayerId", joueur.id);
+      }
+      params.set("VieMax", String(joueur.hp?.max ?? 0));
+      params.set("VieCurrent", String(joueur.hp?.current ?? 0));
+      params.set("ManaMax", String(joueur.mana?.max ?? 0));
+      params.set("ManaCurrent", String(joueur.mana?.current ?? 0));
+      params.set("DuraMax", String(joueur.armure?.durabilite?.max ?? 0));
+      params.set("DuraCurrent", String(joueur.armure?.durabilite?.current ?? 0));
+      params.set("Valeur protection max", String(joueur.armure?.protection?.max ?? 0));
+      params.set("Valeur protection", String(joueur.armure?.protection?.current ?? 0));
+      params.set("Vie bonus", String(joueur.bonus_vie ?? 0));
+      params.set("Intox.", String(joueur.intox ?? 0));
+      params.set("Inventaire", JSON.stringify(joueur.inventaire || []));
+      params.set("Armes", JSON.stringify(joueur.armes || []));
+
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}?${params.toString()}`
+      );
+
+      updateArmorState();
+      console.log('État serveur synchronisé pour :', joueur.nom);
+    }
 
     function initializeFields() {
       // Injection des valeurs max et actuelles dans les champs
@@ -253,16 +600,20 @@
             classe: document.getElementById('player_class').value,
             race: document.getElementById('player_race').value,
             niveau: parseInt(params.get('Niveau')) || 1,
-            stats: safeJSONParse(params.get('stats'), {
-              force: 0,
-              dexterite: 0,
-              magie: 0,
-              constitution: 0,
-              charisme: 0,
-              perception: 0,
-              chance: 0,
-              intelligence: 0
-            }),
+            // Les statistiques sont transmises individuellement dans l'URL
+            // par popupjoueur.js. Ne pas utiliser un paramètre JSON 'stats'
+            // qui n'existe pas dans le flux actuel, sinon une sauvegarde depuis
+            // cette interface peut remettre les statistiques à 0.
+            stats: {
+              force: parseInt(params.get('Force')) || 0,
+              dexterite: parseInt(params.get('Dexterite')) || 0,
+              magie: parseInt(params.get('Magie')) || 0,
+              constitution: parseInt(params.get('Constitution')) || 0,
+              charisme: parseInt(params.get('Charisme')) || 0,
+              perception: parseInt(params.get('Perception')) || 0,
+              chance: parseInt(params.get('Chance')) || 0,
+              intelligence: parseInt(params.get('Intelligence')) || 0
+            },
             hp: {
               max: parseInt(document.getElementById('player_hp').value) || 0,
               current: parseInt(document.getElementById('player_hp_current').value) || 0
@@ -294,19 +645,37 @@
             skills_speciales: params.get('Skills speciales') || '',
             levelup: params.get('Choix de level up') || '',
             armes: safeJSONParse(params.get('Armes'), []),
-            attaques_speciales: safeJSONParse(params.get('Attaques Spéciales'), []),
+            inventaire: safeJSONParse(params.get('Inventaire'), []),
+            attaques_speciales: safeJSONParse(
+              params.get('Attaques speciales') || params.get('Attaques Spéciales'),
+              []
+            ),
           };
 
-          console.log('Données à envoyer:', donnees);
+          console.log('État de session à envoyer:', donnees);
 
-          const response = await fetch('/api/joueur', {  // Modifier cette ligne
+          const playerId = params.get("PlayerId");
+
+          if (!playerId) {
+            throw new Error('PlayerId manquant pour la sauvegarde de session');
+          }
+
+          const response = await fetch('/api/session/player', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              nom: donnees.nom,
-              nouvellesDonnees: donnees  // Ajouter la structure attendue par le serveur
+              id: playerId,
+              nouvellesDonnees: {
+                hp: donnees.hp,
+                mana: donnees.mana,
+                armure: donnees.armure,
+                bonus_vie: donnees.bonus_vie,
+                intox: donnees.intox,
+                inventaire: donnees.inventaire,
+                armes: donnees.armes
+              }
             })
           });
 
@@ -330,9 +699,11 @@
           newParams.set("Valeur protection max", donnees.armure.protection.max.toString());
           newParams.set("Vie bonus", donnees.bonus_vie.toString());
           newParams.set("Intox.", donnees.intox);
+          newParams.set("Inventaire", JSON.stringify(donnees.inventaire || []));
+          newParams.set("Armes", JSON.stringify(donnees.armes || []));
 
           window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-          alert('Données sauvegardées avec succès !');
+          alert('État de session sauvegardé avec succès !');
 
       } catch (error) {
           console.error('Erreur détaillée:', error);

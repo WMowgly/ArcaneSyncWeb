@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte de jeu — MJ — ArcaneSync V1.13</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root{
+      --parchemin:#fdf6e3;
+      --panneau:#fffaf0;
+      --bord:#8b5e3c;
+      --bord-clair:#d9c8a9;
+      --encre:#3b2f1e;
+      --actif:#e6d9b8;
+      --danger:#9b2c2c;
+    }
+    *{box-sizing:border-box}
+
+    /* Police décorative réservée aux titres : le reste de l'interface
+       utilise une police système, bien plus lisible en petit corps. */
+    /* ---------------------------------------------------------------
+       V1.13.5 — Coque applicative à hauteur verrouillée.
+       Auparavant la page suivait le flux du document : la carte
+       définissait la hauteur, débordait du viewport, et les colonnes
+       latérales — dimensionnées par leur contenu — laissaient une large
+       bande vide sur le côté. Une table virtuelle a besoin de l'inverse :
+       hauteur fixée à l'écran, la carte prend le reste, chaque panneau
+       défile chez lui.
+       `min-height:0` est indispensable partout : sans lui un enfant flex
+       refuse de se réduire sous sa taille de contenu et le débordement
+       réapparaît.
+       --------------------------------------------------------------- */
+    html{height:100%}
+    body{
+      margin:0; padding:0 10px 10px;
+      background:var(--parchemin); color:var(--encre);
+      font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',sans-serif;
+      font-size:13px; line-height:1.4;
+      height:100dvh; overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+    h1,h2,h3{font-family:'Uncial Antiqua',cursive;font-weight:400;margin:0}
+
+    .map-container{
+      width:100%;max-width:1900px;margin:0 auto;
+      flex:1;min-height:0;display:flex;flex-direction:column;
+    }
+    .map-header{display:flex;align-items:baseline;gap:10px;padding:8px 2px 10px;flex:0 0 auto}
+    .map-header h1{font-size:1.15rem;white-space:nowrap}
+    #active-map-name{font-size:12px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* V1.13.10 : le bandeau doit etre impossible a manquer — on regarde
+       une carte qui n’est PAS celle du MJ, et l’edition est bloquee. */
+    #vue-joueur-barre{display:flex;align-items:center;gap:8px;font-size:11.5px;
+      padding:3px 10px;border-radius:11px;background:#3c5e8b;color:#f5ecd8;
+      border:1px solid #2a4463}
+    #vue-joueur-barre[hidden]{display:none}
+    #vue-joueur-barre button{font-size:11px;padding:2px 8px;background:#f5ecd8;
+      color:#3c5e8b;border:0;border-radius:8px;cursor:pointer;font-weight:600}
+    #map-status{margin-left:auto;font-size:11.5px;padding:3px 10px;border-radius:11px;
+      background:#f1e7d0;border:1px solid var(--bord-clair);white-space:nowrap;
+      max-width:46ch;overflow:hidden;text-overflow:ellipsis}
+
+    .map-layout{
+      display:grid;grid-template-columns:216px minmax(0,1fr) 258px;gap:10px;
+      align-items:stretch;flex:1;min-height:0;
+    }
+
+    /* Chaque colonne défile chez elle, dans la hauteur de la coque. */
+    .col{height:100%;min-height:0;overflow-y:auto;padding-right:2px}
+    .col::-webkit-scrollbar{width:8px}
+    .col::-webkit-scrollbar-thumb{background:#cdb894;border-radius:4px}
+
+    .panel{background:var(--panneau);border:1px solid var(--bord);border-radius:8px;
+      padding:9px;box-shadow:0 1px 3px rgba(59,47,30,.12)}
+    .panel+.panel,.panel+details.box,details.box+details.box,details.box+.panel{margin-top:8px}
+
+    details.box{background:var(--panneau);border:1px solid var(--bord);border-radius:8px;overflow:hidden}
+    details.box>summary{cursor:pointer;padding:7px 9px;background:#f4ead3;
+      font-family:'Uncial Antiqua',cursive;font-size:12.5px;list-style:none;user-select:none}
+    details.box>summary::-webkit-details-marker{display:none}
+    details.box>summary::before{content:'▸  '}
+    details.box[open]>summary::before{content:'▾  '}
+    details.box>summary:hover{background:#efe1c4}
+    details.box .body{padding:9px;border-top:1px solid var(--bord-clair)}
+
+    button,select,input,textarea{
+      font-family:inherit;font-size:12px;color:var(--encre);
+      border:1px solid var(--bord);border-radius:5px;padding:5px 7px;background:#fffdf6}
+    button{cursor:pointer;white-space:nowrap}
+    button:hover:not(:disabled){background:var(--actif)}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    button.primary{background:#e9dcbc;font-weight:600}
+    button.danger{background:#f7e2e2;border-color:var(--danger);color:#7a2222}
+    input[type=color]{padding:2px;height:28px}
+    input[type=range]{padding:0;height:22px}
+    textarea{resize:vertical}
+
+    .full{width:100%}
+    .row{display:flex;gap:5px}
+    .row>*{flex:1 1 0;min-width:0}
+    .row.tight>.grow{flex:3 1 0}
+    .row.tight>.fixed{flex:0 0 auto}
+    label{display:block;font-size:11px;opacity:.75;margin:7px 0 2px}
+    label:first-child{margin-top:0}
+    label.check{display:flex;align-items:center;gap:6px;font-size:11.5px;opacity:1;margin:7px 0 0}
+    label.check input{width:auto;padding:0}
+    .hint{font-size:11px;opacity:.7;line-height:1.35;margin:5px 0 0}
+    .sep{height:1px;background:var(--bord-clair);margin:9px 0}
+
+    /* Barre d'outils : icônes compactes, l'outil actif est nommé juste dessous. */
+    .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+    .tools .tool-btn{padding:8px 0;font-size:16px;line-height:1;text-align:center}
+    .tools .tool-btn.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
+    #tool-title{font-size:13px;margin:9px 0 0}
+
+    /* Palette de decors : galerie groupee par categorie, propre au biome. */
+    .kind-palette{display:block;max-height:290px;overflow-y:auto;padding-right:2px}
+    .palette-groupe+.palette-groupe{margin-top:7px}
+    .palette-titre{display:block;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+      opacity:.55;margin-bottom:3px}
+    .palette-grille{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+    .palette-grille button{
+      text-align:left;font-size:10.5px;padding:4px 5px;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap;border-left-width:4px}
+    .palette-grille button.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
+
+    /* Modale de propriétés d'entité */
+    .modal-fond{position:fixed;inset:0;background:rgba(30,24,14,.55);z-index:50;
+      display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal{background:var(--panneau);border:2px solid var(--bord);border-radius:10px;
+      width:min(430px,100%);max-height:92vh;overflow-y:auto;
+      box-shadow:0 8px 28px rgba(30,24,14,.4);padding:14px 16px 16px}
+    .modal h2{font-size:15px;margin-bottom:2px}
+    .modal .modal-sous{font-size:11.5px;opacity:.7;margin:0 0 10px}
+    .modal-res{border:1px solid var(--bord-clair);border-radius:7px;padding:9px;margin-bottom:9px;background:#fffdf6}
+    .modal-res h4{margin:0 0 6px;font-size:12px;font-family:inherit;font-weight:600}
+    .modal-jauge{height:12px;border:1px solid var(--encre);border-radius:3px;background:#fff;overflow:hidden;margin-bottom:6px}
+    .modal-jauge>div{height:100%;transition:width .2s}
+    .modal-pas{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+    .modal-pas button{flex:1 1 0;padding:4px 0;font-size:11px}
+    .modal-actions{display:flex;gap:8px;margin-top:12px}
+    .modal-actions button{flex:1 1 0;padding:8px 0}
+    .statut-liste{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+    .statut-pastille{font-size:11px;padding:4px 9px;border-radius:11px}
+    .statut-pastille.actif{background:#f7e2e2;border-color:var(--danger);color:#7a2222;font-weight:600}
+    .modal-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:3px 10px;font-size:11px;opacity:.8;margin:0 0 10px}
+
+    .canvas-panel{padding:9px;display:flex;flex-direction:column;min-height:0;height:100%}
+    .canvas-bar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:8px;
+      font-size:11.5px;flex:0 0 auto}
+    .canvas-bar label{display:inline-flex;align-items:center;gap:4px;margin:0;font-size:11.5px;opacity:.85}
+    .canvas-bar label input{width:auto}
+    #coord-readout{font-variant-numeric:tabular-nums;min-width:11ch;opacity:.8}
+
+    /* Le conteneur prend toute la hauteur restante ; la carte y est
+       centrée. Au-delà de l'échelle d'ajustement, c'est lui qui défile. */
+    .canvas-wrap{
+      border:1px solid var(--bord);border-radius:6px;background:#fff;
+      flex:1;min-height:0;overflow:auto;touch-action:none;
+      display:flex;align-items:center;justify-content:center;
+    }
+    #map-canvas{display:block;touch-action:none;cursor:crosshair;flex:0 0 auto}
+
+    /* Onglets de la colonne droite */
+    .onglets{display:flex;gap:3px;margin-bottom:8px;border-bottom:1px solid var(--bord-clair);padding-bottom:6px}
+    .onglet{flex:1 1 0;padding:5px 2px;font-size:10.5px;text-align:center;overflow:hidden;text-overflow:ellipsis}
+    .onglet.actif{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord);font-weight:600}
+    .best-item{border:1px solid var(--bord-clair);border-radius:6px;padding:6px 7px;background:#fffdf6}
+    .best-tete{display:flex;align-items:baseline;gap:5px}
+    .best-tete strong{font-size:12px;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .best-icone{font-size:15px;flex:0 0 auto}
+    .best-actions{display:flex;gap:3px;margin-top:5px}
+    .best-actions button{flex:1 1 0;padding:3px 0;font-size:10.5px}
+
+    .entity-list{display:grid;gap:5px;max-height:44vh;overflow-y:auto}
+    .entity-item{border:1px solid var(--bord-clair);border-radius:6px;padding:6px 7px;background:#fffdf6;font-size:11.5px}
+    .entity-item strong{display:block;font-size:12px;margin-bottom:3px}
+    .entity-item .row{margin-top:5px}
+    .entity-item button{padding:3px 5px;font-size:10.5px}
+    .badge{display:inline-block;padding:1px 6px;border-radius:8px;background:#efe4cd;font-size:10px;margin:0 3px 2px 0}
+    .badge.hidden-badge{background:#f7e2e2;color:#7a2222}
+    .empty,#inspector-empty{font-size:11.5px;opacity:.65;margin:0}
+
+    #inspector p{margin:0 0 6px}
+    #inspector textarea{font-size:11.5px}
+
+    /* Sous 1360 px la troisième colonne ne tient plus : on repasse au flux
+       de document classique, avec défilement de page. La coque à hauteur
+       verrouillée n'a de sens que sur un écran large. */
+    @media (max-width:1360px){
+      body{height:auto;overflow:auto;padding-bottom:18px}
+      .map-container{flex:0 0 auto}
+      .map-layout{grid-template-columns:206px minmax(0,1fr);flex:0 0 auto;align-items:start}
+      .col{height:auto;max-height:none;overflow:visible}
+      .canvas-panel{height:auto}
+      .canvas-wrap{min-height:60vh}
+      .col-right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+      .col-right .panel,.col-right details.box{margin-top:0}
+    }
+    @media (max-width:820px){
+      .map-layout{grid-template-columns:1fr}
+      .col-right{grid-template-columns:1fr}
+      .canvas-wrap{min-height:50vh}
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+
+  <main class="map-container">
+    <header class="map-header">
+      <h1>🗺️ Carte — MJ</h1>
+      <span id="active-map-name">aucune carte active</span>
+      <div id="vue-joueur-barre" hidden>
+        <span>👁 Vue de <b id="vue-joueur-nom"></b></span>
+        <button id="btn-quitter-vue-joueur" type="button">✖ Revenir à la vue MJ</button>
+      </div>
+      <div id="map-status">Connexion…</div>
+    </header>
+
+    <div class="map-layout">
+
+      <!-- ============ COLONNE GAUCHE : outils et configuration ============ -->
+      <aside class="col">
+
+        <!-- Barre d'outils compacte : l'outil actif est nommé juste dessous,
+             et seules ses options s'affichent. -->
+        <div class="panel">
+          <div class="tools">
+            <button class="tool-btn active" data-tool="select"     type="button" title="Sélection — inspecter et déplacer">🖱️</button>
+            <button class="tool-btn"        data-tool="paint"      type="button" title="Poser du décor">🧱</button>
+            <button class="tool-btn"        data-tool="mob"        type="button" title="Placer une créature">👹</button>
+            <button class="tool-btn"        data-tool="erase"      type="button" title="Gomme">🧽</button>
+            <button class="tool-btn"        data-tool="mesure"     type="button" title="Mesurer une distance">📏</button>
+            <button class="tool-btn"        data-tool="dessin"     type="button" title="Dessiner">✏️</button>
+            <button class="tool-btn"        data-tool="texte"      type="button" title="Écrire un texte">📝</button>
+            <button class="tool-btn"        data-tool="fog-hide"   type="button" title="Masquer une zone">🌫️</button>
+            <button class="tool-btn"        data-tool="fog-reveal" type="button" title="Révéler une zone">💡</button>
+          </div>
+
+          <h3 id="tool-title">Sélection</h3>
+          <p class="hint" id="tool-hint">Cliquez pour inspecter, glissez pour déplacer.</p>
+
+          <!-- Options du décor -->
+          <div data-panel="paint" hidden>
+            <div class="sep"></div>
+            <div id="kind-palette" class="kind-palette"></div>
+            <label for="element-name">Nom (optionnel)</label>
+            <input id="element-name" class="full" placeholder="nom du type par défaut">
+          </div>
+
+          <!-- Options des créatures -->
+          <div data-panel="mob" hidden>
+            <div class="sep"></div>
+            <label for="mob-template">Modèle</label>
+            <select id="mob-template" class="full"><option value="">— créature vierge —</option></select>
+            <label class="check"><input type="checkbox" id="mob-visible" checked> Visible des joueurs</label>
+          </div>
+
+          <!-- Options des annotations -->
+          <div data-panel="annot" hidden>
+            <div class="sep"></div>
+            <div class="row">
+              <div><label for="annot-color">Couleur</label><input id="annot-color" class="full" type="color" value="#9b2c2c"></div>
+              <div><label for="annot-size">Épaisseur</label><input id="annot-size" class="full" type="number" min="1" max="20" value="3"></div>
+            </div>
+            <label for="annot-layer">Calque</label>
+            <select id="annot-layer" class="full">
+              <option value="shared">Partagé</option>
+              <option value="gm">MJ seulement</option>
+            </select>
+            <label class="check"><input type="checkbox" id="annot-players"> Joueurs autorisés à annoter</label>
+            <label for="annot-scope">Effacer</label>
+            <div class="row tight">
+              <select id="annot-scope" class="grow">
+                <option value="all">Toutes</option>
+                <option value="mj">Les miennes</option>
+                <option value="players">Celles des joueurs</option>
+              </select>
+              <button id="btn-clear-annot" class="danger fixed" title="Effacer">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Rappel brouillard -->
+          <div data-panel="fog" hidden>
+            <div class="sep"></div>
+            <p class="hint">Actif en mode « Zones peintes ». Réglable plus bas.</p>
+          </div>
+        </div>
+
+        <details class="box" open>
+          <summary>Cartes</summary>
+          <div class="body">
+            <input id="map-recherche" class="full" placeholder="Rechercher une carte…" style="margin-bottom:5px">
+            <select id="map-select" class="full"><option value="">— aucune carte —</option></select>
+            <div class="row" style="margin-top:6px">
+              <button id="btn-activate" class="primary">📌 Charger</button>
+              <button id="btn-new">➕ Nouvelle</button>
+            </div>
+            <div class="row" style="margin-top:5px">
+              <button id="btn-duplicate" title="Dupliquer">⧉</button>
+              <button id="btn-delete" class="danger" title="Supprimer">🗑️</button>
+            </div>
+            <div class="row" style="margin-top:5px">
+              <button id="btn-portes-fermer" title="Fermer toutes les portes de la carte active">🚪 Fermer</button>
+              <button id="btn-portes-ouvrir" title="Ouvrir toutes les portes de la carte active">🚪 Ouvrir</button>
+            </div>
+            <p class="hint">« Charger » rend la carte active pour toute la table.
+               Les portes bloquent passage ET ligne de vue une fois fermées.</p>
+          </div>
+        </details>
+
+        <details class="box">
+          <summary>Générer un lieu</summary>
+          <div class="body">
+            <select id="gen-type" class="full"></select>
+            <p class="hint" id="gen-desc"></p>
+            <div class="row">
+              <div><label for="gen-cols">Colonnes</label><input id="gen-cols" class="full" type="number" min="8" max="80"></div>
+              <div><label for="gen-rows">Lignes</label><input id="gen-rows" class="full" type="number" min="8" max="80"></div>
+            </div>
+            <label for="gen-density">Densité : <span id="gen-density-val">100</span> %</label>
+            <input id="gen-density" class="full" type="range" min="20" max="200" step="10" value="100">
+            <label for="gen-seed">Graine</label>
+            <div class="row tight">
+              <input id="gen-seed" class="grow" placeholder="aléatoire">
+              <button id="gen-dice" class="fixed" type="button" title="Nouvelle graine">🎲</button>
+            </div>
+            <button id="btn-generate" class="full primary" style="margin-top:7px">🌍 Générer un aperçu</button>
+
+            <!-- L'aperçu n'est pas enregistré : rien n'est écrit tant que
+                 le MJ n'a pas cliqué « Conserver ». -->
+            <div id="apercu-actions" hidden>
+              <div class="sep"></div>
+              <p class="hint" id="apercu-info" style="margin-top:0"></p>
+              <button id="btn-apercu-garder" class="full primary">💾 Conserver et charger</button>
+              <div class="row" style="margin-top:5px">
+                <button id="btn-apercu-relancer">🎲 Autre variante</button>
+                <button id="btn-apercu-abandonner">✖ Abandonner</button>
+              </div>
+            </div>
+
+            <button id="btn-regenerate" class="full" style="margin-top:5px">♻️ Régénérer le décor</button>
+            <p class="hint">Le décor généré reste modifiable élément par élément.</p>
+          </div>
+        </details>
+
+        <details class="box">
+          <summary>Brouillard de guerre</summary>
+          <div class="body">
+            <label class="check"><input type="checkbox" id="fog-enabled"> Activer</label>
+            <label for="fog-mode">Mode</label>
+            <select id="fog-mode" class="full">
+              <option value="none">Aucun</option>
+              <option value="vision">Vision des personnages</option>
+              <option value="manual">Zones peintes par le MJ</option>
+            </select>
+            <label class="check"><input type="checkbox" id="fog-autoreveal" checked> Mémoriser les zones explorées</label>
+            <button id="btn-fog-reset" class="full danger" style="margin-top:7px">↺ Tout re-masquer</button>
+          </div>
+        </details>
+
+        <details class="box">
+          <summary>Grille et fond</summary>
+          <div class="body">
+            <label for="map-name">Nom de la carte</label>
+            <input id="map-name" class="full">
+            <label for="map-type">Type de lieu (détermine la palette de décors)</label>
+            <select id="map-type" class="full"><option value="">— générique —</option></select>
+            <div class="row">
+              <div><label for="grid-cols">Colonnes</label><input id="grid-cols" class="full" type="number" min="4" max="80"></div>
+              <div><label for="grid-rows">Lignes</label><input id="grid-rows" class="full" type="number" min="4" max="80"></div>
+            </div>
+            <div class="row">
+              <div><label for="grid-cell">Taille de case</label><input id="grid-cell" class="full" type="number" min="16" max="160"></div>
+              <div><label for="map-bg">Fond</label><input id="map-bg" class="full" type="color"></div>
+            </div>
+            <button id="btn-save-grid" class="full primary" style="margin-top:7px">💾 Enregistrer</button>
+          </div>
+        </details>
+      </aside>
+
+      <!-- ==================== COLONNE CENTRALE : carte ==================== -->
+      <section class="panel canvas-panel">
+        <div class="canvas-bar">
+          <span id="coord-readout">Case : —</span>
+          <span style="flex:1"></span>
+          <label title="Afficher la grille"><input type="checkbox" id="opt-grid" checked> Grille</label>
+          <label title="Numéros de colonnes et de lignes"><input type="checkbox" id="opt-coords" checked> Repères</label>
+          <label title="Prévisualiser ce que voient les joueurs"><input type="checkbox" id="opt-vision"> Vue joueurs</label>
+          <label title="Cercle de portée autour du jeton sélectionné"><input type="checkbox" id="opt-aura"> Aura de portée
+            <input id="opt-aura-cases" type="number" min="1" max="60" value="1" title="Portée en cases" style="width:52px" disabled></label>
+          <span id="opt-aura-etat" hidden style="color:#8b3e3c">sélectionnez un jeton</span>
+          <button id="btn-zoom" title="Basculer entre carte ajustée et échelle réelle">🔍 Ajustée</button>
+          <button id="btn-export" title="Exporter en PNG">📥</button>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="map-canvas" width="600" height="400"></canvas>
+        </div>
+
+        <p class="hint" id="map-empty-hint" hidden>
+          Aucune carte active — créez ou générez une carte, puis cliquez « Charger ».
+        </p>
+      </section>
+
+      <!-- ================= COLONNE DROITE : inspection ================= -->
+      <aside class="col col-right">
+        <div class="panel">
+          <h2 style="font-size:13px;margin-bottom:7px">Inspecteur</h2>
+          <div id="inspector"><p id="inspector-empty">Aucune sélection.</p></div>
+        </div>
+
+        <div class="panel" style="margin-top:8px">
+          <!-- Trois onglets = les trois niveaux du modele :
+               token sur la carte / instance en jeu / modele reutilisable. -->
+          <div class="onglets">
+            <button class="onglet actif" data-onglet="carte" type="button">🗺️ Sur la carte</button>
+            <button class="onglet" data-onglet="jeu" type="button">👹 En jeu</button>
+            <button class="onglet" data-onglet="bestiaire" type="button">📖 Bestiaire</button>
+          </div>
+
+          <div data-vue="carte">
+            <div id="entity-list" class="entity-list"><p class="empty">—</p></div>
+          </div>
+
+          <div data-vue="jeu" hidden>
+            <p class="hint" style="margin-top:0">
+              Creatures presentes dans la partie. Chaque instance a ses propres
+              PV : les blesser n'affecte ni les autres, ni le modele.
+            </p>
+            <div id="session-mob-list" class="entity-list"><p class="empty">—</p></div>
+          </div>
+
+          <div data-vue="bestiaire" hidden>
+            <div class="row tight">
+              <input id="best-recherche" class="grow" placeholder="Rechercher une creature...">
+              <button id="best-nouveau" class="fixed primary" type="button" title="Nouvelle creature">➕</button>
+            </div>
+
+            <div id="best-editeur" hidden>
+              <div class="sep"></div>
+              <label for="best-nom">Nom</label>
+              <input id="best-nom" class="full">
+              <div class="row">
+                <div><label for="best-categorie">Categorie</label>
+                  <select id="best-categorie" class="full"></select></div>
+                <div><label for="best-icone">Icone</label>
+                  <input id="best-icone" class="full" maxlength="4" placeholder="auto"></div>
+              </div>
+              <div class="row">
+                <div><label for="best-hp">PV max</label>
+                  <input id="best-hp" class="full" type="number" min="0" value="10"></div>
+                <div><label for="best-mana">Mana max</label>
+                  <input id="best-mana" class="full" type="number" min="0" value="0"></div>
+              </div>
+              <label for="best-description">Description</label>
+              <textarea id="best-description" class="full" rows="2"></textarea>
+              <label for="best-notes">Notes MJ</label>
+              <textarea id="best-notes" class="full" rows="2"></textarea>
+              <div class="row" style="margin-top:7px">
+                <button id="best-enregistrer" class="primary" type="button">💾 Enregistrer</button>
+                <button id="best-annuler" type="button">✖ Annuler</button>
+              </div>
+              <div class="sep"></div>
+            </div>
+
+            <div id="best-list" class="entity-list"><p class="empty">—</p></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Modale de propriétés d'une entité (PV / PM / visibilité / position).
+       Vide tant qu'elle n'est pas ouverte : aucun panneau permanent ne
+       vient rogner la place de la carte. -->
+  <div id="entity-modal" hidden></div>
+
+  <script src="navbar.js"></script>
+  <script src="map-core.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // Cette page est réservée au MJ : le rôle est fixé en dur.
+    const ROLE = 'mj';
+
+    const socket = ArcaneMap.connect(ROLE, '');
+    const canvas = document.getElementById('map-canvas');
+    const statusEl = document.getElementById('map-status');
+    const coordEl = document.getElementById('coord-readout');
+    const escapeHtml = ArcaneMap.escapeHtml;
+
+    const renderer = ArcaneMap.createRenderer(canvas, {});
+
+    let bibliotheque = [];
+    let activeMapId = null;
+    let outil = 'select';
+    let brushCourant = 'murPierre';   // pinceau de décor courant
+    let paletteType = null;            // type de lieu de la palette chargée
+    let kinds = [];
+    let templates = [];
+    let selection = null;           // {type:'token'|'element', id}
+    let drag = null;                // déplacement de token en cours
+    let peinture = null;            // {cells:Map, mode}
+    let trace = null;               // tracé d'annotation en cours
+
+    // --- Réglages d'annotation -------------------------------------------
+
+    function couleurAnnotation() { return document.getElementById('annot-color').value; }
+    function tailleAnnotation() { return Number(document.getElementById('annot-size').value) || 3; }
+    function partageAnnotation() { return document.getElementById('annot-layer').value !== 'gm'; }
+
+    function setStatus(message, erreur) {
+      statusEl.textContent = message;
+      statusEl.style.color = erreur ? '#9b2c2c' : '';
+    }
+
+    /**
+     * Toutes les mutations passent par cette fonction : le rôle MJ y est
+     * injecté une seule fois, ce qui évite de l'oublier quelque part.
+     */
+    async function api(methode, url, corps) {
+      const response = await fetch(url, {
+        method: methode,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(corps || {}), role: ROLE })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || 'Erreur serveur.');
+      return data;
+    }
+
+    function map() { return renderer.state.map; }
+
+    // ---------------------------------------------------------------------
+    // Bibliothèque de cartes
+    // ---------------------------------------------------------------------
+
+    async function chargerBibliotheque() {
+      try {
+        const data = await (await fetch('/api/maps?role=mj')).json();
+        bibliotheque = data.maps || [];
+        activeMapId = data.activeMapId || null;
+
+        renderBibliotheque();
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    /**
+     * V1.13.11 — Filtrage de la bibliothèque.
+     *
+     * Le nom d’une carte générée porte son biome ET sa graine
+     * (« Forêt — GERRX8 ») : chercher « foret » ou une graine suffit donc,
+     * sans champ supplémentaire à saisir.
+     *
+     * La carte ACTIVE reste toujours listée, même si elle ne correspond pas
+     * au filtre. Sans cela, taper trois lettres la ferait disparaître du
+     * sélecteur et le bouton « Charger » viserait une autre carte.
+     */
+    function renderBibliotheque() {
+      const filtre = (document.getElementById('map-recherche').value || '').trim().toLowerCase();
+      const liste = bibliotheque.filter(m => m.id === activeMapId
+        || !filtre
+        || String(m.nom || '').toLowerCase().includes(filtre)
+        || String(m.type || '').toLowerCase().includes(filtre));
+
+      const select = document.getElementById('map-select');
+      select.innerHTML = liste.length
+        ? liste.map(m =>
+            `<option value="${escapeHtml(m.id)}"${m.id === activeMapId ? ' selected' : ''}>
+               ${escapeHtml(m.nom)} — ${m.grid.cols}×${m.grid.rows}${m.id === activeMapId ? ' ★' : ''}
+             </option>`).join('')
+        : '<option value="">— aucune carte ne correspond —</option>';
+
+      const compte = document.getElementById('map-recherche');
+      compte.title = `${liste.length} carte(s) sur ${bibliotheque.length}`;
+    }
+
+    async function chargerTemplates() {
+      try {
+        templates = await (await fetch('/api/mob-templates')).json();
+        document.getElementById('mob-template').innerHTML =
+          '<option value="">— créature vierge —</option>' +
+          templates.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.nom)}</option>`).join('');
+      } catch (error) {
+        console.error('Templates de mobs indisponibles:', error);
+      }
+    }
+
+    /**
+     * Palette de décors adaptée au TYPE de la carte active.
+     * Rechargée dès que le type change (génération, régénération, ou
+     * choix manuel du MJ dans « Grille et fond »).
+     */
+    async function chargerPalette(type) {
+      if (paletteType === type && kinds.length) return;
+      paletteType = type;
+
+      const palette = await (await fetch(`/api/map/palette?type=${encodeURIComponent(type || '')}`)).json();
+      kinds = palette.groupes.flatMap(groupe => groupe.elements);
+
+      document.getElementById('kind-palette').innerHTML = palette.groupes.map(groupe => `
+        <div class="palette-groupe">
+          <span class="palette-titre">${escapeHtml(groupe.nom)}</span>
+          <div class="palette-grille">
+            ${groupe.elements.map(element => `
+              <button type="button" data-brush="${escapeHtml(element.id)}"
+                      style="border-left-color:${escapeHtml(element.color)}"
+                      title="${escapeHtml(element.nom)}${element.blocksVision ? ' — bloque la vue' : ''}${element.blocksMovement ? ' — infranchissable' : ''}">
+                ${element.icone || '▪'} ${escapeHtml(element.nom)}
+              </button>`).join('')}
+          </div>
+        </div>`).join('');
+
+      // Conserver le pinceau si le nouveau biome le propose encore.
+      if (!kinds.some(element => element.id === brushCourant)) {
+        brushCourant = kinds[0]?.id || '';
+      }
+
+      document.querySelectorAll('#kind-palette button').forEach(bouton => {
+        bouton.classList.toggle('active', bouton.dataset.brush === brushCourant);
+        bouton.addEventListener('click', () => {
+          brushCourant = bouton.dataset.brush;
+          document.querySelectorAll('#kind-palette button')
+            .forEach(b => b.classList.toggle('active', b.dataset.brush === brushCourant));
+          setTool('paint');
+        });
+      });
+    }
+
+    // ---------------------------------------------------------------------
+    // Générateur de lieux
+    // ---------------------------------------------------------------------
+
+    let generateurs = [];
+
+    function generateurCourant() {
+      return generateurs.find(g => g.id === document.getElementById('gen-type').value);
+    }
+
+    function graineAleatoire() {
+      // Graine lisible et reproductible, saisissable à la main.
+      return Math.random().toString(36).slice(2, 8).toUpperCase();
+    }
+
+    function optionsGeneration() {
+      return {
+        type: document.getElementById('gen-type').value,
+        cols: Number(document.getElementById('gen-cols').value),
+        rows: Number(document.getElementById('gen-rows').value),
+        density: Number(document.getElementById('gen-density').value) / 100,
+        seed: document.getElementById('gen-seed').value.trim() || graineAleatoire()
+      };
+    }
+
+    async function chargerGenerateurs() {
+      generateurs = await (await fetch('/api/map/generators')).json();
+
+      const options = generateurs
+        .map(g => `<option value="${escapeHtml(g.id)}">${g.icone} ${escapeHtml(g.nom)}</option>`)
+        .join('');
+
+      document.getElementById('gen-type').innerHTML = options;
+
+      // Une carte dessinée à la main peut aussi déclarer son biome pour
+      // obtenir la bonne palette de décors.
+      document.getElementById('map-type').innerHTML =
+        '<option value="">— générique —</option>' + options;
+
+      appliquerDefautsGenerateur();
+      document.getElementById('gen-seed').value = graineAleatoire();
+    }
+
+    function appliquerDefautsGenerateur() {
+      const generateur = generateurCourant();
+      if (!generateur) return;
+      document.getElementById('gen-desc').textContent = generateur.description;
+      document.getElementById('gen-cols').value = generateur.defaut.cols;
+      document.getElementById('gen-rows').value = generateur.defaut.rows;
+    }
+
+    document.getElementById('gen-type').addEventListener('change', appliquerDefautsGenerateur);
+
+    document.getElementById('gen-density').addEventListener('input', event => {
+      document.getElementById('gen-density-val').textContent = event.target.value;
+    });
+
+    document.getElementById('gen-dice').addEventListener('click', () => {
+      document.getElementById('gen-seed').value = graineAleatoire();
+    });
+
+    // ---------------------------------------------------------------------
+    // APERÇU DE GÉNÉRATION — rien n'est enregistré tant que le MJ n'a pas
+    // cliqué « Conserver ».
+    //
+    // Générer écrivait auparavant directement dans la bibliothèque : on
+    // s'y retrouvait avec des cartes jamais utilisées, et des doublons
+    // exacts nés de clics répétés. L'aperçu vit uniquement dans ce
+    // navigateur — ni maps.json, ni session, ni diffusion temps réel.
+    // ---------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------
+    // V1.13.10 — L'œil du joueur
+    //
+    // Le MJ voit la carte EXACTEMENT comme un personnage donné : même
+    // brouillard, mêmes jetons masqués, même décor oublié. La projection
+    // n'est pas reconstituée ici — elle est demandée au serveur, qui la
+    // produit par le chemin habituel du joueur. Toute autre méthode ferait
+    // diverger ce que le MJ croit montrer de ce que le joueur voit.
+    //
+    // C'est un mode de LECTURE : l'édition est bloquée, exactement comme
+    // pendant un aperçu de génération.
+    // ---------------------------------------------------------------------
+
+    let vueJoueur = null;   // { playerId, nom } ou null
+
+    async function activerVueJoueur(playerId, nom) {
+      try {
+        const reponse = await fetch(
+          `/api/map/vue-joueur/${encodeURIComponent(playerId)}?role=mj`);
+        const projection = await reponse.json();
+        if (!reponse.ok) throw new Error(projection.message || 'Vue indisponible.');
+
+        vueJoueur = { playerId, nom };
+        fermerModale();
+        selectionner(null);
+        renderer.setMap(projection);
+
+        document.getElementById('vue-joueur-barre').hidden = false;
+        document.getElementById('vue-joueur-nom').textContent = nom;
+        document.getElementById('active-map-name').textContent =
+          `ŒIL DE ${nom.toUpperCase()} — lecture seule`;
+
+        const cases = projection.vision?.visible?.length ?? 0;
+        setStatus(`Vue de ${nom} : ${cases} case(s) visible(s), `
+          + `${Object.keys(projection.tokens).length} jeton(s) perçu(s).`);
+      } catch (erreur) {
+        setStatus(erreur.message, true);
+      }
+    }
+
+    // Le monde continue de bouger pendant qu'on regarde : un déplacement,
+    // une porte, une lumière. On resuit donc la vue en direct plutôt que
+    // de figer un instantané.
+    async function rafraichirVueJoueur() {
+      if (!vueJoueur) return;
+      try {
+        const reponse = await fetch(
+          `/api/map/vue-joueur/${encodeURIComponent(vueJoueur.playerId)}?role=mj`);
+        if (!reponse.ok) return quitterVueJoueur();
+        renderer.setMap(await reponse.json());
+      } catch (_) { /* la prochaine mutation réessaiera */ }
+    }
+
+    function quitterVueJoueur() {
+      if (!vueJoueur) return;
+      vueJoueur = null;
+      document.getElementById('vue-joueur-barre').hidden = true;
+      // On redemande l'état officiel : la projection MJ revient telle quelle.
+      socket.emit('mapRequest');
+      setStatus('Retour à la vue MJ.');
+    }
+
+    let apercu = null;   // brouillon non enregistré, ou null
+
+    /**
+     * Un aperçu n'existe pas côté serveur : il n'a pas d'identifiant, et
+     * toute mutation viserait « /api/maps/null/... ». On bloque donc les
+     * outils d'édition tant qu'il n'est pas conservé.
+     */
+    function refuserSiApercu() {
+      // V1.13.10 : deux modes de LECTURE SEULE passent par ici — l’aperçu
+      // non enregistré, et l’œil du joueur. Les sept points d’édition
+      // appelaient déjà cette garde : les couvrir tous n’a rien coûté.
+      if (vueJoueur) {
+        setStatus(`Vous regardez la carte par les yeux de ${vueJoueur.nom} : revenez à la vue MJ pour modifier.`, true);
+        return true;
+      }
+      if (!apercu) return false;
+      setStatus('Cet aperçu n’est pas enregistré : conservez-le d’abord pour le modifier.', true);
+      return true;
+    }
+
+    function projectionApercu(genere) {
+      // Le moteur de rendu attend une projection MJ : on en fabrique une,
+      // sans tokens ni brouillard, pour afficher le brouillon tel quel.
+      const elements = {};
+      genere.elements.forEach((element, index) => {
+        elements[`apercu_${index}`] = { ...element, id: `apercu_${index}` };
+      });
+
+      return {
+        role: 'mj',
+        id: null,
+        nom: genere.nom,
+        type: genere.type,
+        grid: genere.grid,
+        background: genere.background,
+        tokens: {},
+        elements,
+        annotations: {},
+        drawing: { playersAllowed: false },
+        fog: { enabled: false, mode: 'none', autoReveal: true, revealed: [] },
+        playerVision: { visible: [], explored: [] }
+      };
+    }
+
+    function afficherApercu(genere) {
+      apercu = genere;
+      selectionner(null);
+      renderer.setMap(projectionApercu(genere));
+
+      document.getElementById('apercu-actions').hidden = false;
+      document.getElementById('apercu-info').textContent =
+        `${genere.elements.length} éléments · ${genere.grid.cols}×${genere.grid.rows} · `
+        + `${genere.praticables} cases praticables · graine ${genere.seed}`;
+      document.getElementById('active-map-name').textContent =
+        `APERÇU — ${genere.nom} (non enregistré)`;
+      document.getElementById('gen-seed').value = genere.seed;
+
+      setStatus('Aperçu non enregistré : conservez-le, ou tirez une autre variante.');
+    }
+
+    function quitterApercu() {
+      apercu = null;
+      document.getElementById('apercu-actions').hidden = true;
+      // On redemande l'état officiel : le brouillon disparaît sans laisser
+      // de trace, et la carte réellement active revient.
+      socket.emit('mapRequest');
+    }
+
+    async function genererApercu() {
+      const bouton = document.getElementById('btn-generate');
+      try {
+        bouton.disabled = true;
+        setStatus('Génération en cours…');
+        const genere = await api('POST', '/api/map/generate-preview', optionsGeneration());
+        afficherApercu(genere);
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        bouton.disabled = false;
+      }
+    }
+
+    document.getElementById('btn-generate').addEventListener('click', genererApercu);
+
+    document.getElementById('btn-apercu-relancer').addEventListener('click', () => {
+      // Nouvelle graine : on explore les variantes sans rien accumuler.
+      document.getElementById('gen-seed').value = graineAleatoire();
+      genererApercu();
+    });
+
+    document.getElementById('btn-quitter-vue-joueur')
+      .addEventListener('click', quitterVueJoueur);
+
+    document.getElementById('btn-apercu-abandonner').addEventListener('click', () => {
+      quitterApercu();
+      setStatus('Aperçu abandonné. Rien n’a été enregistré.');
+    });
+
+    document.getElementById('btn-apercu-garder').addEventListener('click', async () => {
+      if (!apercu) return;
+      const bouton = document.getElementById('btn-apercu-garder');
+
+      try {
+        bouton.disabled = true;
+        setStatus('Enregistrement…');
+
+        const nom = prompt('Nom de la carte :', apercu.nom);
+        if (nom === null) { bouton.disabled = false; setStatus('Enregistrement annulé.'); return; }
+
+        const data = await api('POST', '/api/maps', {
+          nom: nom.trim() || apercu.nom,
+          type: apercu.type,
+          grid: apercu.grid,
+          background: apercu.background,
+          elements: apercu.elements
+        });
+
+        apercu = null;
+        document.getElementById('apercu-actions').hidden = true;
+
+        await api('POST', `/api/maps/${encodeURIComponent(data.map.id)}/activate`);
+        await chargerBibliotheque();
+        document.getElementById('map-select').value = data.map.id;
+        setStatus(`Carte « ${data.map.nom} » enregistrée et chargée pour la table.`);
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    document.getElementById('btn-regenerate').addEventListener('click', async () => {
+      if (!map()) { setStatus('Aucune carte active à régénérer.', true); return; }
+      if (refuserSiApercu()) return;
+      if (!confirm('Régénérer le décor de la carte active ?\n\nTout le décor actuel sera remplacé. Les personnages et créatures sont conservés et repositionnés hors des obstacles.')) return;
+
+      const bouton = document.getElementById('btn-regenerate');
+      try {
+        bouton.disabled = true;
+        setStatus('Régénération en cours…');
+        const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/regenerate`, optionsGeneration());
+        document.getElementById('gen-seed').value = data.seed;
+        selectionner(null);
+        setStatus(data.message);
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+
+    // ---------------------------------------------------------------------
+    // Outils
+    // ---------------------------------------------------------------------
+
+    // Chaque outil porte son intitulé, sa consigne courte et le panneau
+    // d'options à afficher : une seule zone d'options est visible à la
+    // fois, au lieu d'empiler tous les réglages en permanence.
+    const OUTILS = {
+      select:       { titre: 'Sélection',  panneau: null,
+                      aide: 'Cliquez pour inspecter, glissez pour déplacer.' },
+      paint:        { titre: 'Poser du décor', panneau: 'paint',
+                      aide: 'Cliquez ou glissez pour poser des éléments.' },
+      mob:          { titre: 'Créature',   panneau: 'mob',
+                      aide: 'Chaque clic crée la créature et la place.' },
+      mesure:       { titre: 'Mesurer',    panneau: null,
+                      aide: 'Glissez d’un point à l’autre. Rien n’est envoyé au serveur.' },
+      erase:        { titre: 'Gomme',      panneau: null,
+                      aide: "Efface l'annotation sous le curseur, sinon le décor." },
+      dessin:       { titre: 'Dessiner',   panneau: 'annot',
+                      aide: 'Glissez pour tracer. Visible en direct par la table.' },
+      texte:        { titre: 'Écrire',     panneau: 'annot',
+                      aide: 'Cliquez pour poser un texte.' },
+      'fog-hide':   { titre: 'Masquer',    panneau: 'fog',
+                      aide: 'Glissez pour re-masquer des zones.' },
+      'fog-reveal': { titre: 'Révéler',    panneau: 'fog',
+                      aide: 'Glissez pour révéler des zones aux joueurs.' }
+    };
+
+    function setTool(nom) {
+      outil = nom;
+      const meta = OUTILS[nom] || OUTILS.select;
+
+      document.querySelectorAll('.tool-btn')
+        .forEach(b => b.classList.toggle('active', b.dataset.tool === nom));
+      document.getElementById('tool-title').textContent = meta.titre;
+      document.getElementById('tool-hint').textContent = meta.aide;
+      document.querySelectorAll('[data-panel]')
+        .forEach(p => { p.hidden = p.dataset.panel !== meta.panneau; });
+
+      canvas.style.cursor = nom === 'select' ? 'grab' : 'crosshair';
+    }
+
+    document.querySelectorAll('.tool-btn').forEach(bouton => {
+      bouton.addEventListener('click', () => setTool(bouton.dataset.tool));
+    });
+
+    // ---------------------------------------------------------------------
+    // Interactions sur le canvas
+    // ---------------------------------------------------------------------
+
+    canvas.addEventListener('pointerdown', async event => {
+      if (!map()) return;
+      event.preventDefault();
+      const cell = renderer.cellFromEvent(event);
+      if (!renderer.inBounds(cell)) return;
+
+      if (outil === 'mesure') {
+        // Outil de LECTURE : local au poste du MJ, aucune requête. Autorisé
+        // même sur un aperçu non enregistré, contrairement à toute édition.
+        renderer.demarrerMesure(renderer.pointFromEvent(event));
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
+
+      if (refuserSiApercu()) return;
+
+      if (outil === 'select') {
+        const token = renderer.tokenAt(cell);
+        if (token) {
+          selectionner('token', token.id);
+          drag = { tokenId: token.id, x: token.x, y: token.y };
+          canvas.setPointerCapture?.(event.pointerId);
+          canvas.style.cursor = 'grabbing';
+          return;
+        }
+        const element = renderer.elementAt(cell);
+        selectionner(element ? 'element' : null, element?.id);
+        return;
+      }
+
+      if (outil === 'dessin') {
+        trace = {
+          strokeId: `${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+          color: couleurAnnotation(),
+          size: tailleAnnotation(),
+          shared: partageAnnotation()
+        };
+        renderer.demarrerTrace(renderer.pointFromEvent(event), trace.color, trace.size);
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
+
+      if (outil === 'texte') {
+        await poserTexte(renderer.pointFromEvent(event));
+        return;
+      }
+
+      if (outil === 'erase') {
+        // La gomme est contextuelle : annotation d'abord, décor ensuite.
+        const annotation = renderer.annotationAt(renderer.pointFromEvent(event));
+        if (annotation) {
+          await effacerAnnotation(annotation.id);
+          return;
+        }
+        const token = renderer.tokenAt(cell);
+        if (token && token.kind === 'mob') {
+          await retirerToken(token.id);
+          return;
+        }
+        const element = renderer.elementAt(cell);
+        if (element) await supprimerElement(element.id);
+        return;
+      }
+
+      if (outil === 'mob') {
+        await placerCreature(cell);
+        return;
+      }
+
+      if (outil === 'paint') {
+        peinture = { mode: 'paint', cells: new Map() };
+        appliquerPeinture(cell);
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
+
+      if (outil === 'fog-hide' || outil === 'fog-reveal') {
+        peinture = { mode: outil, cells: new Map() };
+        appliquerPeinture(cell);
+        canvas.setPointerCapture?.(event.pointerId);
+      }
+    });
+
+    canvas.addEventListener('pointermove', event => {
+      if (!map()) return;
+      const cell = renderer.cellFromEvent(event);
+      renderer.setHover(renderer.inBounds(cell) ? cell : null);
+      coordEl.textContent = renderer.inBounds(cell) ? `Case : ${cell.x} , ${cell.y}` : 'Case : —';
+
+      if (outil === 'mesure' && renderer.state.mesure) {
+        renderer.prolongerMesure(renderer.pointFromEvent(event));
+        return;
+      }
+
+      if (trace) {
+        // Chaque nouveau segment part immédiatement en aperçu ; rien
+        // n'est écrit sur disque avant le relâchement du pointeur.
+        const segment = renderer.prolongerTrace(renderer.pointFromEvent(event));
+        if (segment) {
+          socket.emit('mapDrawStream', {
+            strokeId: trace.strokeId,
+            points: segment,
+            color: trace.color,
+            size: trace.size,
+            visibleToPlayers: trace.shared
+          });
+        }
+        return;
+      }
+
+      if (drag && renderer.inBounds(cell)) {
+        // Aperçu local immédiat ; le serveur reste l'autorité.
+        if (drag.x !== cell.x || drag.y !== cell.y) {
+          drag.x = cell.x;
+          drag.y = cell.y;
+          renderer.setGhost({ id: drag.tokenId, x: cell.x, y: cell.y });
+          socket.emit('mapMoveToken', { tokenId: drag.tokenId, x: cell.x, y: cell.y });
+        }
+        return;
+      }
+
+      if (peinture && renderer.inBounds(cell)) appliquerPeinture(cell);
+    });
+
+    // V1.13.12 — Double-clic sur une porte : ouvrir ou fermer.
+    //
+    // Le simple clic reste la SÉLECTION : le MJ doit pouvoir inspecter une
+    // porte sans la manœuvrer. Le double-clic évite l'aller-retour par
+    // l'inspecteur en pleine partie. Même chemin que les joueurs, donc même
+    // recalcul d'exploration côté serveur.
+    canvas.addEventListener('dblclick', event => {
+      if (refuserSiApercu()) return;
+      const cell = renderer.cellFromEvent(event);
+      if (!renderer.inBounds(cell)) return;
+
+      const element = renderer.elementAt(cell);
+      if (!element || element.kind !== 'porte') return;
+
+      event.preventDefault();
+      socket.emit('mapTogglePorte', { elementId: element.id });
+    });
+
+    function terminerPointer() {
+      if (renderer.state.mesure) renderer.terminerMesure();
+      if (drag) {
+        drag = null;
+        renderer.setGhost(null);
+        canvas.style.cursor = outil === 'select' ? 'grab' : 'crosshair';
+      }
+      if (peinture) {
+        const encours = peinture;
+        peinture = null;
+        validerPeinture(encours).catch(error => setStatus(error.message, true));
+      }
+      if (trace) {
+        const reglages = trace;
+        trace = null;
+        const fini = renderer.terminerTrace();
+        enregistrerTrace(fini, reglages).catch(error => setStatus(error.message, true));
+      }
+    }
+
+    /** Un seul enregistrement par tracé, au relâchement du pointeur. */
+    async function enregistrerTrace(fini, reglages) {
+      if (!fini || fini.points.length < 2) return;
+
+      await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
+        type: 'trait',
+        points: fini.points,
+        color: reglages.color,
+        size: reglages.size,
+        visibleToPlayers: reglages.shared
+      });
+
+      setStatus(reglages.shared ? 'Tracé partagé enregistré.' : 'Tracé MJ enregistré.');
+    }
+
+    async function poserTexte(point) {
+      const contenu = prompt('Texte à poser sur la carte :');
+      if (!contenu || !contenu.trim()) return;
+
+      try {
+        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
+          type: 'texte',
+          text: contenu.trim(),
+          points: [point],
+          color: couleurAnnotation(),
+          size: tailleAnnotation(),
+          visibleToPlayers: partageAnnotation()
+        });
+        setStatus('Texte posé sur la carte.');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    async function effacerAnnotation(annotationId) {
+      try {
+        await api('DELETE',
+          `/api/maps/${encodeURIComponent(map().id)}/annotations/${encodeURIComponent(annotationId)}`);
+        setStatus('Annotation effacée.');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    canvas.addEventListener('pointerup', terminerPointer);
+    canvas.addEventListener('pointercancel', terminerPointer);
+    canvas.addEventListener('pointerleave', () => {
+      renderer.setHover(null);
+      coordEl.textContent = 'Case : —';
+    });
+
+    /** Accumule les cases pendant le glissé : une seule requête à la fin. */
+    function appliquerPeinture(cell) {
+      const cle = `${cell.x},${cell.y}`;
+      if (peinture.cells.has(cle)) return;
+      peinture.cells.set(cle, { x: cell.x, y: cell.y });
+    }
+
+    async function validerPeinture(travail) {
+      const cells = [...travail.cells.values()];
+      if (!cells.length) return;
+
+      if (travail.mode === 'paint') {
+        const nom = document.getElementById('element-name').value.trim();
+        // V1.13.6 : UNE seule requête pour tout le tracé. Auparavant on
+        // envoyait une requête, une mutation et une diffusion temps réel
+        // PAR CASE : trente cases coûtaient trente allers-retours.
+        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/elements/batch`, {
+          brush: brushCourant, cells, nom: nom || undefined
+        });
+        setStatus(`${cells.length} élément(s) posé(s).`);
+        return;
+      }
+
+      await api('POST', `/api/maps/${encodeURIComponent(map().id)}/fog/cells`, {
+        cells,
+        revealed: travail.mode === 'fog-reveal'
+      });
+      setStatus(travail.mode === 'fog-reveal'
+        ? `${cells.length} case(s) révélée(s).`
+        : `${cells.length} case(s) masquée(s).`);
+    }
+
+    async function placerCreature(cell) {
+      try {
+        const templateId = document.getElementById('mob-template').value;
+        const visible = document.getElementById('mob-visible').checked;
+        const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/spawn-mob`, {
+          templateId: templateId || undefined,
+          x: cell.x,
+          y: cell.y,
+          visibleToPlayers: visible
+        });
+        setStatus(`${data.mob.nom} placée en ${cell.x},${cell.y}.`);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function retirerToken(tokenId) {
+      try {
+        await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/tokens/${encodeURIComponent(tokenId)}`);
+        if (selection?.id === tokenId) selectionner(null);
+        setStatus('Token retiré de la carte.');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    async function supprimerElement(elementId) {
+      try {
+        await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/elements/${encodeURIComponent(elementId)}`);
+        if (selection?.id === elementId) selectionner(null);
+        setStatus('Élément supprimé.');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    // ---------------------------------------------------------------------
+    // Modale de propriétés d'une entité (PV / PM / visibilité / position)
+    //
+    // Panneau contextuel : il n'existe que pendant l'édition, et rend
+    // ensuite tout l'espace à la carte.
+    // Les écritures passent par les API métier DÉJÀ en place :
+    //   créature   -> PUT  /api/mobs/:id            (mob.js + session.js)
+    //   personnage -> POST /api/session/player      (session.js)
+    //   token      -> PUT  /api/maps/:id/tokens/:t  (map.js)
+    // Chacune diffuse déjà son événement temps réel : rien à ajouter.
+    // ---------------------------------------------------------------------
+
+    // --- Catalogue de statuts, partagé personnages et créatures ------------
+
+    let catalogueStatuts = [];
+
+    async function chargerCatalogueStatuts() {
+      try {
+        catalogueStatuts = await (await fetch('/api/statuses')).json();
+      } catch (error) {
+        console.error('Catalogue de statuts indisponible :', error);
+        catalogueStatuts = [];
+      }
+    }
+
+    /**
+     * Applique ou retire un statut, sur un personnage comme sur une
+     * créature. Les deux passent par des routes distinctes mais partagent
+     * le même catalogue.
+     */
+    async function basculerStatut(token, statutId, dejaApplique) {
+      const estMob = token.kind === 'mob';
+      const base = estMob
+        ? `/api/mobs/${encodeURIComponent(token.entityId)}/statuses`
+        : `/api/session/player/${encodeURIComponent(token.entityId)}/statuses`;
+
+      try {
+        if (dejaApplique) {
+          await api('DELETE', `${base}/${encodeURIComponent(statutId)}`);
+        } else {
+          await api('POST', base, { statutId });
+        }
+        // La modale est un instantané : on la rouvre sur l'état à jour.
+        ouvrirModaleEntite(token.id);
+      } catch (error) {
+        const etat = document.getElementById('mod-status');
+        if (etat) { etat.textContent = error.message; etat.style.color = '#9b2c2c'; }
+      }
+    }
+
+    let modaleTokenId = null;
+
+    function pourcentage(courant, maximum) {
+      const max = Math.max(1, Number(maximum) || 1);
+      return Math.max(0, Math.min(100, (Number(courant) || 0) / max * 100));
+    }
+
+    function blocRessource(cle, titre, teinte, valeurs) {
+      const cur = Number(valeurs?.current ?? 0);
+      const max = Number(valeurs?.max ?? 0);
+      return `
+        <div class="modal-res">
+          <h4>${titre}</h4>
+          <div class="modal-jauge">
+            <div data-jauge="${cle}" style="width:${pourcentage(cur, max)}%;background:${teinte}"></div>
+          </div>
+          <div class="row">
+            <div><label for="mod-${cle}-cur">Actuel</label>
+              <input id="mod-${cle}-cur" class="full" type="number" value="${cur}"></div>
+            <div><label for="mod-${cle}-max">Maximum</label>
+              <input id="mod-${cle}-max" class="full" type="number" min="0" value="${max}"></div>
+          </div>
+          <div class="modal-pas">
+            <button type="button" data-res="${cle}" data-delta="-5">−5</button>
+            <button type="button" data-res="${cle}" data-delta="-1">−1</button>
+            <button type="button" data-res="${cle}" data-delta="1">+1</button>
+            <button type="button" data-res="${cle}" data-delta="5">+5</button>
+            <button type="button" data-res="${cle}" data-plein="1">Max</button>
+          </div>
+        </div>`;
+    }
+
+    function majJauge(cle) {
+      const cur = document.getElementById(`mod-${cle}-cur`);
+      const max = document.getElementById(`mod-${cle}-max`);
+      const jauge = document.querySelector(`[data-jauge="${cle}"]`);
+      if (cur && max && jauge) jauge.style.width = `${pourcentage(cur.value, max.value)}%`;
+    }
+
+    function fermerModale() {
+      modaleTokenId = null;
+      const conteneur = document.getElementById('entity-modal');
+      conteneur.hidden = true;
+      conteneur.innerHTML = '';
+    }
+
+    function ouvrirModaleEntite(tokenId) {
+      const m = map();
+      const token = m?.tokens?.[tokenId];
+      if (!token) return;
+
+      modaleTokenId = tokenId;
+      const entite = token.entity || {};
+      const estMob = token.kind === 'mob';
+
+      const statuts = estMob
+        ? `Statut : ${escapeHtml(entite.statut || 'vivant')}`
+        : `Statuts : ${escapeHtml((entite.statuts || []).map(s => s.nom).join(', ') || 'aucun')}`;
+
+      // V1.13.8 : pastilles cliquables, pour les DEUX types d'entité.
+      // L'agonie reste automatique et propre aux personnages : on ne la
+      // propose pas à la main.
+      const appliques = new Set((entite.statuts || []).map(x => x.id));
+      const pastilles = catalogueStatuts
+        .filter(cat => !(estMob && cat.id === 'agonie'))
+        .map(cat => `<button type="button" class="statut-pastille${appliques.has(cat.id) ? ' actif' : ''}"
+               data-statut="${escapeHtml(cat.id)}" data-applique="${appliques.has(cat.id)}"
+               ${cat.id === 'agonie' ? 'disabled title="Automatique à 0 PV"' : ''}>${escapeHtml(cat.nom)}</button>`)
+        .join('');
+
+      const conteneur = document.getElementById('entity-modal');
+      conteneur.hidden = false;
+      conteneur.innerHTML = `
+        <div class="modal-fond" data-fermer="fond">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Propriétés de l'entité">
+            <h2>${estMob ? '👹' : '👤'} ${escapeHtml(entite.nom || token.entityId)}</h2>
+            <p class="modal-sous">${estMob ? 'Créature de la partie active' : 'Personnage joueur'}</p>
+
+            <label style="margin-top:0">Statuts</label>
+            <div class="statut-liste">${pastilles}</div>
+
+            <div class="modal-stats">
+              <span>${statuts}</span>
+              <span>Case actuelle : ${token.x} , ${token.y}</span>
+            </div>
+
+            ${blocRessource('hp', 'Points de vie', '#8b3e3c', entite.hp)}
+            ${blocRessource('mana', 'Mana', '#3c5e8b', entite.mana)}
+
+            <div class="row">
+              <div><label for="mod-x">Colonne</label>
+                <input id="mod-x" class="full" type="number" min="0" max="${m.grid.cols - 1}" value="${token.x}"></div>
+              <div><label for="mod-y">Ligne</label>
+                <input id="mod-y" class="full" type="number" min="0" max="${m.grid.rows - 1}" value="${token.y}"></div>
+            </div>
+
+            <label class="check"><input type="checkbox" id="mod-visible" ${token.visibleToPlayers ? 'checked' : ''}>
+              Visible par les joueurs</label>
+            <label class="check"><input type="checkbox" id="mod-locked" ${token.locked ? 'checked' : ''}>
+              Déplacement verrouillé</label>
+
+            <p class="hint" id="mod-status"></p>
+
+            <div class="modal-actions">
+              <button id="mod-apply" class="primary">✔ Appliquer</button>
+              ${estMob ? '' : '<button id="mod-oeil">👁 Son point de vue</button>'}
+              <button id="mod-cancel">✖ Annuler</button>
+            </div>
+            ${estMob
+              ? '<p class="hint">La fiche complète (stats, sorts, armes) reste éditable depuis l\'interface MJ.</p>'
+              : '<p class="hint">Les PV et le mana sont des ressources de partie : la Fiche de Perso n\'est pas modifiée.</p>'}
+          </div>
+        </div>`;
+
+      // Boutons de pas rapide et mise à jour des jauges.
+      conteneur.querySelectorAll('[data-res]').forEach(bouton => {
+        bouton.addEventListener('click', () => {
+          const cle = bouton.dataset.res;
+          const champ = document.getElementById(`mod-${cle}-cur`);
+          const maximum = Number(document.getElementById(`mod-${cle}-max`).value) || 0;
+          champ.value = bouton.dataset.plein
+            ? maximum
+            : Math.max(0, Math.min(maximum, (Number(champ.value) || 0) + Number(bouton.dataset.delta)));
+          majJauge(cle);
+        });
+      });
+
+      ['hp', 'mana'].forEach(cle => {
+        document.getElementById(`mod-${cle}-cur`).addEventListener('input', () => majJauge(cle));
+        document.getElementById(`mod-${cle}-max`).addEventListener('input', () => majJauge(cle));
+      });
+
+      conteneur.querySelectorAll('[data-statut]').forEach(pastille => {
+        pastille.addEventListener('click', () => basculerStatut(
+          token, pastille.dataset.statut, pastille.dataset.applique === 'true'));
+      });
+
+      const boutonOeil = document.getElementById('mod-oeil');
+      if (boutonOeil) {
+        boutonOeil.addEventListener('click', () =>
+          activerVueJoueur(token.entityId, entite.nom || token.entityId));
+      }
+
+      document.getElementById('mod-cancel').addEventListener('click', fermerModale);
+      document.getElementById('mod-apply').addEventListener('click', appliquerModale);
+      conteneur.querySelector('[data-fermer="fond"]').addEventListener('click', event => {
+        if (event.target === event.currentTarget) fermerModale();
+      });
+    }
+
+    async function appliquerModale() {
+      const m = map();
+      const token = m?.tokens?.[modaleTokenId];
+      if (!token) return fermerModale();
+
+      const lire = id => Number(document.getElementById(id).value) || 0;
+      const hp = { current: lire('mod-hp-cur'), max: lire('mod-hp-max') };
+      const mana = { current: lire('mod-mana-cur'), max: lire('mod-mana-max') };
+      const bouton = document.getElementById('mod-apply');
+      const etat = document.getElementById('mod-status');
+
+      try {
+        bouton.disabled = true;
+        etat.textContent = 'Enregistrement…';
+
+        if (token.kind === 'mob') {
+          await api('PUT', `/api/mobs/${encodeURIComponent(token.entityId)}`, { hp, mana });
+        } else {
+          // Ressources de partie : elles ne touchent jamais data.json.
+          const reponse = await fetch('/api/session/player', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: token.entityId, nouvellesDonnees: { hp, mana } })
+          });
+          const data = await reponse.json().catch(() => ({}));
+          if (!reponse.ok) throw new Error(data.message || 'Enregistrement impossible.');
+        }
+
+        await api('PUT', `/api/maps/${encodeURIComponent(m.id)}/tokens/${encodeURIComponent(token.id)}`, {
+          x: lire('mod-x'),
+          y: lire('mod-y'),
+          visibleToPlayers: document.getElementById('mod-visible').checked,
+          locked: document.getElementById('mod-locked').checked
+        });
+
+        setStatus(`${token.entity?.nom || 'Entité'} mise à jour.`);
+        fermerModale();
+      } catch (error) {
+        etat.textContent = error.message;
+        etat.style.color = '#9b2c2c';
+        bouton.disabled = false;
+      }
+    }
+
+    // Double-clic sur un token : accès direct aux propriétés.
+    canvas.addEventListener('dblclick', event => {
+      if (!map() || apercu) return;
+      const token = renderer.tokenAt(renderer.cellFromEvent(event));
+      if (token) ouvrirModaleEntite(token.id);
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && modaleTokenId) fermerModale();
+    });
+
+    // ---------------------------------------------------------------------
+    // Inspecteur
+    // ---------------------------------------------------------------------
+
+    function selectionner(type, id) {
+      selection = type ? { type, id } : null;
+      renderer.setSelection(type === 'token' ? id : null);
+      renderInspector();
+      majIndicationAura();
+    }
+
+    /**
+     * V1.13.12 — Dire pourquoi l'aura ne dessine rien.
+     *
+     * Le MJ n'a pas de jeton propre : sans sélection, l'aura n'a aucun
+     * point d'ancrage et la case cochée reste sans effet. Laisser une
+     * option muette la fait passer pour une panne — c'est exactement ce
+     * qui s'est produit après V1.13.11.
+     */
+    function majIndicationAura() {
+      const actif = document.getElementById('opt-aura')?.checked;
+      const etiquette = document.getElementById('opt-aura-etat');
+      if (!etiquette) return;
+      etiquette.hidden = !(actif && !renderer.auraAncree());
+    }
+
+    function renderInspector() {
+      const conteneur = document.getElementById('inspector');
+      const m = map();
+
+      if (!m || !selection) {
+        conteneur.innerHTML = '<p id="inspector-empty">Aucune sélection.</p>';
+        return;
+      }
+
+      if (selection.type === 'token') {
+        const token = m.tokens[selection.id];
+        if (!token) { selection = null; return renderInspector(); }
+
+        conteneur.innerHTML = `
+          <p><strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.entity?.nom || token.entityId)}</strong>
+             <span class="badge">${token.kind === 'mob' ? 'Créature' : 'Personnage'}</span></p>
+          <p style="font-size:11.5px">Position : ${token.x} , ${token.y}
+             — PV ${token.entity?.hp?.current ?? '?'} / ${token.entity?.hp?.max ?? '?'}</p>
+          <button id="ins-stats" class="full primary" style="margin-bottom:7px">⚙️ Modifier PV / PM…</button>
+          <label for="ins-label">Étiquette affichée</label>
+          <input id="ins-label" class="full" value="${escapeHtml(token.label || '')}" placeholder="${escapeHtml(token.entity?.nom || '')}">
+          <div class="row">
+            <div><label for="ins-size">Taille (cases)</label><input id="ins-size" class="full" type="number" min="1" max="6" value="${token.size}"></div>
+            <div><label for="ins-vision">Portée de vue</label><input id="ins-vision" class="full" type="number" min="0" max="40" value="${token.vision?.range ?? 6}"></div>
+          </div>
+          <label for="ins-color">Couleur</label>
+          <input id="ins-color" class="full" type="color" value="${escapeHtml(token.color)}">
+          <label><input type="checkbox" id="ins-visible" ${token.visibleToPlayers ? 'checked' : ''}> Visible par les joueurs</label>
+          <label><input type="checkbox" id="ins-locked" ${token.locked ? 'checked' : ''}> Verrouiller le déplacement</label>
+          <label for="ins-notes">Notes MJ (jamais envoyées aux joueurs)</label>
+          <textarea id="ins-notes" class="full" rows="3">${escapeHtml(token.gmNotes || '')}</textarea>
+          <div class="row" style="margin-top:7px">
+            <button id="ins-save" class="primary">💾 Appliquer</button>
+            <button id="ins-remove" class="danger">✖ Retirer</button>
+          </div>
+          ${token.kind === 'mob'
+            ? '<p class="hint">La fiche complète de la créature (PV, stats, sorts) se modifie depuis l\'interface MJ.</p>'
+            : '<p class="hint">Le personnage est lié à sa fiche : seul son affichage sur la carte se règle ici.</p>'}
+        `;
+
+        document.getElementById('ins-save').addEventListener('click', async () => {
+          try {
+            await api('PUT', `/api/maps/${encodeURIComponent(m.id)}/tokens/${encodeURIComponent(token.id)}`, {
+              label: document.getElementById('ins-label').value,
+              size: Number(document.getElementById('ins-size').value),
+              vision: { range: Number(document.getElementById('ins-vision').value) },
+              color: document.getElementById('ins-color').value,
+              visibleToPlayers: document.getElementById('ins-visible').checked,
+              locked: document.getElementById('ins-locked').checked,
+              gmNotes: document.getElementById('ins-notes').value
+            });
+            setStatus('Token mis à jour.');
+          } catch (error) { setStatus(error.message, true); }
+        });
+
+        document.getElementById('ins-remove').addEventListener('click', () => retirerToken(token.id));
+        document.getElementById('ins-stats').addEventListener('click', () => ouvrirModaleEntite(token.id));
+        return;
+      }
+
+      const element = m.elements[selection.id];
+      if (!element) { selection = null; return renderInspector(); }
+
+      conteneur.innerHTML = `
+        <p><strong>${element.icone} ${escapeHtml(element.nom)}</strong>
+           <span class="badge">${escapeHtml(element.kind)}</span></p>
+        ${element.kind === 'porte'
+          ? `<button id="ins-door" class="full primary" style="margin-bottom:6px">
+               ${element.blocksMovement ? '🔓 Ouvrir la porte' : '🔒 Fermer la porte'}
+             </button>`
+          : ''}
+        <label for="ins-enom">Nom</label>
+        <input id="ins-enom" class="full" value="${escapeHtml(element.nom)}">
+        <div class="row">
+          <div><label for="ins-ex">X</label><input id="ins-ex" class="full" type="number" min="0" value="${element.x}"></div>
+          <div><label for="ins-ey">Y</label><input id="ins-ey" class="full" type="number" min="0" value="${element.y}"></div>
+        </div>
+        <div class="row">
+          <div><label for="ins-ew">Largeur</label><input id="ins-ew" class="full" type="number" min="1" value="${element.w}"></div>
+          <div><label for="ins-eh">Hauteur</label><input id="ins-eh" class="full" type="number" min="1" value="${element.h}"></div>
+        </div>
+        <div class="row">
+          <div><label for="ins-ecolor">Couleur</label>
+            <input id="ins-ecolor" class="full" type="color" value="${escapeHtml(element.color)}"></div>
+          <div><label for="ins-elight" title="0 = pas une source de lumière">Portée de lumière</label>
+            <input id="ins-elight" class="full" type="number" min="0" max="40" value="${element.lightRange ?? 0}"></div>
+        </div>
+        <label><input type="checkbox" id="ins-emove" ${element.blocksMovement ? 'checked' : ''}> Bloque le déplacement</label>
+        <label><input type="checkbox" id="ins-evision" ${element.blocksVision ? 'checked' : ''}> Bloque la vision</label>
+        <label><input type="checkbox" id="ins-evisible" ${element.visibleToPlayers ? 'checked' : ''}> Visible par les joueurs</label>
+        ${element.kind === 'porte'
+          ? `<label title="Les joueurs ne pourront pas l'ouvrir eux-mêmes"><input type="checkbox" id="ins-everrou"
+               ${element.verrouillee ? 'checked' : ''}> Verrouillée</label>`
+          : ''}
+        <label for="ins-edesc">Description (visible des joueurs)</label>
+        <textarea id="ins-edesc" class="full" rows="2">${escapeHtml(element.description || '')}</textarea>
+        <label for="ins-enotes">Notes MJ (jamais envoyées aux joueurs)</label>
+        <textarea id="ins-enotes" class="full" rows="3">${escapeHtml(element.gmNotes || '')}</textarea>
+        <div class="row" style="margin-top:7px">
+          <button id="ins-esave" class="primary">💾 Appliquer</button>
+          <button id="ins-edelete" class="danger">🗑️ Supprimer</button>
+        </div>
+      `;
+
+      document.getElementById('ins-esave').addEventListener('click', async () => {
+        try {
+          await api('PUT', `/api/maps/${encodeURIComponent(m.id)}/elements/${encodeURIComponent(element.id)}`, {
+            nom: document.getElementById('ins-enom').value,
+            x: Number(document.getElementById('ins-ex').value),
+            y: Number(document.getElementById('ins-ey').value),
+            w: Number(document.getElementById('ins-ew').value),
+            h: Number(document.getElementById('ins-eh').value),
+            color: document.getElementById('ins-ecolor').value,
+            lightRange: Number(document.getElementById('ins-elight').value) || 0,
+            blocksMovement: document.getElementById('ins-emove').checked,
+            blocksVision: document.getElementById('ins-evision').checked,
+            visibleToPlayers: document.getElementById('ins-evisible').checked,
+            // Absent pour tout ce qui n'est pas une porte : le champ n'est
+            // affiché que dans ce cas.
+            verrouillee: document.getElementById('ins-everrou')?.checked === true,
+            description: document.getElementById('ins-edesc').value,
+            gmNotes: document.getElementById('ins-enotes').value
+          });
+          setStatus('Élément mis à jour.');
+        } catch (error) { setStatus(error.message, true); }
+      });
+
+      document.getElementById('ins-edelete').addEventListener('click', () => supprimerElement(element.id));
+
+      // Une porte se manipule en un clic : ouvrir la rend franchissable
+      // et transparente, la fermer bloque passage et ligne de vue.
+      // Le champ de vision des joueurs est recalculé immédiatement.
+      const boutonPorte = document.getElementById('ins-door');
+      if (boutonPorte) {
+        boutonPorte.addEventListener('click', async () => {
+          const fermee = element.blocksMovement;
+          try {
+            await api('PUT', `/api/maps/${encodeURIComponent(m.id)}/elements/${encodeURIComponent(element.id)}`, {
+              blocksMovement: !fermee,
+              blocksVision: !fermee,
+              nom: fermee ? 'Porte (ouverte)' : 'Porte (fermée)'
+            });
+            setStatus(fermee ? 'Porte ouverte.' : 'Porte fermée.');
+          } catch (error) { setStatus(error.message, true); }
+        });
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // V1.13.6 — BESTIAIRE et CRÉATURES EN JEU
+    //
+    // Les trois onglets de la colonne droite reflètent les trois niveaux du
+    // modèle, sans jamais dupliquer de données :
+    //
+    //   Sur la carte   token      position et visibilité
+    //   En jeu         instance   PV/PM propres à CETTE créature
+    //   Bestiaire      modèle     définition réutilisable
+    //
+    // Transitions : modèle → « Ajouter à la partie » → instance
+    //               instance → « Placer » → token
+    //
+    // Modifier un modèle n'affecte JAMAIS les instances déjà créées : une
+    // instance est indépendante dès sa naissance.
+    // ---------------------------------------------------------------------
+
+    let bestiaire = [];
+    let mobsEnJeu = [];
+    let categoriesMob = [];
+    let templateEnEdition = null;
+
+    function setOnglet(nom) {
+      document.querySelectorAll('.onglet')
+        .forEach(b => b.classList.toggle('actif', b.dataset.onglet === nom));
+      document.querySelectorAll('[data-vue]')
+        .forEach(v => { v.hidden = v.dataset.vue !== nom; });
+    }
+
+    document.querySelectorAll('.onglet').forEach(bouton => {
+      bouton.addEventListener('click', () => {
+        setOnglet(bouton.dataset.onglet);
+        if (bouton.dataset.onglet === 'bestiaire') chargerBestiaire();
+        if (bouton.dataset.onglet === 'jeu') chargerMobsEnJeu();
+      });
+    });
+
+    // --- Chargement --------------------------------------------------------
+
+    async function chargerCategoriesMob() {
+      try {
+        categoriesMob = await (await fetch('/api/mob-categories')).json();
+        document.getElementById('best-categorie').innerHTML = categoriesMob
+          .map(c => `<option value="${escapeHtml(c.id)}">${c.icone} ${escapeHtml(c.nom)}</option>`)
+          .join('');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    async function chargerBestiaire() {
+      try {
+        const reponse = await fetch('/api/mob-templates');
+        if (!reponse.ok) throw new Error('Impossible de charger le bestiaire.');
+        bestiaire = await reponse.json();
+        renderBestiaire();
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    async function chargerMobsEnJeu() {
+      try {
+        const reponse = await fetch('/api/mobs');
+        if (!reponse.ok) throw new Error('Impossible de charger les créatures en jeu.');
+        mobsEnJeu = await reponse.json();
+        renderMobsEnJeu();
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    // --- Rendu du Bestiaire ------------------------------------------------
+
+    function renderBestiaire() {
+      const conteneur = document.getElementById('best-list');
+      const filtre = document.getElementById('best-recherche').value.trim().toLowerCase();
+
+      const liste = bestiaire.filter(t => !filtre
+        || String(t.nom || '').toLowerCase().includes(filtre)
+        || String(t.categorie || '').includes(filtre));
+
+      if (!liste.length) {
+        conteneur.innerHTML = bestiaire.length
+          ? '<p class="empty">Aucune créature ne correspond à cette recherche.</p>'
+          : '<p class="empty">Bestiaire vide. Créez une créature avec ➕, ou promouvez une créature déjà en jeu depuis l\'onglet « En jeu ».</p>';
+        return;
+      }
+
+      conteneur.innerHTML = liste.map(t => {
+        const categorie = categoriesMob.find(c => c.id === t.categorie);
+        return `
+          <div class="best-item">
+            <div class="best-tete">
+              <span class="best-icone">${t.icone || '👹'}</span>
+              <strong title="${escapeHtml(t.nom)}">${escapeHtml(t.nom)}</strong>
+            </div>
+            <div>
+              <span class="badge">${escapeHtml(categorie ? categorie.nom : 'Autre')}</span>
+              <span class="badge">PV ${escapeHtml(t.hp?.max ?? 0)}</span>
+              <span class="badge">PM ${escapeHtml(t.mana?.max ?? 0)}</span>
+            </div>
+            <div class="best-actions">
+              <button data-best="ajouter"   data-id="${escapeHtml(t.id)}" title="Ajouter à la partie">➕</button>
+              <button data-best="placer"    data-id="${escapeHtml(t.id)}" title="Ajouter et placer sur la carte">🗺️</button>
+              <button data-best="editer"    data-id="${escapeHtml(t.id)}" title="Modifier le modèle">✏️</button>
+              <button data-best="dupliquer" data-id="${escapeHtml(t.id)}" title="Dupliquer">⧉</button>
+              <button data-best="supprimer" data-id="${escapeHtml(t.id)}" class="danger" title="Retirer du bestiaire">🗑️</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      conteneur.querySelectorAll('button[data-best]').forEach(bouton => {
+        bouton.addEventListener('click', () => actionBestiaire(bouton.dataset.best, bouton.dataset.id));
+      });
+    }
+
+    // --- Rendu des créatures en jeu ---------------------------------------
+
+    function renderMobsEnJeu() {
+      const conteneur = document.getElementById('session-mob-list');
+      if (!conteneur) return;
+
+      const courante = map();
+      const surCarte = new Set(Object.values(courante?.tokens || {})
+        .filter(t => t.kind === 'mob')
+        .map(t => t.entityId));
+
+      if (!mobsEnJeu.length) {
+        conteneur.innerHTML = '<p class="empty">Aucune créature dans la partie. Ajoutez-en depuis le Bestiaire.</p>';
+        return;
+      }
+
+      conteneur.innerHTML = mobsEnJeu.map(mob => {
+        const place = surCarte.has(mob.id);
+        return `
+          <div class="best-item">
+            <div class="best-tete">
+              <span class="best-icone">${mob.icone || '👹'}</span>
+              <strong title="${escapeHtml(mob.nom)}">${escapeHtml(mob.nom)}</strong>
+            </div>
+            <div>
+              <span class="badge">PV ${escapeHtml(mob.hp?.current ?? 0)}/${escapeHtml(mob.hp?.max ?? 0)}</span>
+              <span class="badge">PM ${escapeHtml(mob.mana?.current ?? 0)}/${escapeHtml(mob.mana?.max ?? 0)}</span>
+              ${place ? '<span class="badge">sur la carte</span>' : ''}
+            </div>
+            <div class="best-actions">
+              ${place
+                ? `<button data-jeu="inspecter" data-id="${escapeHtml(mob.id)}" title="Modifier PV / PM">⚙️</button>`
+                : `<button data-jeu="placer" data-id="${escapeHtml(mob.id)}" title="Placer sur la carte">🗺️</button>`}
+              <button data-jeu="promouvoir" data-id="${escapeHtml(mob.id)}" title="Ajouter au bestiaire">📖</button>
+              <button data-jeu="retirer" data-id="${escapeHtml(mob.id)}" class="danger" title="Retirer de la partie">🗑️</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      conteneur.querySelectorAll('button[data-jeu]').forEach(bouton => {
+        bouton.addEventListener('click', () => actionMobEnJeu(bouton.dataset.jeu, bouton.dataset.id));
+      });
+    }
+
+    // --- Actions -----------------------------------------------------------
+
+    async function actionBestiaire(action, id) {
+      const template = bestiaire.find(t => t.id === id);
+      if (!template) return;
+
+      try {
+        if (action === 'editer') {
+          ouvrirEditeurBestiaire(template);
+          return;
+        }
+
+        if (action === 'supprimer') {
+          if (!confirm(`Retirer « ${template.nom} » du bestiaire ?\n\nLes créatures déjà en jeu ne sont pas affectées.`)) return;
+          await api('DELETE', `/api/mob-templates/${encodeURIComponent(id)}`);
+          setStatus('Modèle retiré du bestiaire.');
+        }
+
+        if (action === 'dupliquer') {
+          const nom = prompt('Nom du duplicata :', `${template.nom} (copie)`);
+          if (nom === null) return;
+          const data = await api('POST', `/api/mob-templates/${encodeURIComponent(id)}/duplicate`, { nom });
+          setStatus(data.message);
+        }
+
+        if (action === 'ajouter') {
+          const data = await api('POST', `/api/mob-templates/${encodeURIComponent(id)}/spawn`);
+          setStatus(`${data.mob.nom} ajoutée à la partie.`);
+          await chargerMobsEnJeu();
+        }
+
+        if (action === 'placer') {
+          if (!map()) { setStatus('Aucune carte active.', true); return; }
+          const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/spawn-mob`, { templateId: id });
+          setStatus(`${data.mob.nom} placée sur la carte.`);
+          await chargerMobsEnJeu();
+        }
+
+        await chargerBestiaire();
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    async function actionMobEnJeu(action, id) {
+      const mob = mobsEnJeu.find(m => m.id === id);
+      if (!mob) return;
+
+      try {
+        if (action === 'inspecter') {
+          // La modale travaille sur un TOKEN : elle n'est proposée que
+          // pour les créatures effectivement posées sur la carte.
+          ouvrirModaleEntite(`mob:${id}`);
+          return;
+        }
+
+        if (action === 'placer') {
+          if (!map()) { setStatus('Aucune carte active.', true); return; }
+          // Sans coordonnées, le serveur choisit une case praticable.
+          await api('POST', `/api/maps/${encodeURIComponent(map().id)}/tokens`,
+            { kind: 'mob', entityId: id });
+          setStatus(`${mob.nom} placée sur la carte.`);
+        }
+
+        if (action === 'promouvoir') {
+          const nom = prompt('Nom du modèle à ajouter au bestiaire :',
+            String(mob.nom).replace(/ #\d+$/, ''));
+          if (nom === null) return;
+          const data = await api('POST', `/api/mob-templates/from-mob/${encodeURIComponent(id)}`, { nom });
+          setStatus(data.message);
+          await chargerBestiaire();
+        }
+
+        if (action === 'retirer') {
+          if (!confirm(`Retirer « ${mob.nom} » de la partie ?`)) return;
+          await api('DELETE', `/api/mobs/${encodeURIComponent(id)}`);
+          setStatus('Créature retirée de la partie.');
+        }
+
+        await chargerMobsEnJeu();
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    // --- Éditeur de modèle -------------------------------------------------
+
+    function ouvrirEditeurBestiaire(template) {
+      templateEnEdition = template || null;
+      document.getElementById('best-editeur').hidden = false;
+      document.getElementById('best-nom').value = template?.nom || '';
+      document.getElementById('best-categorie').value = template?.categorie || 'autre';
+      document.getElementById('best-icone').value = template?.icone || '';
+      document.getElementById('best-hp').value = template?.hp?.max ?? 10;
+      document.getElementById('best-mana').value = template?.mana?.max ?? 0;
+      document.getElementById('best-description').value = template?.description || '';
+      document.getElementById('best-notes').value = template?.notes || '';
+      document.getElementById('best-nom').focus();
+    }
+
+    function fermerEditeurBestiaire() {
+      templateEnEdition = null;
+      document.getElementById('best-editeur').hidden = true;
+    }
+
+    document.getElementById('best-nouveau').addEventListener('click', () => ouvrirEditeurBestiaire(null));
+    document.getElementById('best-annuler').addEventListener('click', fermerEditeurBestiaire);
+    document.getElementById('best-recherche').addEventListener('input', renderBestiaire);
+    document.getElementById('map-recherche').addEventListener('input', renderBibliotheque);
+
+    document.getElementById('best-enregistrer').addEventListener('click', async () => {
+      const nom = document.getElementById('best-nom').value.trim();
+      if (!nom) { setStatus('Le nom de la créature est requis.', true); return; }
+
+      const hpMax = Math.max(0, Number(document.getElementById('best-hp').value) || 0);
+      const manaMax = Math.max(0, Number(document.getElementById('best-mana').value) || 0);
+
+      const corps = {
+        nom,
+        categorie: document.getElementById('best-categorie').value,
+        icone: document.getElementById('best-icone').value.trim() || undefined,
+        // Un modèle se définit à pleine ressource : c'est l'instance qui
+        // encaissera ensuite les dégâts, sans jamais toucher au modèle.
+        hp: { max: hpMax, current: hpMax },
+        mana: { max: manaMax, current: manaMax },
+        description: document.getElementById('best-description').value,
+        notes: document.getElementById('best-notes').value
+      };
+
+      try {
+        if (templateEnEdition) {
+          await api('PUT', `/api/mob-templates/${encodeURIComponent(templateEnEdition.id)}`, corps);
+          setStatus(`« ${nom} » mis à jour. Les créatures déjà en jeu sont inchangées.`);
+        } else {
+          await api('POST', '/api/mob-templates', corps);
+          setStatus(`« ${nom} » ajouté au bestiaire.`);
+        }
+        fermerEditeurBestiaire();
+        await chargerBestiaire();
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    // ---------------------------------------------------------------------
+    // Liste des entités présentes sur la carte
+    // ---------------------------------------------------------------------
+
+    function renderEntityList() {
+      const conteneur = document.getElementById('entity-list');
+      const m = map();
+      const tokens = m ? Object.values(m.tokens || {}) : [];
+
+      if (!tokens.length) {
+        conteneur.innerHTML = '<p class="empty">Aucune entité sur la carte.</p>';
+        return;
+      }
+
+      conteneur.innerHTML = tokens
+        .sort((a, b) => a.kind.localeCompare(b.kind) || (a.entity?.nom || '').localeCompare(b.entity?.nom || ''))
+        .map(token => `
+          <div class="entity-item">
+            <strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.label || token.entity?.nom || token.entityId)}</strong>
+            <span class="badge">${token.x},${token.y}</span>
+            <span class="badge">PV ${token.entity?.hp?.current ?? '?'}/${token.entity?.hp?.max ?? '?'}</span>
+            ${token.visibleToPlayers ? '' : '<span class="badge hidden-badge">caché</span>'}
+            <div class="row">
+              <button data-act="stats" data-id="${escapeHtml(token.id)}" title="PV / PM">⚙️</button>
+              <button data-act="focus" data-id="${escapeHtml(token.id)}" title="Inspecter">🔍</button>
+              <button data-act="toggle" data-id="${escapeHtml(token.id)}">${token.visibleToPlayers ? '🚫 Cacher' : '👁️ Montrer'}</button>
+              ${token.kind === 'mob'
+                ? `<button data-act="remove" data-id="${escapeHtml(token.id)}" class="danger">✖</button>` : ''}
+            </div>
+          </div>`).join('');
+
+      conteneur.querySelectorAll('button[data-act]').forEach(bouton => {
+        bouton.addEventListener('click', async () => {
+          const id = bouton.dataset.id;
+          if (bouton.dataset.act === 'stats') return ouvrirModaleEntite(id);
+          if (bouton.dataset.act === 'focus') return selectionner('token', id);
+          if (bouton.dataset.act === 'remove') return retirerToken(id);
+
+          const token = map().tokens[id];
+          try {
+            await api('PUT', `/api/maps/${encodeURIComponent(map().id)}/tokens/${encodeURIComponent(id)}`,
+              { visibleToPlayers: !token.visibleToPlayers });
+          } catch (error) { setStatus(error.message, true); }
+        });
+      });
+    }
+
+    // ---------------------------------------------------------------------
+    // Formulaires de configuration
+    // ---------------------------------------------------------------------
+
+    function syncFormulaires() {
+      const m = map();
+      const vide = !m;
+      document.getElementById('map-empty-hint').hidden = !vide;
+      document.getElementById('active-map-name').textContent =
+        vide ? 'aucune carte active' : `${m.nom} — ${m.grid.cols}×${m.grid.rows}`;
+      if (vide) return;
+
+      document.getElementById('grid-cols').value = m.grid.cols;
+      document.getElementById('grid-rows').value = m.grid.rows;
+      document.getElementById('grid-cell').value = m.grid.cellSize;
+      document.getElementById('map-bg').value = m.background?.color || '#fffdf7';
+      document.getElementById('map-name').value = m.nom;
+      document.getElementById('fog-enabled').checked = !!m.fog?.enabled;
+      document.getElementById('fog-mode').value = m.fog?.mode || 'none';
+      document.getElementById('fog-autoreveal').checked = m.fog?.autoReveal !== false;
+      document.getElementById('annot-players').checked = m.drawing?.playersAllowed === true;
+      document.getElementById('map-type').value = m.type || '';
+
+      // La palette suit le type de lieu : décors forestiers sur une forêt,
+      // mobilier de donjon dans un donjon.
+      chargerPalette(m.type || '').catch(error => setStatus(error.message, true));
+    }
+
+    document.getElementById('annot-players').addEventListener('change', async event => {
+      if (!map()) return;
+      try {
+        const data = await api('PUT', `/api/maps/${encodeURIComponent(map().id)}/drawing`,
+          { playersAllowed: event.target.checked });
+        setStatus(data.message);
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-clear-annot').addEventListener('click', async () => {
+      if (!map()) return;
+      const scope = document.getElementById('annot-scope').value;
+      const libelle = { all: 'toutes les annotations', mj: 'vos annotations', players: 'les annotations des joueurs' }[scope];
+      if (!confirm(`Effacer ${libelle} de cette carte ?`)) return;
+
+      try {
+        const data = await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/annotations`, { scope });
+        setStatus(data.message);
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-save-grid').addEventListener('click', async () => {
+      if (refuserSiApercu()) return;
+      try {
+        await api('PUT', `/api/maps/${encodeURIComponent(map().id)}`, {
+          nom: document.getElementById('map-name').value,
+          type: document.getElementById('map-type').value,
+          background: { color: document.getElementById('map-bg').value },
+          grid: {
+            cols: Number(document.getElementById('grid-cols').value),
+            rows: Number(document.getElementById('grid-rows').value),
+            cellSize: Number(document.getElementById('grid-cell').value)
+          }
+        });
+        await chargerBibliotheque();
+        setStatus('Carte enregistrée.');
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    async function majBrouillard() {
+      if (refuserSiApercu()) return;
+      try {
+        await api('PUT', `/api/maps/${encodeURIComponent(map().id)}/fog`, {
+          enabled: document.getElementById('fog-enabled').checked,
+          mode: document.getElementById('fog-mode').value,
+          autoReveal: document.getElementById('fog-autoreveal').checked
+        });
+        setStatus('Brouillard mis à jour.');
+      } catch (error) { setStatus(error.message, true); }
+    }
+
+    ['fog-enabled', 'fog-mode', 'fog-autoreveal'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => { if (map()) majBrouillard(); });
+    });
+
+    document.getElementById('btn-fog-reset').addEventListener('click', async () => {
+      if (!map() || refuserSiApercu()) return;
+      if (!confirm('Re-masquer toutes les zones explorées ?')) return;
+      try {
+        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/fog/reset`);
+        setStatus('Brouillard réinitialisé.');
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    // --- Boutons de bibliothèque -----------------------------------------
+
+    document.getElementById('btn-new').addEventListener('click', async () => {
+      const nom = prompt('Nom de la nouvelle carte :', 'Nouvelle carte');
+      if (nom === null) return;
+      try {
+        const data = await api('POST', '/api/maps', { nom });
+        await chargerBibliotheque();
+        document.getElementById('map-select').value = data.map.id;
+        setStatus(`Carte « ${data.map.nom} » créée.`);
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-activate').addEventListener('click', async () => {
+      const id = document.getElementById('map-select').value;
+      if (!id) return;
+      try {
+        await api('POST', `/api/maps/${encodeURIComponent(id)}/activate`);
+        setStatus('Carte chargée pour toute la table.');
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-duplicate').addEventListener('click', async () => {
+      const id = document.getElementById('map-select').value;
+      if (!id) return;
+      try {
+        const data = await api('POST', `/api/maps/${encodeURIComponent(id)}/duplicate`);
+        await chargerBibliotheque();
+        setStatus(`Copie créée : ${data.map.nom}.`);
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      const id = document.getElementById('map-select').value;
+      if (!id || !confirm('Supprimer définitivement cette carte ?')) return;
+      try {
+        await api('DELETE', `/api/maps/${encodeURIComponent(id)}`);
+        await chargerBibliotheque();
+        setStatus('Carte supprimée.');
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('opt-grid').addEventListener('change', e => renderer.setOption('showGrid', e.target.checked));
+    document.getElementById('opt-coords').addEventListener('change', e => renderer.setOption('showCoords', e.target.checked));
+    document.getElementById('opt-vision').addEventListener('change', e => renderer.setOption('showPlayerVision', e.target.checked));
+
+    // V1.13.11 — Aura de portée. Le champ de saisie ne s'active qu'avec la
+    // case cochée : un nombre modifiable sans effet visible passerait pour
+    // une panne.
+    function majAura() {
+      const actif = document.getElementById('opt-aura').checked;
+      const cases = document.getElementById('opt-aura-cases');
+      cases.disabled = !actif;
+      renderer.setAura(actif, cases.value);
+      majIndicationAura();
+    }
+    // V1.13.11 — Portes en lot. Un donjon généré en compte une vingtaine :
+    // les fermer une à une rendait la fonctionnalité théorique.
+    async function basculerPortes(fermer) {
+      if (refuserSiApercu()) return;
+      const m = map();
+      if (!m?.id) return setStatus('Aucune carte active.', true);
+      try {
+        const data = await api('POST', `/api/maps/${encodeURIComponent(m.id)}/portes`, { fermer });
+        setStatus(data.message);
+      } catch (error) { setStatus(error.message, true); }
+    }
+    document.getElementById('btn-portes-fermer').addEventListener('click', () => basculerPortes(true));
+    document.getElementById('btn-portes-ouvrir').addEventListener('click', () => basculerPortes(false));
+
+    document.getElementById('opt-aura').addEventListener('change', majAura);
+    document.getElementById('opt-aura-cases').addEventListener('input', majAura);
+    // Ajustée : la carte tient en entier dans le cadre.
+    // Échelle réelle : la carte garde sa taille de case et le cadre défile.
+    document.getElementById('btn-zoom').addEventListener('click', event => {
+      const ajustee = renderer.getZoom() === 1;
+      renderer.setZoom(ajustee ? 1.8 : 1);
+      event.currentTarget.textContent = ajustee ? '🔍 Agrandie' : '🔍 Ajustée';
+    });
+
+    document.getElementById('btn-export').addEventListener('click', () => renderer.exportPng('arcanesync-carte-mj.png'));
+
+    // ---------------------------------------------------------------------
+    // Temps réel
+    // ---------------------------------------------------------------------
+
+    // Le serveur pousse la projection MJ complète : c'est la source de vérité.
+    socket.on('mapState', payload => {
+      // Un aperçu en cours a priorité : il disparaîtrait sinon au premier
+      // événement venu (déplacement d’un joueur, modification de PV...).
+      if (apercu) { renderEntityList(); renderMobsEnJeu(); return; }
+
+      // V1.13.10 : en vue joueur, la projection MJ écraserait ce que le MJ
+      // est venu observer. On redemande LA MÊME vue, à jour : le brouillard
+      // d’un personnage change quand il bouge ou qu’une lumière s’allume.
+      if (vueJoueur) { rafraichirVueJoueur(); renderEntityList(); renderMobsEnJeu(); return; }
+
+      // V1.13.11 — La projection peut être ALLÉGÉE : les champs lourds
+      // inchangés ne sont pas renvoyés, le moteur les reprend de l'état
+      // courant. S'il ne le peut pas — aucun état, ou autre carte — on
+      // redemande un état complet plutôt que d'afficher une carte amputée.
+      if (!renderer.setMap(payload)) {   // fusion impossible
+        socket.emit('mapRequest');
+        return;
+      }
+      activeMapId = payload?.id || null;
+      syncFormulaires();
+      renderInspector();
+      renderEntityList();
+      // Le badge « sur la carte » de l'onglet « En jeu » dépend des tokens.
+      renderMobsEnJeu();
+    });
+
+    socket.on('mapActionRejected', event => setStatus(event?.message || 'Action refusée.', true));
+    socket.on('mapLibraryUpdated', () => chargerBibliotheque());
+
+    // Tracé en cours sur un autre poste : simple aperçu, remplacé par
+    // l'annotation officielle dès que son auteur relâche le pointeur.
+    socket.on('mapDrawPreview', apercu => renderer.pushPreview(apercu));
+
+    // Les changements d'état de partie (PV, statuts, mobs) rafraîchissent
+    // les tokens : le serveur renvoie mapState, on n'a rien à recalculer.
+    // Le bestiaire peut être modifié depuis un autre poste, ou depuis
+    // l'interface MJ : les deux listes suivent.
+    socket.on('mobTemplateUpdated', () => {
+      chargerTemplates();
+      chargerBestiaire();
+    });
+
+    socket.on('mobUpdated', () => chargerMobsEnJeu());
+
+    socket.on('connect', () => {
+      setStatus('🟢 Carte synchronisée.');
+      socket.emit('mapRequest');
+    });
+
+    socket.on('disconnect', () => setStatus('🔴 Connexion perdue — reconnexion…', true));
+    socket.on('connect_error', () => setStatus('🔴 Serveur injoignable.', true));
+
+    // Après une reconnexion, le snapshot autoritaire V1.12 contient aussi
+    // la carte : on l'applique sans attendre.
+    socket.on('stateSync', snapshot => {
+      if (!snapshot || snapshot.role !== 'mj') return;
+      if (snapshot.map !== undefined) {
+        renderer.setMap(snapshot.map);
+        syncFormulaires();
+        renderInspector();
+        renderEntityList();
+      }
+      if (snapshot.maps) {
+        bibliotheque = snapshot.maps;
+        activeMapId = snapshot.activeMapId || null;
+        chargerBibliotheque();
+      }
+      setStatus('🟢 État autoritaire resynchronisé.');
+    });
+
+    setTool('select');
+    chargerPalette('').catch(error => setStatus(error.message, true));
+    chargerGenerateurs().catch(error => setStatus(error.message, true));
+    chargerTemplates();
+    chargerBibliotheque();
+
+    // Les catégories doivent être chargées avant le premier rendu du
+    // bestiaire : elles fournissent le libellé affiché sur chaque fiche.
+    chargerCatalogueStatuts();
+    chargerCategoriesMob()
+      .then(chargerBestiaire)
+      .then(chargerMobsEnJeu)
+      .catch(error => setStatus(error.message, true));
+  })();
+  </script>
+</body>
+</html>

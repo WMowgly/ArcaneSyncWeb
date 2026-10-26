@@ -1,253 +1,608 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tableau Blanc Collaboratif</title>
-  <link rel="stylesheet" href="style.css"/> 
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scène de jeu — ArcaneSync V1.10</title>
+  <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     body {
-      font-family: 'Uncial Antiqua', cursive;
-      background-color: #fdf6e3;
-      color: #3b2f1e;
       margin: 0;
-      padding: 20px;
+      padding: 0 12px 30px;
+      background: #fdf6e3;
+      color: #3b2f1e;
+      font-family: 'Uncial Antiqua', cursive;
     }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      background: rgba(255, 248, 220, 0.9);
-      border: 4px solid #8b5e3c;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 0 10px #3b2f1e99;
+    .scene-container {
+      width: min(1500px, 100%);
+      margin: 20px auto;
     }
-    h1 {
+    .scene-header {
       text-align: center;
-      margin-bottom: 20px;
-    }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       margin-bottom: 15px;
-      justify-content: space-between;
     }
-    .toolbar select,
-    .toolbar input[type="color"],
-    .toolbar input[type="range"],
-    .toolbar button {
-      padding: 8px;
+    .scene-header h1 { margin-bottom: 6px; }
+    .scene-status {
+      min-height: 22px;
+      font-size: 0.95rem;
+    }
+    .scene-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 15px;
+      align-items: start;
+    }
+    .scene-board-card,
+    .scene-sidebar {
+      background: rgba(255,248,220,0.96);
+      border: 3px solid #8b5e3c;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(59,47,30,0.18);
+    }
+    .scene-board-card { padding: 12px; }
+    .scene-sidebar { padding: 15px; }
+    .scene-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .scene-toolbar button,
+    .scene-toolbar select,
+    .scene-toolbar input {
       font-family: inherit;
-      font-size: 16px;
-      border-radius: 4px;
       border: 1px solid #8b5e3c;
-      background-color: #fff6e1;
-      cursor: pointer;
+      border-radius: 5px;
+      padding: 7px 9px;
+      background: #fff6e1;
     }
-    canvas {
+    .scene-toolbar .tool-active {
+      box-shadow: inset 0 0 0 2px #8b5e3c;
+      font-weight: bold;
+    }
+    .scene-canvas-wrap {
       width: 100%;
-      height: auto;
+      overflow: hidden;
       border: 2px solid #8b5e3c;
       border-radius: 8px;
-      background-color: white;
+      background: #fff;
+      position: relative;
+      touch-action: none;
+    }
+    #scene-canvas {
       display: block;
+      width: 100%;
+      height: auto;
+      cursor: crosshair;
+      touch-action: none;
     }
-    #color-palette {
-      display: flex;
-      gap: 5px;
-      align-items: center;
+    .scene-help {
+      margin: 8px 0 0;
+      font-size: 0.88rem;
+      opacity: 0.85;
     }
-    .color-swatch {
-      width: 24px;
-      height: 24px;
-      border: 2px solid #3b2f1e;
-      border-radius: 50%;
-      cursor: pointer;
-      padding: 0;
-      outline: none;
+    .scene-sidebar h2,
+    .scene-sidebar h3 { margin-top: 0; }
+    .scene-token-list {
+      display: grid;
+      gap: 7px;
+      max-height: 500px;
+      overflow-y: auto;
     }
-    .color-swatch.selected {
-      border: 3px solid #ffcc00;
+    .scene-token-item {
+      border: 1px solid #8b5e3c;
+      border-radius: 7px;
+      padding: 8px;
+      background: #fff6e1;
     }
-
+    .scene-token-item strong { display: block; }
+    .scene-token-item small { display: block; margin-top: 3px; }
+    .scene-role-badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 10px;
+      background: #eadfcf;
+      font-size: 0.82rem;
+    }
+    .scene-legend {
+      margin-top: 15px;
+      padding-top: 12px;
+      border-top: 1px solid #8b5e3c;
+      font-size: 0.9rem;
+    }
+    .scene-legend div { margin: 5px 0; }
+    @media (max-width: 900px) {
+      .scene-layout { grid-template-columns: 1fr; }
+      .scene-sidebar { order: 2; }
+    }
+    @media (max-width: 600px) {
+      body { padding: 0 6px 20px; }
+      .scene-toolbar > * { flex: 1 1 auto; }
+    }
   </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
-  <div class="container">
-    <h1>Tableau Blanc Collaboratif</h1>
-    <div class="toolbar">
-      <select id="mode">
-        <option value="draw">✏️ Dessin</option>
-        <option value="text">📝 Texte</option>
-        <option value="eraser">🧽 Gomme</option>
-      </select>
-      <div id="color-palette">
-        <button class="color-swatch" data-color="#000000" style="background:#000000;"></button>
-        <button class="color-swatch" data-color="#ff0000" style="background:#ff0000;"></button>
-        <button class="color-swatch" data-color="#008000" style="background:#008000;"></button>
-        <button class="color-swatch" data-color="#0000ff" style="background:#0000ff;"></button>
-        <button class="color-swatch" data-color="#ffff00" style="background:#ffff00;"></button>
-        <button class="color-swatch" data-color="#ffffff" style="background:#ffffff;"></button>
-      </div>
-      <label>
-        Taille:
-        <input type="number" id="size-number" min="1" max="50" value="3" style="width: 60px;"/>
-        <input type="range" id="size" min="1" max="50" value="3" />
-      </label>
-      <button id="save">📥 Sauvegarder</button>
+
+  <main class="scene-container">
+    <header class="scene-header">
+      <h1>🗺️ Scène de jeu</h1>
+      <div id="scene-status" class="scene-status">Connexion au tableau...</div>
+    </header>
+
+    <div class="scene-layout">
+      <section class="scene-board-card">
+        <div class="scene-toolbar">
+          <button id="tool-move" type="button" class="tool-active">✋ Déplacer</button>
+          <button id="tool-draw" type="button">✏️ Dessiner</button>
+          <button id="tool-text" type="button">📝 Texte</button>
+          <button id="tool-erase" type="button">🧽 Gomme</button>
+          <label>Taille
+            <input id="draw-size" type="number" min="1" max="50" value="3" style="width:55px">
+          </label>
+          <label>Couleur
+            <input id="draw-color" type="color" value="#000000">
+          </label>
+          <button id="clear-drawing" type="button">🗑️ Effacer dessins</button>
+          <button id="reset-positions" type="button" hidden>↺ Réinitialiser positions</button>
+          <button id="download-scene" type="button">📥 Export PNG</button>
+        </div>
+
+        <div class="scene-canvas-wrap">
+          <canvas id="scene-canvas" width="1200" height="675"></canvas>
+        </div>
+
+        <p class="scene-help">
+          <strong>Déplacer :</strong> faites glisser un token.
+          Le MJ peut déplacer tous les tokens ; un joueur peut déplacer uniquement son propre personnage.
+          <strong>Visibilité :</strong> seul le MJ peut cacher ou révéler un mob déjà créé.
+          Un mob caché reste dans la partie mais n'est pas envoyé aux joueurs.
+          Les dessins et textes sont synchronisés en direct et ne sont pas sauvegardés comme données permanentes.
+        </p>
+      </section>
+
+      <aside class="scene-sidebar">
+        <span id="scene-role" class="scene-role-badge">Mode spectateur</span>
+        <h2>Participants</h2>
+        <div id="scene-token-list" class="scene-token-list">
+          <p>Chargement...</p>
+        </div>
+        <div class="scene-legend">
+          <div>👤 Joueur = personnage du groupe</div>
+          <div>👹 Mob = adversaire actif</div>
+          <div>🖱️ Le déplacement est synchronisé immédiatement.</div>
+        </div>
+      </aside>
     </div>
-    <canvas id="whiteboard"></canvas>
-  </div>
+  </main>
 
   <script src="navbar.js"></script>
   <script>
-    const socket = io(`${location.protocol}//${location.hostname}:3000`);
-    const canvas = document.getElementById('whiteboard');
+    const params = new URLSearchParams(location.search);
+    let role = params.get('role');
+    const playerId = params.get('PlayerId');
+
+    if (!role) {
+      if (location.pathname.endsWith('/mj.html')) role = 'mj';
+      else if (playerId) role = 'player';
+      else role = 'viewer';
+    }
+
+    const socket = io({ query: { role, playerId: playerId || '' } });
+    const canvas = document.getElementById('scene-canvas');
     const ctx = canvas.getContext('2d');
-    const sizeSlider = document.getElementById('size');
-    const sizeNumber = document.getElementById('size-number');
-    const modeSelector = document.getElementById('mode');
-    const saveButton = document.getElementById('save');
+    const statusEl = document.getElementById('scene-status');
+    const tokenList = document.getElementById('scene-token-list');
+    const roleEl = document.getElementById('scene-role');
+    const resetButton = document.getElementById('reset-positions');
+    const clearDrawingButton = document.getElementById('clear-drawing');
 
-    let selectedColor = '#000000';
+    let scene = {
+      width: 1200,
+      height: 675,
+      gridSize: 50,
+      tokens: {},
+      entities: { players: [], mobs: [] }
+    };
     let drawing = false;
-    let current = { x: 0, y: 0 };
-    let mode = 'draw';
+    let dragTokenId = null;
+    let activeTool = 'move';
+    let lastPoint = null;
+    let selectedColor = '#000000';
+    let drawSize = 3;
 
-    // Synchronisation entre slider et champ numérique
-    sizeSlider.addEventListener('input', () => {
-      sizeNumber.value = sizeSlider.value;
-    });
-    sizeNumber.addEventListener('input', () => {
-      sizeSlider.value = sizeNumber.value;
-    });
+    roleEl.textContent =
+      role === 'mj' ? '🎲 Mode MJ' :
+      role === 'player' ? '👤 Mode joueur' :
+      '👁️ Mode spectateur';
+    resetButton.hidden = role !== 'mj';
+    clearDrawingButton.hidden = role !== 'mj';
 
-    // Gestion de la palette de couleurs
-    const swatches = document.querySelectorAll('.color-swatch');
-    swatches.forEach(swatch => {
-      swatch.addEventListener('click', () => {
-        swatches.forEach(s => s.classList.remove('selected'));
-        swatch.classList.add('selected');
-        selectedColor = swatch.dataset.color;
-      });
-    });
-    // Sélection initiale
-    swatches[0].classList.add('selected');
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+    }
 
-
+    function setStatus(message, error=false) {
+      statusEl.textContent = message;
+      statusEl.style.color = error ? '#9b2c2c' : '';
+    }
 
     function resizeCanvas() {
-      const container = canvas.parentElement;
-      canvas.width = container.clientWidth;
-      canvas.height = Math.floor(container.clientWidth * 9 / 16);
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function getPos(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const cssWidth = Math.max(320, rect.width);
+      const ratio = scene.height / scene.width;
+      canvas.height = Math.round(cssWidth * ratio * (window.devicePixelRatio || 1));
+      canvas.width = Math.round(cssWidth * (window.devicePixelRatio || 1));
+      canvas.style.height = `${Math.round(cssWidth * ratio)}px`;
+      ctx.setTransform(
+        canvas.width / scene.width, 0, 0,
+        canvas.height / scene.height, 0, 0
+      );
+      renderScene();
+    }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
       return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
+        x: ((event.clientX - rect.left) / rect.width) * scene.width,
+        y: ((event.clientY - rect.top) / rect.height) * scene.height
       };
     }
 
-    function drawLine(x0, y0, x1, y1, color, size, emit) {
+    function tokenAt(point) {
+      const tokens = Object.values(scene.tokens || {});
+      for (let i=tokens.length-1;i>=0;i--) {
+        const token=tokens[i];
+        const tx=token.x*scene.width;
+        const ty=token.y*scene.height;
+        if(Math.hypot(point.x-tx,point.y-ty)<=30) return token;
+      }
+      return null;
+    }
+
+    function canMoveToken(token) {
+      if (!token) return false;
+      return role === 'mj' ||
+        (role === 'player' && token.type === 'player' && token.entityId === playerId);
+    }
+
+    function entityForToken(token) {
+      if(token.type === 'player') return (scene.entities.players || []).find(x=>x.id===token.entityId);
+      return (scene.entities.mobs || []).find(x=>x.id===token.entityId);
+    }
+
+    function renderToken(token) {
+      const x=token.x*scene.width;
+      const y=token.y*scene.height;
+      const entity=entityForToken(token);
+      const isMob=token.type==='mob';
+      const radius=27;
+
       ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
+      ctx.arc(x,y,radius,0,Math.PI*2);
+      ctx.fillStyle=isMob ? '#7d3f3f' : '#3f6287';
+      ctx.fill();
+      ctx.lineWidth=3;
+      ctx.strokeStyle='#3b2f1e';
       ctx.stroke();
-      ctx.closePath();
 
-      if (emit) {
-        socket.emit('draw', { x0, y0, x1, y1, color, size });
+      ctx.fillStyle='#fff';
+      ctx.font='bold 17px sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(isMob ? '👹' : '👤',x,y);
+
+      ctx.font='bold 15px sans-serif';
+      ctx.textBaseline='top';
+      const name=entity?.nom || (isMob?'Mob':'Joueur');
+      const label=name.length>18 ? `${name.slice(0,17)}…` : name;
+      const labelWidth=Math.max(70,ctx.measureText(label).width+16);
+      ctx.fillStyle='rgba(255,248,220,0.92)';
+      ctx.fillRect(x-labelWidth/2,y+31,labelWidth,23);
+      ctx.strokeStyle='#8b5e3c';
+      ctx.strokeRect(x-labelWidth/2,y+31,labelWidth,23);
+      ctx.fillStyle='#3b2f1e';
+      ctx.textBaseline='middle';
+      ctx.fillText(label,x,y+42);
+
+      if(entity?.hp) {
+        const max=Math.max(1,Number(entity.hp.max)||1);
+        const current=Math.max(0,Number(entity.hp.current)||0);
+        const pct=Math.max(0,Math.min(1,current/max));
+        ctx.fillStyle='#fff';
+        ctx.fillRect(x-27,y-40,54,7);
+        ctx.fillStyle='#8b3e3c';
+        ctx.fillRect(x-27,y-40,54*pct,7);
+        ctx.strokeStyle='#3b2f1e';
+        ctx.strokeRect(x-27,y-40,54,7);
+      }
+
+      if(isMob && token.visibleToPlayers === false) {
+        ctx.fillStyle='#6b4b2f';
+        ctx.font='bold 12px sans-serif';
+        ctx.fillText('CACHÉ',x,y-51);
+      } else if(isMob && entity?.statut==='mort') {
+        ctx.fillStyle='#3b2f1e';
+        ctx.font='bold 13px sans-serif';
+        ctx.fillText('MORT',x,y-51);
       }
     }
 
-    function drawText(x, y, text, color, size, emit) {
-      ctx.fillStyle = color;
-      ctx.font = `${size * 5}px Uncial Antiqua`;
-      ctx.fillText(text, x, y);
-      if (emit) {
-        socket.emit('text', { x, y, text, color, size });
+    function renderScene() {
+      ctx.clearRect(0,0,scene.width,scene.height);
+      ctx.fillStyle='#fffdf7';
+      ctx.fillRect(0,0,scene.width,scene.height);
+
+      const grid=Number(scene.gridSize)||50;
+      ctx.strokeStyle='rgba(139,94,60,0.18)';
+      ctx.lineWidth=1;
+      for(let x=0;x<=scene.width;x+=grid){
+        ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,scene.height);ctx.stroke();
+      }
+      for(let y=0;y<=scene.height;y+=grid){
+        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(scene.width,y);ctx.stroke();
+      }
+
+      Object.values(scene.tokens || {}).forEach(renderToken);
+    }
+
+    function renderTokenList() {
+      const tokens=Object.values(scene.tokens||{});
+      if(!tokens.length){
+        tokenList.innerHTML='<p>Aucun participant visible dans la scène.</p>';
+        return;
+      }
+
+      tokenList.innerHTML=tokens.map(token=>{
+        const entity=entityForToken(token);
+        const isMob=token.type==='mob';
+        const hp=entity?.hp ? `${entity.hp.current ?? 0} / ${entity.hp.max ?? 0}` : '—';
+        const status=isMob ? (entity?.statut || 'vivant') :
+          ((entity?.statuts||[]).map(s=>s.nom).join(', ')||'Aucun statut');
+        const visibility = isMob && token.visibleToPlayers === false
+          ? '<small><strong>🚫 Caché aux joueurs</strong></small>'
+          : '';
+
+        const visibilityButton = isMob && role === 'mj'
+          ? `<button type="button" data-scene-visibility="${escapeHtml(token.entityId)}">
+              ${token.visibleToPlayers === false ? '👁️ Montrer aux joueurs' : '🚫 Cacher aux joueurs'}
+             </button>`
+          : '';
+
+        return `<div class="scene-token-item">
+          <strong>${isMob?'👹':'👤'} ${escapeHtml(entity?.nom || (isMob?'Mob':'Joueur'))}</strong>
+          <small>HP : ${escapeHtml(hp)}</small>
+          <small>Statut : ${escapeHtml(status)}</small>
+          ${visibility}
+          ${visibilityButton}
+        </div>`;
+      }).join('');
+
+      if(role === 'mj'){
+        tokenList.querySelectorAll('[data-scene-visibility]').forEach(button=>{
+          button.addEventListener('click',async()=>{
+            const mobId=button.getAttribute('data-scene-visibility');
+            const token=scene.tokens[`mob:${mobId}`];
+            if(!token) return;
+
+            try{
+              button.disabled=true;
+              const response=await fetch(`/api/session/scene/mob/${encodeURIComponent(mobId)}/toggle-visibility`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({role:'mj'})
+              });
+              const result=await response.json();
+              if(!response.ok) throw new Error(result.message||'Impossible de modifier la visibilité.');
+              setStatus(result.message);
+              await loadScene();
+            }catch(error){
+              setStatus(error.message,true);
+            }finally{
+              button.disabled=false;
+            }
+          });
+        });
       }
     }
 
-    canvas.addEventListener('mousedown', e => {
-      const pos = getPos(e);
-      if (mode === 'draw' || mode === 'eraser') {
-        drawing = true;
-        current = pos;
-      } else if (mode === 'text') {
-        const userText = prompt('Entrez votre texte :');
-        if (userText) {
-          drawText(pos.x, pos.y, userText, selectedColor, parseInt(sizeSlider.value), true);
+    function applyScene(nextScene) {
+      if(!nextScene) return;
+      scene=nextScene;
+      resizeCanvas();
+      renderTokenList();
+    }
+
+    function emitMove(token, point) {
+      const x=Math.max(0,Math.min(1,point.x/scene.width));
+      const y=Math.max(0,Math.min(1,point.y/scene.height));
+      token.x=x; token.y=y;
+      renderScene();
+      socket.emit('sceneMoveToken',{tokenId:token.id,x,y});
+    }
+
+    function drawLine(x0,y0,x1,y1,color,size,emit=true) {
+      ctx.beginPath();
+      ctx.moveTo(x0,y0);
+      ctx.lineTo(x1,y1);
+      ctx.strokeStyle=color;
+      ctx.lineWidth=size;
+      ctx.lineCap='round';
+      ctx.stroke();
+      if(emit) socket.emit('draw',{x0,y0,x1,y1,color,size});
+    }
+
+    function addText(point) {
+      const text=prompt('Entrez votre texte :');
+      if(!text) return;
+      ctx.fillStyle=selectedColor;
+      ctx.font=`${drawSize*5}px Uncial Antiqua`;
+      ctx.fillText(text,point.x,point.y);
+      socket.emit('text',{x:point.x,y:point.y,text,color:selectedColor,size:drawSize});
+    }
+
+    function setTool(tool) {
+      activeTool=tool;
+      document.querySelectorAll('.scene-toolbar button').forEach(b=>b.classList.remove('tool-active'));
+      const button=document.getElementById(`tool-${tool}`);
+      if(button)button.classList.add('tool-active');
+      canvas.style.cursor=tool==='move'?'grab':tool==='erase'?'cell':'crosshair';
+    }
+
+    document.getElementById('tool-move').addEventListener('click',()=>setTool('move'));
+    document.getElementById('tool-draw').addEventListener('click',()=>setTool('draw'));
+    document.getElementById('tool-text').addEventListener('click',()=>setTool('text'));
+    document.getElementById('tool-erase').addEventListener('click',()=>setTool('erase'));
+    document.getElementById('draw-size').addEventListener('input',e=>{
+      drawSize=Math.max(1,Math.min(50,Number(e.target.value)||1));
+    });
+    document.getElementById('draw-color').addEventListener('input',e=>selectedColor=e.target.value);
+
+    canvas.addEventListener('pointerdown',event=>{
+      event.preventDefault();
+      const point=canvasPoint(event);
+
+      if(activeTool==='move'){
+        const token=tokenAt(point);
+        if(token && canMoveToken(token)){
+          dragTokenId=token.id;
+          canvas.setPointerCapture?.(event.pointerId);
+          canvas.style.cursor='grabbing';
         }
+        return;
       }
-    });
 
-    canvas.addEventListener('mouseup', () => drawing = false);
-    canvas.addEventListener('mouseout', () => drawing = false);
-
-    canvas.addEventListener('mousemove', e => {
-      if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
-      const pos = getPos(e);
-      const color = mode === 'eraser' ? '#ffffff' : selectedColor;
-      drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
-      current = pos;
-    });
-
-    canvas.addEventListener('touchstart', e => {
-      const pos = getPos(e);
-      if (mode === 'draw' || mode === 'eraser') {
-        drawing = true;
-        current = pos;
-      } else if (mode === 'text') {
-        const userText = prompt('Entrez votre texte :');
-        if (userText) {
-          drawText(pos.x, pos.y, userText, selectedColor, parseInt(sizeSlider.value), true);
-        }
+      if(activeTool==='text'){
+        addText(point);
+        return;
       }
+
+      drawing=true;
+      lastPoint=point;
+      canvas.setPointerCapture?.(event.pointerId);
     });
 
-    canvas.addEventListener('touchend', () => drawing = false);
-    canvas.addEventListener('touchmove', e => {
-      if (!drawing || (mode !== 'draw' && mode !== 'eraser')) return;
-      const pos = getPos(e);
-      const color = mode === 'eraser' ? '#ffffff' : selectedColor;
-      drawLine(current.x, current.y, pos.x, pos.y, color, parseInt(sizeSlider.value), true);
-      current = pos;
-      e.preventDefault();
+    canvas.addEventListener('pointermove',event=>{
+      const point=canvasPoint(event);
+
+      if(dragTokenId){
+        const token=scene.tokens[dragTokenId];
+        if(token)emitMove(token,point);
+        return;
+      }
+
+      if(!drawing || !lastPoint) return;
+      const color=activeTool==='erase'?'#fffdf7':selectedColor;
+      drawLine(lastPoint.x,lastPoint.y,point.x,point.y,color,drawSize,true);
+      lastPoint=point;
     });
 
-    modeSelector.addEventListener('change', () => {
-      mode = modeSelector.value;
+    function stopPointer(){
+      drawing=false;
+      lastPoint=null;
+      if(dragTokenId){
+        dragTokenId=null;
+        canvas.style.cursor='grab';
+      }
+    }
+    canvas.addEventListener('pointerup',stopPointer);
+    canvas.addEventListener('pointercancel',stopPointer);
+    canvas.addEventListener('pointerleave',()=>{ if(drawing) stopPointer(); });
+
+    clearDrawingButton.addEventListener('click',()=>{
+      if(role!=='mj') return;
+      if(!confirm('Effacer tous les dessins et textes du tableau pour tous les participants ?')) return;
+      socket.emit('clearDrawings');
     });
 
-    saveButton.addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.download = 'tableau.png';
-      link.href = canvas.toDataURL();
+    resetButton.addEventListener('click',()=>{
+      if(role!=='mj') return;
+      fetch('/api/session/scene/reset',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({role:'mj'})
+      }).catch(error=>setStatus(error.message,true));
+    });
+
+    document.getElementById('download-scene').addEventListener('click',()=>{
+      const link=document.createElement('a');
+      link.download='arcanesync-scene.png';
+      link.href=canvas.toDataURL('image/png');
       link.click();
     });
 
-    // Socket.io
-    socket.on('draw', data => {
-      drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
+    socket.on('connect',()=>{
+      setStatus('🟢 Scène synchronisée en temps réel.');
+      socket.emit('stateSyncRequest');
+      socket.emit('sceneRequest');
     });
 
-    socket.on('text', data => {
-      drawText(data.x, data.y, data.text, data.color, data.size, false);
+    // V1.12 : le snapshot autoritaire permet de reconstruire immédiatement
+    // la scène après une perte/reprise de connexion.
+    socket.on('stateSync', snapshot => {
+      if (!snapshot?.scene) return;
+      applyScene(snapshot.scene);
+      setStatus('🟢 État autoritaire resynchronisé.');
     });
+
+    socket.on('stateSyncError', event => {
+      setStatus(event?.message || 'Resynchronisation impossible.', true);
+    });
+
+    socket.on('sceneUpdated',nextScene=>{
+      if(nextScene) applyScene(nextScene);
+      else loadScene();
+    });
+
+    socket.on('sceneMoveRejected',event=>{
+      setStatus(event?.message||'Déplacement refusé.',true);
+      loadScene();
+    });
+
+    socket.on('draw',data=>{
+      drawLine(data.x0,data.y0,data.x1,data.y1,data.color,data.size,false);
+    });
+
+    socket.on('text',data=>{
+      ctx.fillStyle=data.color;
+      ctx.font=`${data.size*5}px Uncial Antiqua`;
+      ctx.fillText(data.text,data.x,data.y);
+    });
+
+    socket.on('clearDrawings',()=>{
+      renderScene();
+    });
+
+    socket.on('playerUpdate',loadScene);
+    socket.on('playerStatusUpdated',loadScene);
+    socket.on('sessionPlayerUpdate',loadScene);
+    socket.on('gmPlayerUpdated',loadScene);
+    socket.on('sessionUpdated',loadScene);
+    socket.on('mobUpdated',loadScene);
+
+    async function loadScene(){
+      try{
+        const query=new URLSearchParams({
+          role,
+          ...(playerId ? {playerId} : {})
+        });
+        const response=await fetch(`/api/session/scene?${query.toString()}`);
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.message||'Impossible de charger la scène.');
+        applyScene(data);
+      }catch(error){
+        setStatus(error.message,true);
+      }
+    }
+
+    window.addEventListener('resize',resizeCanvas);
+    loadScene();
   </script>
 </body>
 </html>

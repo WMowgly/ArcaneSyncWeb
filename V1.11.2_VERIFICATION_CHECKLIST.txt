@@ -1,0 +1,77 @@
+ArcaneSync V 1.11.2 - Inventory & Equipment Bidirectional Sync
+================================================================
+
+OBJECTIF
+--------
+Vérifier que la Fiche de Perso et l'éditeur MJ utilisent bien les mêmes
+données pour l'inventaire et l'équipement.
+
+1. FICHE DE PERSO -> MJ
+-----------------------
+[ ] Ouvrir la Fiche de Perso d'un joueur.
+[ ] Ajouter un objet unique, par exemple « TEST FICHE ».
+[ ] Mettre quantité = 7.
+[ ] Définir un emplacement.
+[ ] Cocher « Équipé ».
+[ ] Ajouter une description.
+[ ] Modifier une arme existante.
+[ ] Sauvegarder la Fiche de Perso.
+[ ] Ouvrir l'interface MJ.
+[ ] Ouvrir « Modifier le joueur ».
+[ ] Vérifier que « TEST FICHE » apparaît.
+[ ] Vérifier quantité, emplacement, équipé et description.
+[ ] Vérifier la modification de l'arme.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+2. MJ -> FICHE DE PERSO
+-----------------------
+[ ] Dans « Modifier le joueur » côté MJ, modifier « TEST FICHE ».
+[ ] Changer la quantité.
+[ ] Changer l'emplacement.
+[ ] Désactiver/réactiver « Équipé ».
+[ ] Modifier la description.
+[ ] Modifier une arme.
+[ ] Enregistrer.
+[ ] Fermer l'éditeur MJ.
+[ ] Ouvrir/recharger la Fiche de Perso.
+[ ] Vérifier toutes les modifications.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+3. PERSISTANCE
+--------------
+[ ] Redémarrer le serveur.
+[ ] Ouvrir la Fiche de Perso.
+[ ] Vérifier que l'inventaire est toujours présent.
+[ ] Vérifier que l'équipement est toujours présent.
+[ ] Ouvrir le MJ.
+[ ] Vérifier que les mêmes données sont présentes.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+4. IMPORT SESSION -> FICHE
+--------------------------
+[ ] Modifier l'inventaire/équipement dans l'état actif.
+[ ] Utiliser « Mettre à jour depuis la partie » sur la Fiche de Perso.
+[ ] Confirmer l'import.
+[ ] Vérifier que l'inventaire est importé.
+[ ] Vérifier que les armes sont importées.
+[ ] Vérifier que l'armure est importée.
+[ ] Vérifier sac et ceinture.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+5. RÉGRESSION HP / MANA
+-----------------------
+[ ] Modifier uniquement l'inventaire depuis le MJ.
+[ ] Vérifier que les HP/Mana actuels de la session ne sont pas
+    accidentellement réinitialisés.
+
+Résultat : [ ] PASS [ ] PARTIAL [ ] FAIL
+
+REMARQUES
+---------
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________

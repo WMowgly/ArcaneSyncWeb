@@ -1,7 +1,8 @@
 export function openFicheJoueur(joueur) {
   const params = new URLSearchParams();
 
-  // Champs simples
+  // Identité technique stable + champs simples
+  if (joueur.id) params.set("PlayerId", joueur.id);
   params.set("Nom", joueur.nom);
   params.set("Classe", joueur.classe);
   params.set("Race", joueur.race);
@@ -43,6 +44,10 @@ export function openFicheJoueur(joueur) {
   if (joueur.sorts_mineurs) params.set("Sorts mineurs", JSON.stringify(joueur.sorts_mineurs));
   if (joueur.competences) params.set("Competences", JSON.stringify(joueur.competences));
   if (joueur.armes) params.set("Armes", JSON.stringify(joueur.armes));
+  if (joueur.inventaire) params.set("Inventaire", JSON.stringify(joueur.inventaire));
+  if (joueur.attaques_speciales) {
+    params.set("Attaques speciales", JSON.stringify(joueur.attaques_speciales));
+  }
   
   // Informations additionnelles
   if (joueur.skills_speciales) params.set("Skills speciales", joueur.skills_speciales);

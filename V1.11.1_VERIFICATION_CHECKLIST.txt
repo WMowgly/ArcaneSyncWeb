@@ -1,0 +1,41 @@
+ArcaneSync V 1.11.1 - Graphical Inventory Management
+===========================================================
+
+MJ — OUVERTURE
+[ ] Ouvrir l'interface MJ.
+[ ] Cliquer sur un joueur.
+[ ] Cliquer sur « Modifier le joueur ».
+[ ] Vérifier qu'aucun champ « Inventaire structuré (JSON) » n'est affiché.
+
+MJ — AJOUT
+[ ] Cliquer sur « + Ajouter un objet ».
+[ ] Ajouter un nom, type, quantité, emplacement et description.
+[ ] Cocher « Équipé ».
+[ ] Enregistrer.
+
+MJ — MODIFICATION / SUPPRESSION
+[ ] Rouvrir le joueur.
+[ ] Modifier un objet.
+[ ] Vérifier la modification.
+[ ] Supprimer un objet.
+[ ] Vérifier qu'il disparaît.
+
+JOUEUR
+[ ] Ouvrir la fiche du joueur.
+[ ] Vérifier que l'inventaire correspond.
+[ ] Modifier l'inventaire côté joueur.
+[ ] Revenir côté MJ et vérifier la modification.
+
+PERSISTANCE
+[ ] Exporter la session.
+[ ] Importer la session.
+[ ] Vérifier que l'inventaire et les équipements sont conservés.
+
+RÉSULTAT
+[ ] PASS
+[ ] PARTIAL
+[ ] FAIL
+
+REMARQUES :
+____________________________________________________________
+____________________________________________________________
