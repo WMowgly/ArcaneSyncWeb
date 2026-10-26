@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Création de Personnage</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
@@ -355,7 +356,7 @@
       const niveau = row.querySelector('input[type="number"]');
       if (select.value) {
         sortsMajeurs.push({
-          nom: select.options[select.selectedIndex].text,
+          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
           degats: degats.value,
           niveau: parseInt(niveau.value) || 1
         });
@@ -369,7 +370,7 @@
       const degats = row.querySelector('input[type="text"]');
       if (select.value) {
         sortsMineurs.push({
-          nom: select.options[select.selectedIndex].text,
+          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
           degats: degats.value
         });
       }
@@ -383,7 +384,7 @@
       const niveau = row.querySelector('input[type="number"]');
       if (select.value) {
         attackSpecial.push({
-          nom: select.options[select.selectedIndex].text,
+          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
           degats: degats.value,
           niveau: parseInt(niveau.value) || 1
         });
@@ -531,16 +532,20 @@ async function createSortRow(type = 'majeur') {
         sorts.forEach(sort => {
             const option = document.createElement('option');
             option.value = sort.id;
-            option.textContent = sort.nom || '';
+            // ✨ signale une attaque avec affinité magique ; le nom
+            // enregistré reste celui de la référence (dataset.nom).
+            option.dataset.nom = sort.nom || '';
+            option.textContent = sort.affinite_magique ? `✨ ${sort.nom}` : (sort.nom || '');
             option.dataset.degats = sort.degats || '';
             option.dataset.niveau = sort.niveau || '';
             selectSort.appendChild(option);
         });
 
-        // Champs pour les dégâts et le niveau
+        // Champs pour les dégâts et le niveau. Les dégâts sont pré-remplis
+        // par la référence (sorts.json) puis restent modifiables.
         const degatsInput = document.createElement('input');
         degatsInput.type = 'text';
-        degatsInput.readOnly = true;
+        degatsInput.placeholder = 'ex. 1d6+2';
         
         const niveauInput = document.createElement('input');
         niveauInput.type = 'number';

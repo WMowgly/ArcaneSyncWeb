@@ -96,6 +96,7 @@ try {
   fs.writeFileSync(mapsFile, contenuAvant, 'utf8');
   delete require.cache[require.resolve('../map')];
   mapStore = require('../map');
+  mapStore.activerBrouillard(true); // désactivé dans l'appli, toujours testé
   assert(mapStore.deleteMap(temoin.map.id).success,
     'Après rechargement, les écritures doivent redevenir possibles.');
 
@@ -132,7 +133,7 @@ try {
 
   // Les valeurs hors bornes sont ramenées dans le domaine autorisé.
   const bornes = mapStore.createMap({ nom: '__TEST_BORNES__', grid: { cols: 9999, rows: -3 } });
-  assert(bornes.map.grid.cols <= 80 && bornes.map.grid.rows >= 4, 'Bornes de grille non respectées.');
+  assert(bornes.map.grid.cols <= 160 && bornes.map.grid.rows >= 4, 'Bornes de grille non respectées.');
   mapStore.deleteMap(bornes.map.id);
 
   // ---------------------------------------------------------------------
@@ -240,7 +241,13 @@ try {
   assert(!mapStore.ajouterElements(mapId, 'pas un tableau').success,
     'Un lot mal formé doit être refusé.');
 
-  lot.elementIds.forEach(id => mapStore.supprimerElement(mapId, id));
+  // Retrait par lot (annulation Ctrl + Z d'une pose au pinceau) : une
+  // seule mutation, et les identifiants inconnus sont ignorés.
+  const retrait = mapStore.supprimerElements(mapId, [...lot.elementIds, 'elem_inexistant']);
+  assert(retrait.success && retrait.retires === 3, 'Le retrait par lot doit retirer les trois éléments.');
+  assert(Object.keys(mapStore.getMapById(mapId).elements).length === avantLot,
+    'Après retrait du lot, le décor doit revenir à son état précédent.');
+  assert(!mapStore.supprimerElements(mapId, []).success, 'Un retrait vide doit être refusé.');
 
   // ---------------------------------------------------------------------
   // V1.13.6 — Placement automatique sans coordonnées
@@ -355,6 +362,25 @@ try {
   assert(JSON.stringify(vueJoueurA.vision.visible) !== JSON.stringify(vueJoueurB.vision.visible),
     'Deux personnages ne doivent pas partager le même champ de vision.');
 
+  // Écran partagé : ce que voit le GROUPE (A et B), filtré comme un joueur.
+  const vueEcran = mapStore.getMapForViewer(mapId, { role: 'ecran', entities });
+  assert(vueEcran.role === 'ecran' && vueEcran.playerId === null && vueEcran.self === null,
+    "La projection écran n'appartient à aucun personnage.");
+  assert(vueEcran.tokens['player:char_test_a'] && vueEcran.tokens['player:char_test_b'],
+    "L'écran doit voir les deux personnages, de part et d'autre du mur.");
+  assert(vueEcran.tokens['mob:mob_test_1'], "L'écran doit voir la créature visible du groupe.");
+  assert(!vueEcran.tokens['mob:mob_test_2'], "Une créature cachée par le MJ ne doit pas apparaître à l'écran.");
+  assert(!vueEcran.elements[piege.elementId], "Un élément secret ne doit pas apparaître à l'écran.");
+  const visiblesEcran = new Set(vueEcran.vision.visible);
+  assert([...vueJoueurA.vision.visible, ...vueJoueurB.vision.visible].every(c => visiblesEcran.has(c)),
+    "La vision de l'écran doit couvrir celle de chaque personnage.");
+  const chargeEcran = JSON.stringify(vueEcran);
+  assert(!chargeEcran.includes(SECRET) && !chargeEcran.includes('gmNotes') && !chargeEcran.includes('blocksVision'),
+    "Aucune donnée réservée au MJ ne doit atteindre l'écran.");
+  assert(!Object.values(vueEcran.tokens).some(t => t.own), "Aucun jeton n'appartient à l'écran.");
+  assert(!mapStore.deplacerToken(mapId, 'player:char_test_a', 1, 1, { role: 'player', playerId: null }).success,
+    "L'écran (sans personnage) ne doit pouvoir déplacer aucun jeton.");
+
   // ---------------------------------------------------------------------
   // 7. Mémoire d'exploration
   // ---------------------------------------------------------------------
@@ -410,6 +436,7 @@ try {
 
   delete require.cache[require.resolve('../map')];
   const rechargee = require('../map');
+  rechargee.activerBrouillard(true); // désactivé dans l'appli, toujours testé
   assert(rechargee.getMapById(mapId), 'La carte doit survivre à un rechargement du module.');
   assert(rechargee.getMaps().some(m => m.id === mapId), 'La carte doit apparaître dans la bibliothèque.');
 
@@ -561,7 +588,8 @@ try {
   const mjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
   const joueurSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map_joueur.html'), 'utf8');
 
-  assert(mjSource.includes("data-tool=\"fog-reveal\""), 'Outil de révélation absent de l\'interface MJ.');
+  // Le brouillard est désactivé dans l'application : plus d'outil côté MJ.
+  assert(!mjSource.includes("data-tool=\"fog-reveal\""), 'Les outils de brouillard ne doivent plus être proposés.');
   assert(mjSource.includes('spawn-mob'), 'Ajout de créature absent de l\'interface MJ.');
   assert(mjSource.includes('gmNotes'), 'Champ de notes MJ absent de l\'inspecteur.');
   assert(!joueurSource.includes("role: 'mj'"), "L'interface joueur ne doit jamais demander la vue MJ.");
@@ -621,9 +649,9 @@ try {
 
   // La garde d'édition doit couvrir CE mode aussi, sinon le MJ modifierait
   // la carte en croyant regarder celle d'un joueur.
-  const garde = carteMj.indexOf('function refuserSiApercu()');
+  const garde = carteMj.indexOf('function refuserSiLectureSeule()');
   assert(garde !== -1, 'Garde de lecture seule introuvable.');
-  assert(carteMj.slice(garde, garde + 700).includes('if (vueJoueur)'),
+  assert(carteMj.slice(garde, garde + 700).includes('if (!vueJoueur) return false;'),
     'La garde d\'édition doit refuser aussi pendant la vue joueur.');
 
   // Et la projection MJ ne doit pas écraser ce que le MJ est venu observer.
@@ -646,6 +674,7 @@ try {
   // La suite principale a vidé son cache de module dans son `finally` :
   // on recharge, sur le bac à sable déjà en place.
   const mapStore = require('../map');
+  mapStore.activerBrouillard(true); // désactivé dans l'appli, toujours testé
 
   const carte = mapStore.createMap({
     nom: '__TEST_PORTE_JOUEUR__',

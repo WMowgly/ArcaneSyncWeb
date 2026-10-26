@@ -2,10 +2,64 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/> 
   <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Largeur adaptée : trois colonnes de champs restent lisibles. */
+    body > .section { max-width: min(1200px, 100%); }
+    .section .section { max-width: none; }
+    .notes-textarea {
+      width: 100%; min-height: 120px; resize: vertical; box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; padding: 8px 10px;
+      border: 2px solid #8b5e3c; border-radius: 6px; background: #fffef8;
+    }
+    @media (max-width: 760px) {
+      .section .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .section .grid { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    /* Lecture seule : valeurs de référence (nom, maximums...), affichées
+       sans cadre de saisie. Modifiable : champ clair au cadre plein. */
+    .section input[readonly] {
+      background: transparent;
+      border: 2px dashed #c9b28c;
+      box-shadow: none;
+      color: #5c3b21;
+      cursor: default;
+    }
+    .section input:not([readonly]):not([type="checkbox"]) {
+      background: #fffef8;
+      border-color: #8b5e3c;
+    }
+    .section input:not([readonly]):not([type="checkbox"]):focus {
+      outline: 2px solid #d4af37;
+    }
+    .legende-champs { margin: 22px 0 0; font-size: 13px; color: #6b5135; text-align: right; }
+    .legende-champs span { padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
+    .legende-modifiable { border: 2px solid #8b5e3c; background: #fffef8; }
+    .legende-lecture { border: 2px dashed #c9b28c; }
+    .field label small { font-weight: normal; font-size: 12px; opacity: .8; }
+
+    .player-stats-section { margin-top: 24px; }
+    .player-stats-section h3 { margin: 0 0 10px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat-chip {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 6px 10px; border: 2px dashed #c9b28c; border-radius: 6px;
+    }
+    .stat-chip span { font-size: 14px; }
+    .stat-chip strong { font-size: 18px; }
+    @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
 </head>
 <body>
 
@@ -27,6 +81,10 @@
 
   <div class="section">
     <h2>Interface de Jeu</h2>
+    <p class="legende-champs">
+      <span class="legende-modifiable">Modifiable</span>
+      <span class="legende-lecture">Lecture seule</span>
+    </p>
     <div class="grid">
       <div class="field"><label>Nom</label><input id="player_name" type="text" readonly></div>
       <div class="field"><label>Classe</label><input id="player_class" type="text" readonly></div>
@@ -56,7 +114,7 @@
       </div>
 
       <div class="field">
-        <label>Vie</label>
+        <label>Vie <small>actuelle / max</small></label>
         <div class="dual-input">
           <input type="number" id="player_hp_current" min="0" placeholder="Min">
           <span class="divider-span">/</span>
@@ -65,7 +123,7 @@
       </div>
 
       <div class="field">
-        <label>Mana</label>
+        <label>Mana <small>actuel / max</small></label>
         <div class="dual-input">
           <input type="number" id="player_mana_current" min="0" placeholder="Min">
           <span class="divider-span">/</span>
@@ -74,7 +132,7 @@
       </div>
 
       <div class="field">
-        <label>Durabilité</label>
+        <label>Durabilité <small>actuelle / max</small></label>
         <div class="dual-input">
           <input type="number" id="player_dura_current" min="0" placeholder="0">
           <span class="divider-span">/</span>
@@ -89,7 +147,7 @@
       </div>
 
       <div class="field">
-        <label>Valeur de Protection</label>
+        <label>Protection <small>actuelle / max</small></label>
         <div class="dual-input">
           <input type="number" id="player_protection_current" min="0" placeholder="0">
           <span class="divider-span">/</span>
@@ -109,9 +167,12 @@
       </div>
 
     </div><!-- fin du grid -->
-    <div class="player-status-section">
-      <h3>Statuts</h3>
-      <div id="player-statuses"><span>Aucun statut actif.</span></div>
+    <!-- Caractéristiques de référence du personnage (lecture seule). Les
+         statuts (poison, agonie...) restent gérés par le MJ, sans affichage
+         côté joueur. -->
+    <div class="player-stats-section">
+      <h3>Statistiques</h3>
+      <div id="player-stats" class="stats-grid"></div>
     </div>
 
     <section class="section notes-panel" id="personal-notes-panel">
@@ -121,16 +182,6 @@
       <div class="notes-actions">
         <button id="personal-notes-save" class="game-button" type="button">Sauvegarder mes notes</button>
         <span id="personal-notes-status"></span>
-      </div>
-    </section>
-
-    <section class="section notes-panel" id="private-messages-panel">
-      <h2>🔒 Messages privés avec le MJ</h2>
-      <div id="private-messages-thread" class="notes-thread"><p>Chargement...</p></div>
-      <textarea id="private-message-input" class="notes-textarea" placeholder="Écrire un message privé au MJ..."></textarea>
-      <div class="notes-actions">
-        <button id="private-message-send" class="game-button" type="button">Envoyer au MJ</button>
-        <span id="private-message-status"></span>
       </div>
     </section>
 
@@ -167,16 +218,16 @@
       catch { return value || ''; }
     }
 
-    function renderPrivateMessages(messages) {
-      const container=document.getElementById('private-messages-thread');
-      if(!messages.length){ container.innerHTML='<p>Aucun message privé avec le MJ.</p>'; return; }
-      container.innerHTML=messages.map(message=>`
-        <div class="note-message note-message-${message.author==='mj'?'mj':'player'}">
-          <div class="note-message-meta"><strong>${message.author==='mj'?'MJ':'Moi'}</strong> — ${escapeNotesHtml(formatNotesDate(message.createdAt))}</div>
-          <div>${escapeNotesHtml(message.content).replace(/\n/g,'<br>')}</div>
-        </div>
-      `).join('');
-      container.scrollTop=container.scrollHeight;
+    const STATISTIQUES = [
+      ['force', 'Force'], ['dexterite', 'Dextérité'], ['magie', 'Magie'],
+      ['constitution', 'Constitution'], ['charisme', 'Charisme'],
+      ['perception', 'Perception'], ['chance', 'Chance'], ['intelligence', 'Intelligence']
+    ];
+
+    function renderStats(stats) {
+      document.getElementById('player-stats').innerHTML = STATISTIQUES
+        .map(([cle, libelle]) => `<div class="stat-chip"><span>${libelle}</span><strong>${escapeNotesHtml(stats?.[cle] ?? 0)}</strong></div>`)
+        .join('');
     }
 
     function renderPublicNotes(notes) {
@@ -218,35 +269,6 @@
       }
     }
 
-    async function loadPrivateMessages() {
-      const playerId=params.get('PlayerId');
-      if(!playerId)return;
-      const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/private-messages?role=player&playerId=${encodeURIComponent(playerId)}`);
-      const x=await r.json();
-      if(!r.ok)throw new Error(x.message||'Impossible de charger les messages privés.');
-      renderPrivateMessages(x.messages||[]);
-    }
-
-    async function sendPrivateMessage() {
-      const playerId=params.get('PlayerId');
-      const input=document.getElementById('private-message-input');
-      const status=document.getElementById('private-message-status');
-      const content=input.value.trim();
-      if(!content){status.textContent='Le message est vide.';status.style.color='#a52a2a';return;}
-      try{
-        const r=await fetch(`/api/session/player/${encodeURIComponent(playerId)}/private-messages`,{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({role:'player',playerId,content})
-        });
-        const x=await r.json();
-        if(!r.ok)throw new Error(x.message||'Impossible d’envoyer le message.');
-        input.value='';
-        renderPrivateMessages(x.messages||[]);
-        status.textContent='Message envoyé au MJ.';
-        status.style.color='#2e7d32';
-      }catch(e){status.textContent=e.message;status.style.color='#a52a2a';}
-    }
-
     async function loadPublicNotes() {
       const r=await fetch('/api/session/public-notes');
       const x=await r.json();
@@ -276,11 +298,9 @@
       await refreshSessionFromServer();
 
       document.getElementById('personal-notes-save')?.addEventListener('click', savePersonalNotes);
-      document.getElementById('private-message-send')?.addEventListener('click', sendPrivateMessage);
 
       try {
         await loadPersonalNotes();
-        await loadPrivateMessages();
         await loadPublicNotes();
       } catch(error) {
         console.error('Erreur chargement des notes:', error);
@@ -313,7 +333,6 @@
 
         try {
           await loadPersonalNotes();
-          await loadPrivateMessages();
           await loadPublicNotes();
         } catch (error) {
           console.error('Erreur lors de la resynchronisation des données complémentaires:', error);
@@ -339,12 +358,6 @@
       socket.on('personalNotesUpdated', async (event) => {
         if(event?.playerId===params.get('PlayerId')) {
           try { await loadPersonalNotes(); } catch(e) { console.error(e); }
-        }
-      });
-
-      socket.on('privateMessagesUpdated', async (event) => {
-        if(event?.playerId===params.get('PlayerId')) {
-          try { await loadPrivateMessages(); } catch(e) { console.error(e); }
         }
       });
 
@@ -439,18 +452,22 @@
 
       document.getElementById('player_vie_bonus').value = joueur.bonus_vie ?? 0;
       document.getElementById('player_intox').value = joueur.intox ?? 0;
-      const statusesContainer=document.getElementById('player-statuses');
-      if(statusesContainer){
-        const statuts=Array.isArray(joueur.statuts)?joueur.statuts:[];
-        statusesContainer.innerHTML=statuts.length
-          ? statuts.map(statut=>`<span class="player-status-badge ${statut.id==='agonie'?'agony':''}">${statut.nom}</span>`).join('')
-          : '<span>Aucun statut actif.</span>';
-      }
+      if (joueur.stats) renderStats(joueur.stats);
 
-      // Garder l'URL cohérente avec l'état officiel.
+      // Garder l'URL cohérente avec l'état officiel. Le nom et l'armure y
+      // sont réécrits : la sauvegarde les relit dans l'URL, qui peut ne
+      // contenir que le PlayerId (lien de la barre de navigation).
       if (joueur.id) {
         params.set("PlayerId", joueur.id);
       }
+      if (joueur.nom) {
+        params.set("Nom", joueur.nom);
+        document.querySelector("h1").innerText = `Interface de Jeu – ${joueur.nom}`;
+      }
+      if (joueur.classe) params.set("Classe", joueur.classe);
+      if (joueur.race) params.set("Race", joueur.race);
+      params.set("Type d'armure", joueur.armure?.type || '');
+      params.set("Résistance", joueur.armure?.resistance || '');
       params.set("VieMax", String(joueur.hp?.max ?? 0));
       params.set("VieCurrent", String(joueur.hp?.current ?? 0));
       params.set("ManaMax", String(joueur.mana?.max ?? 0));
@@ -489,6 +506,12 @@
       document.getElementById('player_name').value = params.get("Nom") || '';
       document.getElementById('player_class').value = params.get("Classe") || '';
       document.getElementById('player_race').value = params.get("Race") || '';
+      renderStats({
+        force: params.get('Force'), dexterite: params.get('Dexterite'), magie: params.get('Magie'),
+        constitution: params.get('Constitution'), charisme: params.get('Charisme'),
+        perception: params.get('Perception'), chance: params.get('Chance'),
+        intelligence: params.get('Intelligence')
+      });
 
       // Initialiser les cases à cocher de survie
       for (let i = 1; i <= 3; i++) {

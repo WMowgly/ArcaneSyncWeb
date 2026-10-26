@@ -123,6 +123,31 @@ try {
 
   verifier(mob.templateDepuisMob(null) === null, 'Promouvoir un mob absent doit échouer.');
 
+  // ---------------------------------------------------------------------
+  // Duplication d'une INSTANCE de la partie : copie conforme, indépendante.
+  // ---------------------------------------------------------------------
+  const original = mob.normaliserMob({
+    nom: 'Gobelin #2', templateId: gobelin.id,
+    hp: { max: 12, current: 5 }, stats: { force: 9 },
+    armes: [{ nom: 'Gourdin' }], statuts: [{ id: 'poison', nom: 'Poison' }]
+  });
+  // enPartie contient déjà Gobelin, Gobelin #2 et Gobelin #3.
+  const double = mob.duplicateMob(original, enPartie);
+  verifier(double && double.id !== original.id && double.id.startsWith('mob_'),
+    'Le double doit avoir son propre identifiant d\'instance.');
+  verifier(double.nom === 'Gobelin #4', `Nom du double : ${double.nom}`);
+  verifier(double.templateId === gobelin.id, 'Le double doit garder la filiation du modèle.');
+  verifier(double.hp.current === 5 && double.stats.force === 9 && double.statuts.length === 1,
+    "Le double doit reprendre l'état courant de l'original.");
+  double.hp.current = 0;
+  double.stats.force = 1;
+  double.armes[0].nom = 'Épée';
+  double.statuts.length = 0;
+  verifier(original.hp.current === 5 && original.stats.force === 9
+    && original.armes[0].nom === 'Gourdin' && original.statuts.length === 1,
+    "Modifier le double ne doit JAMAIS toucher l'original.");
+  verifier(mob.duplicateMob(null) === null, 'Dupliquer un mob absent doit échouer.');
+
   mob.deleteMobTemplate(archer.id);
   mob.deleteMobTemplate(promu.id);
 

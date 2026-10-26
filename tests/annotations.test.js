@@ -23,6 +23,7 @@ function assert(condition, message) {
 try {
   delete require.cache[require.resolve('../map')];
   const mapStore = require('../map');
+  mapStore.activerBrouillard(true); // désactivé dans l'appli, toujours testé
 
   const JOUEUR = 'char_annot_a';
   const AUTRE = 'char_annot_b';
@@ -254,6 +255,7 @@ try {
 
   delete require.cache[require.resolve('../map')];
   const recharge = require('../map');
+  recharge.activerBrouillard(true); // désactivé dans l'appli, toujours testé
   const apresRechargement = recharge.getMapById(mapId);
   assert(apresRechargement.annotations[survivant.annotationId],
     'Une annotation doit survivre au rechargement du module (persistance).');

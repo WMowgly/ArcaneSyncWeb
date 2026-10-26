@@ -1,0 +1,1677 @@
+{
+  "source": "Sorts.txt",
+  "ecoles": [
+    {
+      "id": "commun",
+      "nom": "Sorts communs"
+    },
+    {
+      "id": "arcanique",
+      "nom": "Magie arcanique"
+    },
+    {
+      "id": "druidique",
+      "nom": "Magie druidique"
+    },
+    {
+      "id": "elementaire",
+      "nom": "Magie élémentaire"
+    },
+    {
+      "id": "lumiere",
+      "nom": "Magie de la lumière"
+    },
+    {
+      "id": "imposition",
+      "nom": "Imposition des mains : variations"
+    }
+  ],
+  "sorts": [
+    {
+      "id": "commun-alarme-magique",
+      "nom": "Alarme magique",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Un fil magique de 3m est créé. Si une entité le traverse, le lanceur est alerté. Une seule instance d'alarme magique est possible.",
+      "degats": null
+    },
+    {
+      "id": "commun-serrure-magique",
+      "nom": "Serrure magique",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Une porte sans serrure peut être verrouillée magiquement.",
+      "degats": null
+    },
+    {
+      "id": "commun-telepathie",
+      "nom": "Télépathie",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le personnage est doué de télépathie, et peut l’utiliser à sa guise à destination de 4 personnes en simultanée. Le maintien du sort est gratuit et la concentration est aisée.",
+      "degats": null
+    },
+    {
+      "id": "commun-vision-distante",
+      "nom": "Vision distante",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur peut voir à travers la vision d’une entité voulue.",
+      "degats": null
+    },
+    {
+      "id": "commun-aide-sociale",
+      "nom": "Aide sociale",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Permet au joueur de cibler une entité, qui verra le résultat de son prochain jet de charisme amélioré de +10.",
+      "degats": null
+    },
+    {
+      "id": "commun-lance-transpercante",
+      "nom": "Lance transperçante",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Invoque une lance magique pouvant être lancée. Quand celle-ci touche une entité, elle se désintègre, infligeant 1d8 +2 DGT, et apportant un avantage lors du prochain coup infligés.",
+      "degats": "1d8+2 ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "commun-illusion-imparfaite",
+      "nom": "Illusion imparfaite",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Invoque une illusion imparfaite d’une entité, d’un objet ou d’un personnage.",
+      "degats": null
+    },
+    {
+      "id": "commun-force-spectrale",
+      "nom": "Force spectrale",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur dispose d’une force invisible, telle une main invisible, permettant de manipuler de petits objets, ouvrir et fermer des portes, etc..",
+      "degats": null
+    },
+    {
+      "id": "commun-brouillage-arcanique",
+      "nom": "Brouillage arcanique",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Rend le lanceur indétectable magiquement : il subit néanmoins 1d8 + 2 dégâts magiques.",
+      "degats": "1d8+2"
+    },
+    {
+      "id": "commun-traque-furtive",
+      "nom": "Traque furtive",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur prend en chasse une cible. Celle-ci laissera une trace magique durant 8h, permettant de la suivre.",
+      "degats": null
+    },
+    {
+      "id": "commun-petite-boule-de-magma",
+      "nom": "Petite boule de magma",
+      "ecole": "commun",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur invoque une petite boule de magma jetable, explosant à l'impact, et brûlant toutes les surfaces. Son avancée lente la rend facilement esquivable.\nInflige 1d6+2 DGT.",
+      "degats": "1d6+2 ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "commun-manipulation-de-jelra",
+      "nom": "Manipulation de Jelra",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur influence la psychée d’une entité intelligente en la touchant, la forçant à réaliser une action simple.Plus l’action demandée est dangereuse, plus la résistance sera importante.",
+      "degats": null
+    },
+    {
+      "id": "commun-illusion-effacante",
+      "nom": "Illusion effaçante",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur crée une illusion, s'effaçant lui et toute autre entité dans l’environnement proche de la cible.",
+      "degats": null
+    },
+    {
+      "id": "commun-souvenirs-perdu",
+      "nom": "Souvenirs perdu",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur touche la tête d’une cible, permettant d’accéder à un souvenir précis de celle-ci.",
+      "degats": null
+    },
+    {
+      "id": "commun-volonte-de-malakrone",
+      "nom": "Volonté de Malakrone",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur cible une entité, et un objet, ou autre entité très proche – d’un mètre). Celle-ci se retrouve collé magiquement avec la surface cible.",
+      "degats": null
+    },
+    {
+      "id": "commun-message-de-jyand",
+      "nom": "Message de Jyand",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur écrit un message sur un support quelconque, puis le rend invisible sauf pour les destinataires.",
+      "degats": null
+    },
+    {
+      "id": "commun-charme-profond",
+      "nom": "Charme profond",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Permet au lanceur de charmer une cible ayant maximum la moitié de ses pv + 12. La cible peut résister au charme selon ses compétences magiques et sa résistance psychique.",
+      "degats": null
+    },
+    {
+      "id": "commun-rayon-de-saut",
+      "nom": "Rayon de saut",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur définit une zone de 3m de rayon sur une surface. Les entitées sautant depuis cette zone peuvent atteindre 4x leurs hauteur de saut initiale.",
+      "degats": null
+    },
+    {
+      "id": "commun-emprunt-physique",
+      "nom": "Emprunt physique",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Pendant les deux prochains tours, le lanceur copie les statistiques d’une cible non hostile. Il garde néanmoins ses malus.",
+      "degats": null
+    },
+    {
+      "id": "commun-imitation-vocale",
+      "nom": "Imitation vocale",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur peut imiter la voix d’une entité déjà entendue.",
+      "degats": null
+    },
+    {
+      "id": "commun-graisse-collante",
+      "nom": "Graisse collante",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur lance un sort rendant une surface de 3m de rayon extrêmement gluante, rendant toute esquive ou déplacement complexe.",
+      "degats": null
+    },
+    {
+      "id": "commun-fragment-de-souvenir",
+      "nom": "Fragment de souvenir",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur obtient la capacité de voir sous forme d’ombre mouvante, les événements importants d’un lieu, en lien avec ce qu’il recherche.",
+      "degats": null
+    },
+    {
+      "id": "commun-oeil-de-brise-lune",
+      "nom": "Oeil de Brise-Lune",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Invoque un œil spectral au-dessus du lanceur. Celui-ci révèle tout objet ou entité invisible durant ce tour.",
+      "degats": null
+    },
+    {
+      "id": "commun-marque-brise-ombre",
+      "nom": "Marque Brise-Ombre",
+      "ecole": "commun",
+      "niveau": 1,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur inflige à distance une marque magique sur une cible, infligent 1d4+2, et marquant celle-ci, la révélant. Elle ne peut plus devenir invisible, ou se cacher pendant deux tours.",
+      "degats": "1d4+2"
+    },
+    {
+      "id": "commun-interrogatoire-de-viltrakje",
+      "nom": "Interrogatoire de Viltrakje",
+      "ecole": "commun",
+      "niveau": 2,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur peut interroger une cible mourante dans un plan de réalité alternatif. Si l’essence de l'âme a été capturée, le coût est gratuit et la durée illimité.",
+      "degats": null
+    },
+    {
+      "id": "commun-oubli-selectif",
+      "nom": "Oubli sélectif",
+      "ecole": "commun",
+      "niveau": 2,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur efface la mémoire immédiate d’une cible, la faisant oublier la dernière action réalisée et/ou subie.",
+      "degats": null
+    },
+    {
+      "id": "commun-aura-de-force",
+      "nom": "Aura de force",
+      "ecole": "commun",
+      "niveau": 2,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur sélectionne une cible, volant ses caractéristiques de forces, et la donnant à tous les alliés dans un rayon de 5m",
+      "degats": null
+    },
+    {
+      "id": "commun-vision-de-brise-lune",
+      "nom": "Vision de Brise-Lune",
+      "ecole": "commun",
+      "niveau": 2,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Les yeux du lanceur s'imprègnent d’une importante magie : celui-ci perçoit tout élément ou cible invisible.",
+      "degats": null
+    },
+    {
+      "id": "commun-essence-de-viltrakje",
+      "nom": "Essence de Viltrakje",
+      "ecole": "commun",
+      "niveau": 3,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur extrait l'âme d’une cible mourante, et la conserve dans un réceptacle adapté.\nSi la concentration est rompue durant l’extraction.",
+      "degats": null
+    },
+    {
+      "id": "commun-invocation-de-projectile",
+      "nom": "Invocation de projectile",
+      "ecole": "commun",
+      "niveau": 3,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur choisis un projectile ou une arme qu’il lance vers un point atteignable. Une nuée de 20 copies de ce projectiles s'abattront grossièrement dans la zone d’impact.",
+      "degats": null
+    },
+    {
+      "id": "commun-silence-du-sourd",
+      "nom": "Silence du sourd",
+      "ecole": "commun",
+      "niveau": 3,
+      "duree": "2 tours",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur réalise un long sifflement. Rend sourd et muet toutes entités dans un large rayon pendant, excepté le lanceur.",
+      "degats": null
+    },
+    {
+      "id": "commun-copie-de-caracteristique",
+      "nom": "Copie de caractéristique",
+      "ecole": "commun",
+      "niveau": 3,
+      "duree": "Concentration",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur copie les statistiques d’une cible non hostile.",
+      "degats": null
+    },
+    {
+      "id": "commun-bannissement",
+      "nom": "Bannissement",
+      "ecole": "commun",
+      "niveau": 3,
+      "duree": "Concentration",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur bannit une cible dans un plan de réalité alternatif.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-trait-d-arcane",
+      "nom": "Trait d’arcane",
+      "ecole": "arcanique",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur tire un trait arcanique de sa main ou son baton. Inflige 1d6+2. Gagne 1d6 tous les 5 niveaux du joueur.",
+      "degats": "1d6+2 ; 1d6"
+    },
+    {
+      "id": "arcanique-impulsion-rapide",
+      "nom": "Impulsion rapide",
+      "ecole": "arcanique",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur tend la paume de sa main, simbibant de magie, et la tend vers sa cible. Celle-ci est propulsé en arrière surn une courte distance. Ce sort réussit toujours. Inflige 1d4+2 dgt.e.Gagne 1d4 tous les 5 niveaux.",
+      "degats": "1d4+2 ; 1d4 ; +2dgt ; 2dgt"
+    },
+    {
+      "id": "arcanique-runes-mineure-d-emprisonnement",
+      "nom": "Runes mineure d’emprisonnement",
+      "ecole": "arcanique",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Principale",
+      "element": null,
+      "description": "Le lanceur invoque une rune arcanique invisible à l’oeil nu, emprisonnant la cible marchant dessus pendant deux tours. Utilisable seulement hors combat",
+      "degats": null
+    },
+    {
+      "id": "arcanique-lame-impregne-des-arcanes-mineures",
+      "nom": "Lame imprégné des arcanes mineures",
+      "ecole": "arcanique",
+      "niveau": 0,
+      "duree": "Instantanée",
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Le lanceur embrase magiquement l’arme d’un allié. Celle-ci repousse sa prochaine cible lors de l’impact, infligeant des dégâts réduits de moitié.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-rayon-arcanique",
+      "nom": "Rayon arcanique",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Rayon arcanique lancé sur une cible, infligeant 1d12 + 8 dégâts magiques. Repousse de 6m la cible.",
+      "degats": "1d12+8"
+    },
+    {
+      "id": "arcanique-rebond-arcanique",
+      "nom": "Rebond arcanique",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Lance une impulsion arcanique infligeant 1d6 +4 dégâts à une cible, rebondissant sur toutes les cibles proches et renforçant les dégâts de + 2DGT à chaque fois. 6 cibles au maximum.",
+      "degats": "1d6+4 ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "arcanique-projectiles-arcaniques",
+      "nom": "Projectiles arcaniques",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Lance 4 projectiles arcaniques d’affilés, infligeant chacun 1d8 + 2 dégâts. Peut se déplacer pendant le lancement des sorts,",
+      "degats": "1d8+2"
+    },
+    {
+      "id": "arcanique-teleportation-d-urgence",
+      "nom": "Téléportation d’urgence",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Prépare une téléportation pouvant être utilisée en réponse à une attaque durant un combat. Remplace l’esquive.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-expulsion-abrupte",
+      "nom": "Expulsion abrupte",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Repousse fortement toutes les entités dans une zone de 6 mètres autour de vous, les faisant tomber à terre.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-lame-spectrale",
+      "nom": "Lame spectrale",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Invoque une épée spectrale de 1d12 + 4 DGt, qui dure jusqu’au prochain repos ou révocation.\nPossède la capacité d’arme “Brûlure des arcanes”.",
+      "degats": "1d12+4 ; +4DGt ; 4DGt"
+    },
+    {
+      "id": "arcanique-attaque-guidee",
+      "nom": "Attaque guidée",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Permet de manipuler l’arme que porte un adversaire pour le faire attaquer dans son rayon d’action. Celui-ci perd son tour.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-ancrage",
+      "nom": "Ancrage",
+      "ecole": "arcanique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Place un ancrage magique proche. Tous les alliés proches lors de l’invocation du sort peuvent se téléporter sur l’ancre en tant qu’action secondaire, pour 10 mana.\nRend 5 mana au lanceur.\nDure 3 tours",
+      "degats": null
+    },
+    {
+      "id": "arcanique-rune-arcanique",
+      "nom": "Rune arcanique",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Deux runes sont placées sur une surface solide proche. Si celle-ci est déclenchée, inflige 1d12 +4 DGt et projette la cible.",
+      "degats": "1d12+4 ; +4DGt ; 4DGt"
+    },
+    {
+      "id": "arcanique-flux-arcaniques",
+      "nom": "Flux arcaniques",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Un flux de magie s’abat depuis vos mains sur une cible : inflige 2d20 DGT/TOUR. Impossible de vous attaquer de front. Le joueur ne peut se déplacer ou effectuer d’autres actions. Sort avec concentration.",
+      "degats": "2d20 ; 2d20DGT"
+    },
+    {
+      "id": "arcanique-poussiere-explosives",
+      "nom": "Poussière explosives",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Répand une poussière hautement explosive dans une zone fermée ou confinée, partiellement invisible.\nExplose au bout de deux tours, infligeant 2D20 DGt + 8 à toutes les entités présentes.",
+      "degats": "2D20 ; 2D20DGt"
+    },
+    {
+      "id": "arcanique-toucher-repulsif",
+      "nom": "Toucher répulsif",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Touche une cible. Celle-ci est infusée d’une puissante magie arcanique, et il est propulsé avec une extrême puissance dans la direction opposée au touché. Peut être déclenché après 5 tours.\nLa cible subit de lourds dégâts d’impact (2d10 + 6), et est généralement assommée.",
+      "degats": "2d10+6"
+    },
+    {
+      "id": "arcanique-source-arcanique",
+      "nom": "Source arcanique",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "SI quatres sorts arcaniques ont été lancés dans le même tour, vous pouvez invoquer une source arcanique. Celle-ci donne un bonus de dégats de 12DGT à tous les prochains sorts alliés durant les deux prochains tours.",
+      "degats": "12DGT"
+    },
+    {
+      "id": "arcanique-inversion-des-coups",
+      "nom": "Inversion des coups",
+      "ecole": "arcanique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": null,
+      "description": "Cible un personnage humanoïde. Les deux prochaines attaques qu’il réalisera n'inflige aucun dégâts, se faisant parrer par une épée magique. Ensuite, il subira 2d12 + 4 DGT.",
+      "degats": "2d12+4 ; +4DGT ; 4DGT"
+    },
+    {
+      "id": "arcanique-frappe-explosive-arcanique",
+      "nom": "Frappe explosive arcanique",
+      "ecole": "arcanique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Une frappe extrêmement puissante s'abat de vos mains, sous forme d’un intense rayon d’une courte durée, en plein sur votre adversaire. Inflige 2D20 + 10 et détruit l’armure.",
+      "degats": "2D20+10"
+    },
+    {
+      "id": "arcanique-teleportation-de-groupe",
+      "nom": "Téléportation de groupe",
+      "ecole": "arcanique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Après un tour d’incantation, téléporte le joueur et tous ses alliés dans un rayon de 5km autour du point de téléportation.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-singularite-arcanique",
+      "nom": "Singularité arcanique",
+      "ecole": "arcanique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Créer une singularité, attirant tout objet et personne en son centre dans un rayon de 16m. Les cibles subissent 2d12 + dégâts d’impacts.\nDure pendant trois tours.",
+      "degats": "2d12"
+    },
+    {
+      "id": "arcanique-frappe-de-destruction-arcanique",
+      "nom": "Frappe de destruction arcanique",
+      "ecole": "arcanique",
+      "niveau": 4,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Un rayon arcanique traversant toutes les cibles rencontrés, les brûlant et affligeant 2d20 + 12 dégâts.\nLes cibles restent en état de brûlure pendant 3 tours, subissant 8 DGT par tour.",
+      "degats": "2d20+12 ; 8DGT"
+    },
+    {
+      "id": "arcanique-zone-de-domination-arcanique",
+      "nom": "Zone de domination arcanique",
+      "ecole": "arcanique",
+      "niveau": 4,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Une zone visible de 10m de rayon apparaît, empêchant tout entité d’y entrer ou sortir. Les cibles ennemies au sein de la zone subissent x2 dégâts. La zone inflige 10 dégâts bruts par tour.",
+      "degats": null
+    },
+    {
+      "id": "arcanique-artillerie-arcanique",
+      "nom": "Artillerie arcanique",
+      "ecole": "arcanique",
+      "niveau": 4,
+      "duree": null,
+      "type_action": "Principale (secondaire lors de lancement)",
+      "element": null,
+      "description": "Génère trois missiles arcaniques, restant en suspension, et utilisable le tour suivant l’invocation.\nChaque missile inflige 1d20 + 10 dégâts, et ne nécessite qu’une action secondaire pour être lancé.",
+      "degats": "1d20+10"
+    },
+    {
+      "id": "druidique-attaque-vitale",
+      "nom": "Attaque vitale",
+      "ecole": "druidique",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Inflige 1d8dgt +1. Gagne 1d6 de dégâts tous les 5 niveaux.\nRend 1PV. Gagne +1PV au niveau 10.",
+      "degats": "1d8 ; 1d6 ; 1d8dgt ; 1PV"
+    },
+    {
+      "id": "druidique-arme-de-bois",
+      "nom": "Arme de bois",
+      "ecole": "druidique",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Permet de toucher un arbre, arbuste ou autre, afin de lui faire créer une épée infligeant 1d10 +2. Casse rapidement.",
+      "degats": "1d10+2"
+    },
+    {
+      "id": "druidique-soins-de-la-nature",
+      "nom": "Soins de la nature",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Soigne de 1d8 + 2 une cible que vous pouvez toucher.\nLes PV max sont rendus si l’action secondaire est aussi utilisée.",
+      "degats": "1d8+2"
+    },
+    {
+      "id": "druidique-connexion-animale",
+      "nom": "Connexion animale",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Un animal visible devient votre allié et suit vos ordres tant que celui-ci ne subit pas de lourd dégâts l’obligeant à fuir.",
+      "degats": null
+    },
+    {
+      "id": "druidique-prison-de-ronce",
+      "nom": "Prison de ronce",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Sélectionne une cible. Celle-ci va être attaquée par de nombreuses ronces l’immobilisant, infligeant 1d8 +4 DGT par tour, tant que la cible n’aura pas réussi un jet de FOR.",
+      "degats": "1d8+4 ; +4DGT ; 4DGT"
+    },
+    {
+      "id": "druidique-duel-animal",
+      "nom": "Duel animal",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Vos attaques sur les animaux infligent maintenant 1d12 DGT supplémentaires jusqu’au prochain repos.",
+      "degats": "1d12 ; 1d12DGT"
+    },
+    {
+      "id": "druidique-baie-regeneratrice",
+      "nom": "Baie régénératrice",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Depuis la terre, vous utilisez les ressources de la nature voisine pour générer deux baies régénératrices, restaurant chacune 4PV et comblant un repas.\nNe peut être utilisé qu’une fois par repos.",
+      "degats": "4PV"
+    },
+    {
+      "id": "druidique-evolution-naturelle",
+      "nom": "Evolution naturelle",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Fais vieillir ou rajeunir très vite une plante, un arbre, ou tout élément de décors composé d’éléments naturels. Cela peut accélérer la propagation de murs de plantes, etc…",
+      "degats": null
+    },
+    {
+      "id": "druidique-solidification-naturelle",
+      "nom": "Solidification naturelle",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Permet de solidifier des plantes afin de les rendre extrêmement résistantes aux coups, brûlures, etc..",
+      "degats": null
+    },
+    {
+      "id": "druidique-communication-animale",
+      "nom": "Communication animale",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Vous utilisez un animal proche afin d’obtenir des informations, voyager, communiquer, et tout autres actions utilitaires. L’animal demandera généralement des choses en échange (nourritures, caresses, …)",
+      "degats": null
+    },
+    {
+      "id": "druidique-peau-d-epines",
+      "nom": "Peau d’épines",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Invoque une fine couche de sève, avec de nombreuses épines sur un joueur cible. Toutes les entités l’attaquant subiront 2d6+4 dgt de poison pendant deux tours.",
+      "degats": "2d6+4 ; +4dgt ; 4dgt"
+    },
+    {
+      "id": "druidique-offensive-epineuse",
+      "nom": "Offensive épineuse",
+      "ecole": "druidique",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Votre prochaine attaque physique inflige 1d10+2, qu’importe son type, tant qu’une arme ou un objet est utilisé pour frapper l’adversaire.",
+      "degats": "1d10+2"
+    },
+    {
+      "id": "druidique-surplus-de-vitalite",
+      "nom": "Surplus de vitalité",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Confère 10 points de vie temporaire à tous les alliés autours. Rend 1d6 +1 PV.",
+      "degats": "1d6+1 ; 1PV"
+    },
+    {
+      "id": "druidique-connexion-a-la-nature",
+      "nom": "Connexion à la nature",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Votre connexion à la nature vous permet de détecter, en milieu naturel, tous les déplacements, actions ou paroles, qui ont eu lieu, même à plusieurs jours d’intervalles.",
+      "degats": null
+    },
+    {
+      "id": "druidique-plante-veneneuse",
+      "nom": "Plante vénéneuse",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Génère une plante, dont peut être extraite un puissant venin. Selon la dose, peut tuer, ou faire tomber dans le coma une cible, en cas de contact avec le sang.",
+      "degats": null
+    },
+    {
+      "id": "druidique-cocon-de-ronce",
+      "nom": "Cocon de ronce",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Permet d’invoquer un cocon de ronce, protégeant la cible voulue jusqu'à 24 DGT. La cible ne peut néanmoins plus bouger.",
+      "degats": "24DGT"
+    },
+    {
+      "id": "druidique-lien-de-la-nature",
+      "nom": "Lien de la nature",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Un lien entre tous les joueurs est mis en place. Pendant les deux prochains tours, ceux-ci partagent la valeur d’armure la plus importante du groupe.",
+      "degats": null
+    },
+    {
+      "id": "druidique-clarte-naturelle",
+      "nom": "Clarté naturelle",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Dissipe tous les effets de manipulation mentale, d’illusion etc.. dans un rayon de 10m pour une durée de 5 tours.",
+      "degats": null
+    },
+    {
+      "id": "druidique-controle-animal",
+      "nom": "Contrôle animal",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Permet de réaliser un contrôle mental sur un animal visible : une action hostile mènera à la coupure du lien une fois celle-ci réalisée",
+      "degats": null
+    },
+    {
+      "id": "druidique-mur-de-ronce",
+      "nom": "Mur de ronce",
+      "ecole": "druidique",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Invoque un mur de ronce de 3m de long et de 0.5 mètre de large, infligeant 1d12 + 6 au toucher, et bloque le passage.",
+      "degats": "1d12+6"
+    },
+    {
+      "id": "druidique-zone-de-ronce",
+      "nom": "Zone de ronce",
+      "ecole": "druidique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Une large zone circulaire de 3x3m² apparaît, avec des ronces sortant du sol agrippant toutes cibles alentours.\nLes cibles sont immobilisées pendant deux tours, mais peuvent tenter d’attaquer. Elles subissent 2d10+2 dgt/tour.",
+      "degats": "2d10+2 ; +2dgt ; 2dgt"
+    },
+    {
+      "id": "druidique-volonte-de-la-nature",
+      "nom": "Volonté de la nature",
+      "ecole": "druidique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Une très large zone circulaire apparaît. Toutes entités alliées gagnent 12PV/TOUR. Dure 1 tour, et 3 si des éléments naturels sont autour.",
+      "degats": "12PV"
+    },
+    {
+      "id": "druidique-controle-animal-superieur",
+      "nom": "Contrôle animal supérieur",
+      "ecole": "druidique",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Permet de réaliser un contrôle mental sur un animal visible, pouvant attaquer les cibles données par le lanceur de sort.",
+      "degats": null
+    },
+    {
+      "id": "elementaire-trait-de-glace",
+      "nom": "Trait de glace",
+      "ecole": "elementaire",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Inflige 1d6+2 DGT à une cible. Gagne 1d6 DGT tous les 5 niveaux. Permet de rendre une zone glissante et gelée.",
+      "degats": "1d6+2 ; 1d6 ; 1d6DGT ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "elementaire-trait-de-feu",
+      "nom": "Trait de feu",
+      "ecole": "elementaire",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Inflige 1d6+2 DGT à une cible. Gagne 1d6 DGT tous les 5 niveaux. Enflamme les matériaux inflammables.",
+      "degats": "1d6+2 ; 1d6 ; 1d6DGT ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "elementaire-arc-electrique",
+      "nom": "Arc électrique",
+      "ecole": "elementaire",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Inflige 1d6+2 dgt à une cible. Si le sort est maintenu, inflige 1d10 + 2 le tour suivant. Gagne 1d6/1d10 tous les 5 niveaux.",
+      "degats": "1d6+2 ; 1d10+2 ; 1d6 ; 1d10 ; +2dgt ; 2dgt"
+    },
+    {
+      "id": "elementaire-missiles-de-glace",
+      "nom": "Missiles de glace",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "Ce sort ne peut pas rater, et touchera obligatoirement sa cible.\nInvoque deux missiles de glace, infligeant chacun 1d8 + 4.",
+      "degats": "1d8+4"
+    },
+    {
+      "id": "elementaire-souffle-de-glace",
+      "nom": "Souffle de glace",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "Inflige 1d12 + 8 à toutes les cibles dans un petit cône en face de vous.",
+      "degats": "1d12+8"
+    },
+    {
+      "id": "elementaire-poing-de-feu",
+      "nom": "Poing de feu",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "FEU",
+      "description": "Embrase votre poing, celui-ci infligeant désormais 1d12 + 2. Ce sort dure jusqu’au prochain repos ou après désactivation.",
+      "degats": "1d12+2"
+    },
+    {
+      "id": "elementaire-terre-brulees",
+      "nom": "Terre brûlées",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "FEU",
+      "description": "Embrase une zone de 6x6m au sol autour de vous. Vous êtes insensible aux dégâts de la zone.\nInflige 2d8 +2 DGT a chaque entité en son sein.",
+      "degats": "2d8+2 ; +2DGT ; 2DGT"
+    },
+    {
+      "id": "elementaire-toucher-glacial",
+      "nom": "Toucher glacial",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "La prochaine cible, ou objet que vous touchez gèle instantanément, l'immobilisant, tant qu’elle ne subit pas de dégâts.",
+      "degats": null
+    },
+    {
+      "id": "elementaire-magnetisation",
+      "nom": "Magnétisation",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "ELEC",
+      "description": "Vous ciblez deux objets ou surfaces métalliques proches, qui se magnétisent, et se rapprochent comme un aimant très puissant.",
+      "degats": null
+    },
+    {
+      "id": "elementaire-liquefaction",
+      "nom": "Liquéfaction",
+      "ecole": "elementaire",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": "EAU",
+      "description": "Transforme une surface solide en eau. Plus la surface est grande, plus le jet sera compliqué, mais plus l’eau généré sera importante. Le sort a une valeur de jet standard sur la taille d’une double porte ou moins.",
+      "degats": null
+    },
+    {
+      "id": "elementaire-mur-de-glace",
+      "nom": "Mur de glace",
+      "ecole": "elementaire",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "Invoque un mur de glace de 3 mètres de long, et 2 mètres de haut. Ce mur à 50PV, mais peut être désactivé à tout moment, invoquant 8 pics de glace infligeant 1d6DGT chacun.",
+      "degats": "1d6 ; 1d6DGT ; 50PV"
+    },
+    {
+      "id": "elementaire-bloc-de-glace",
+      "nom": "Bloc de glace",
+      "ecole": "elementaire",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "Vous invoquez un bloc de glace sur une cible, l'immobilisation totalement pendant un tour, le rendant invulnérable.\nSi la cible est vous, ou un allié, rend 12PV.",
+      "degats": "12PV"
+    },
+    {
+      "id": "elementaire-acier-brulant-armes",
+      "nom": "Acier brûlant : Armes",
+      "ecole": "elementaire",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": "FEU",
+      "description": "Choisis trois armes adverses avec des parties métalliques et les fais chauffer à des températures extrêmes, les désarmant et les brûlant de 2D6 DGT.",
+      "degats": "2D6 ; 2D6DGT"
+    },
+    {
+      "id": "elementaire-acier-brulant-armure",
+      "nom": "Acier brûlant : Armure",
+      "ecole": "elementaire",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Incantation : 1 tour",
+      "element": "FEU",
+      "description": "Choisis une armure adverse avec des parties métalliques et la fais chauffer à des températures extrêmes, le brûlant très fortement de 1D20 + 10 tant que le sort est maintenu.",
+      "degats": "1D20+10"
+    },
+    {
+      "id": "elementaire-boule-de-feu-superieure",
+      "nom": "Boule de feu supérieure",
+      "ecole": "elementaire",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": null,
+      "description": "Envoie une boule de feu de grande taille. Inflige 1d20 + 8",
+      "degats": "1d20+8"
+    },
+    {
+      "id": "elementaire-boule-de-feu-cosmique",
+      "nom": "Boule de feu cosmique",
+      "ecole": "elementaire",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "FEU",
+      "description": "Fais tomber une boule de feu causant d'importants dégâts aux structures. Inflige 2d20 + 8 DGT dans un diamètre de 12 mètres. Toutes les cibles mourant du sort sont carbonisées et aucun stuff n’est récupérable sur eux.",
+      "degats": "2d20+8 ; +8DGT ; 8DGT"
+    },
+    {
+      "id": "elementaire-tempete-de-glace",
+      "nom": "Tempête de glace",
+      "ecole": "elementaire",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": "GLACE",
+      "description": "Une tempête de glace, réduisant fortement la visibilité, apparaît. Celle-ci dure 3 tours, et ajoute 2d8 pour toutes attaques élémentaires de glace.",
+      "degats": "2d8"
+    },
+    {
+      "id": "lumiere-imposition-de-mana",
+      "nom": "Imposition de mana",
+      "ecole": "lumiere",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Transfère une partie voulue de votre mana à une cible.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-intention-divine",
+      "nom": "Intention divine",
+      "ecole": "lumiere",
+      "niveau": 0,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Dans une zone de 9m autour de vous, vous détectez les mauvaises intentions vous concernant.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-lumiere-du-sacre",
+      "nom": "Lumière du sacre",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Soignez une cible que vous pouvez toucher de 1d10 PV.\nRend 1d6 +1 si la cible est à distance.",
+      "degats": "1d10 ; 1d6+1"
+    },
+    {
+      "id": "lumiere-justice-du-sacre",
+      "nom": "Justice du sacré",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Augmente les dégâts d’une arme de 1d6 sur sa prochaine attaque réussie. Augmente de 1d6 tous les 5 niveaux.",
+      "degats": "1d6"
+    },
+    {
+      "id": "lumiere-purification",
+      "nom": "Purification",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Soigne tous les effets négatifs d’une cible que vous pouvez toucher.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-bouclier-de-lumiere",
+      "nom": "Bouclier de lumière",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "La prochaine attaque physique subie ne vous inflige AUCUN dégâts",
+      "degats": null
+    },
+    {
+      "id": "lumiere-sacrifice",
+      "nom": "Sacrifice",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Si un de vos alliés s'apprête à subir un coup fatal, vous pouvez voler l’initiative d’un allié, afin de prendre le coup à la place de celui-ci sans jet préalable.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-purification-de-masse",
+      "nom": "Purification de masse",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Purifie tous les effets négatifs des personnages autour du joueur, ainsi que lui-même.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-bouclier-de-foi",
+      "nom": "Bouclier de foi",
+      "ecole": "lumiere",
+      "niveau": 1,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Protégez vous ou un allié d’un unique coup. Le bouclier absorbe jusqu'à 18 dégâts.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-devotion",
+      "nom": "Dévotion",
+      "ecole": "lumiere",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Toutes les cibles dans un rayon de 8m vous prennent pour cible.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-armure-spirituelle",
+      "nom": "Armure spirituelle",
+      "ecole": "lumiere",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Tant que ce sort est maintenu, les dégâts que vous subissez sont réduits de moitié. Après activation, coût 5 mana / tour.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-consecration",
+      "nom": "Consécration",
+      "ecole": "lumiere",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Vous générez une vague de lumière puissante. Éclaire la zone touchée, faisant basculer les ennemis et leur infligeant 2d10 + 8 dégâts (x2 pour morts vivants et démons).",
+      "degats": "2d10+8"
+    },
+    {
+      "id": "lumiere-bouclier-divin",
+      "nom": "Bouclier divin",
+      "ecole": "lumiere",
+      "niveau": 2,
+      "duree": null,
+      "type_action": "Secondaire",
+      "element": null,
+      "description": "Protégez vous ou un allié d’un unique coup. Le bouclier absorbe TOUT les dégâts subis, qu’importe la nature de ceux-ci.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-enchantement",
+      "nom": "Enchantement",
+      "ecole": "lumiere",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Confère la possibilité d’enchanter des objets.",
+      "degats": null
+    },
+    {
+      "id": "lumiere-intervention-divine",
+      "nom": "Intervention divine",
+      "ecole": "lumiere",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Une entité divine vous assiste dans votre quête. Toute cible vous attaquant pendant cinq tour subis une attaque d’une entité divine imposante de 1d20 dégâts +4.",
+      "degats": "1d20"
+    },
+    {
+      "id": "lumiere-jugement-dernier",
+      "nom": "Jugement dernier",
+      "ecole": "lumiere",
+      "niveau": 3,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Un imposant trait de lumière est invoqué du ciel et descend sur terre, brûlant tout dans un rayon de 5m. Doit être incanté pendant un tour avant le lancement.\nInflige 20 + 2d20 tant que la cible est dans le rayon.\nDégâts x2 sur démons et morts vivants.\nDure 2 tours.",
+      "degats": "2d20"
+    },
+    {
+      "id": "imposition-imposition-des-mains-rapide",
+      "nom": "Imposition des mains rapide",
+      "ecole": "imposition",
+      "niveau": null,
+      "duree": null,
+      "type_action": "Principale",
+      "element": null,
+      "description": "Soigne la cible de 1d12 + 4.",
+      "degats": null,
+      "cout_charges": 1
+    },
+    {
+      "id": "imposition-imposition-des-mains-classique",
+      "nom": "Imposition des mains classique",
+      "ecole": "imposition",
+      "niveau": null,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": null,
+      "description": "Soigne la cible de 1D20 + 6",
+      "degats": null,
+      "cout_charges": 2
+    },
+    {
+      "id": "imposition-imposition-de-lumiere",
+      "nom": "Imposition de lumière",
+      "ecole": "imposition",
+      "niveau": null,
+      "duree": null,
+      "type_action": "Principale + Secondaire",
+      "element": null,
+      "description": "Soigne la cible de 1d12 +4. Lui rend 1d8+2 mana.",
+      "degats": null,
+      "cout_charges": 2
+    },
+    {
+      "id": "imposition-imposition-sacree",
+      "nom": "Imposition sacrée",
+      "ecole": "imposition",
+      "niveau": null,
+      "duree": null,
+      "type_action": "Incantation : deux tours",
+      "element": null,
+      "description": "Soigne tous les alliés dans une zone de 20m autour de 1d12 + 4  (un jet pour chaque cible.)",
+      "degats": null,
+      "cout_charges": 3
+    }
+  ],
+  "attaques_speciales": {
+    "regles": "Les attaques spéciales sont apprenables par les manieurs d’armes de CaC ou à distance, selon la spécialité du personnage et l’arme utilisée. Elles sont notamment beaucoup plus utilisées par les personnages n’ayant aucune aptitude magique. Elles sont à utilisation unique et se rechargent entre chaque repos. Elles utilisent des emplacements d’attaques spéciales. Aucun jet supplémentaire n’est demandé lors de l’activation.",
+    "liste": [
+      {
+        "id": "attaque-tourbillon",
+        "nom": "Tourbillon",
+        "armes": "EPÉE, HACHE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Le personnage tourne sur lui-même et inflige les dégâts de son arme a toutes les cibles autour de lui, dépendamment de la longueur de l’arme utilisée.",
+        "degats": null
+      },
+      {
+        "id": "attaque-frappe-tombante",
+        "nom": "Frappe tombante",
+        "armes": "EPÉE, HACHE",
+        "niveau": 2,
+        "affinite_magique": false,
+        "description": "Utilise tous les déplacements du joueur, ainsi que toute ses actions, pour réaliser une lourde attaque, de haut en bas, infligeant les dégâts max de l’arme x2.",
+        "degats": null
+      },
+      {
+        "id": "attaque-acharnement",
+        "nom": "Acharnement",
+        "armes": "EPÉE, HACHE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "L’utilisateur assène trois coups à une même cible, infligeant 2x moins de dégâts à chaque coup, mais endommageant fortement l’armure. Un jet de déga ou t unique.",
+        "degats": null
+      },
+      {
+        "id": "attaque-frappe-lourde",
+        "nom": "Frappe lourde",
+        "armes": "HACHE, MASSE, MARTEAU",
+        "niveau": 2,
+        "affinite_magique": false,
+        "description": "Une attaque très puissante permettant d’infliger +2D10 DGT a une cible et traversant l’armure.",
+        "degats": "2D10 ; 2D10DGT"
+      },
+      {
+        "id": "attaque-lancer-d-arme",
+        "nom": "Lancer d’arme",
+        "armes": "TOUT sauf armes à distance",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Une attaque à distance, permettant d’utiliser une arme à une main pour infliger de lourds dégâts. DGT de l’arme +1D12 DGT.",
+        "degats": "1D12 ; 1D12DGT"
+      },
+      {
+        "id": "attaque-double-frappe",
+        "nom": "Double frappe",
+        "armes": "EPÉE, HACHE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Attaque deux fois, avec des dégâts identiques, une cible unique.",
+        "degats": null
+      },
+      {
+        "id": "attaque-desengagement",
+        "nom": "Désengagement",
+        "armes": "DAGUE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Attaque une cible, avec un avantage sur le jet d’attaque, et recul de 4m en arrière sans utiliser de déplacement.",
+        "degats": null
+      },
+      {
+        "id": "attaque-assassinat",
+        "nom": "Assassinat",
+        "armes": "DAGUE,",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Si le joueur attaque de dos, inflige des dégâts x2. Si la cible a un niveau inférieur au joueur, inflige x3..",
+        "degats": null
+      },
+      {
+        "id": "attaque-frappe-percante",
+        "nom": "Frappe perçante",
+        "armes": "ARC, ARBALÈTE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Tire dans un axe. La flèche frappera tous les adversaires dans celui-ci jusqu'à s’écraser contre un élément de décors.",
+        "degats": null
+      },
+      {
+        "id": "attaque-fleche-courbee",
+        "nom": "Flèche courbée",
+        "armes": "ARC, ARBALÈTE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Tir une flèche en arc de cercle, permettant notamment d’atteindre des cibles tout en ne s’exposant pas.",
+        "degats": null
+      },
+      {
+        "id": "attaque-tir-multiple",
+        "nom": "Tir multiple",
+        "armes": "DIST.",
+        "niveau": 2,
+        "affinite_magique": false,
+        "description": "Réalise trois tirs avec une arme à distance dans le même tour, tout en se déplaçant.",
+        "degats": null
+      },
+      {
+        "id": "attaque-frappe-percante-a-distance",
+        "nom": "Frappe Perçante à distance",
+        "armes": "Arc, Arbalète",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Si l’ennemi est en position de désavantage (contre un allié par exemple), inflige + 10 DGT fixe.",
+        "degats": "+10DGT ; 10DGT"
+      },
+      {
+        "id": "attaque-frappe-percante-au-cac",
+        "nom": "Frappe Perçante au CaC",
+        "armes": "Dague",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Si l’ennemi est en position de désavantage (contre un allié par exemple), inflige + 10 DGT. fixe.",
+        "degats": "+10DGT ; 10DGT"
+      },
+      {
+        "id": "attaque-jeu-de-lame",
+        "nom": "Jeu de lame",
+        "armes": "Dague",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Permet d’obtenir +20DEX lors de l’attaque. Celle-ci inflige ses dégâts initiaux si l’adversaire en meurt. Sinon, en inflige seulement la moitié.",
+        "degats": null
+      },
+      {
+        "id": "attaque-abattre",
+        "nom": "Abattre",
+        "armes": "DAGUE, EPÉE LÉGÈRE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Si une cible à moins de 25% de ses PV, cette attaque permet de l’éliminer. Néanmoins, un malus de -20 est appliqué sur le jet si le lanceur est révélé. Si la cible à plus de 25% de ses PV, inflige des dégâts classiques.",
+        "degats": null
+      },
+      {
+        "id": "attaque-decoupe-de-groupe",
+        "nom": "Découpe de groupe",
+        "armes": "EPÉE, HACHE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Inflige des dégâts réduits de moitié, mais à 6 cibles différentes espacé. Les jets de dégâts sont à faire pour chaque cible touchée.",
+        "degats": null
+      },
+      {
+        "id": "attaque-tir-d-en-haut",
+        "nom": "Tir d’en haut",
+        "armes": "ARC, ARBALÈTE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Tir une flèche vers le ciel qui, avec une courbe précise, permet de toucher un adversaire derrière un obstacle, mur, ..",
+        "degats": null
+      },
+      {
+        "id": "attaque-coup-de-bouclier",
+        "nom": "Coup de bouclier",
+        "armes": "BOUCLIER",
+        "niveau": null,
+        "affinite_magique": false,
+        "description": "Attaque une cible unique avec un bouclier. Inflige 1d6 DGT, et le stun durant le prochain tour.",
+        "degats": "1d6 ; 1d6DGT"
+      },
+      {
+        "id": "attaque-choc-terrestre",
+        "nom": "Choc terrestre",
+        "armes": "ARMES CONTENDANTES",
+        "niveau": 2,
+        "affinite_magique": false,
+        "description": "Inflige un coup au sol, créant une fissure dans le sol faisant basculer toutes les cibles dans l’axe de l’attaque, sur 10m.\nInflige la moitié des dégâts de l’arme à toute cible touchée.",
+        "degats": null
+      },
+      {
+        "id": "attaque-lame-et-pommeau",
+        "nom": "Lame et pommeau",
+        "armes": "EPÉE, HACHE",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Inflige les dégâts classiques de l’arme, puis inflige un coup de pommeau, infligeant 1d6 + 2 DGT supplémentaire et assommant brièvement la cible, retardant son action à la fin du tour.",
+        "degats": "1d6+2 ; +2DGT ; 2DGT"
+      },
+      {
+        "id": "attaque-incapacite",
+        "nom": "Incapacité",
+        "armes": "TOUT",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Vise les jambes, permettant de réduire la valeur de DEX de la cible à 30 lors du prochain tour. La cible n'obtiendra pas d’initiative prochain tours. Inflige +1d4.",
+        "degats": "1d4"
+      },
+      {
+        "id": "attaque-frappe-provocante",
+        "nom": "Frappe provocante",
+        "armes": "TOUT",
+        "niveau": 1,
+        "affinite_magique": false,
+        "description": "Inflige les dégâts de l’arme à une cible. Si l’attaque réussit, provoque un jet de charisme permettant d’attirer le focus.",
+        "degats": null
+      },
+      {
+        "id": "attaque-invocation-de-fleches-desintegrante",
+        "nom": "Invocation de flèches désintégrante",
+        "armes": "ARC, ARBALÈTE",
+        "niveau": 1,
+        "affinite_magique": true,
+        "description": "Génère 6 projectiles compatibles avec l’arme utilisée. Ceux-ci, lorsqu’ils frappent leur cible, se désagrègent en une courte explosion, infligeant 3 DGT et projetant l’ennemi à terre.",
+        "degats": "3DGT"
+      },
+      {
+        "id": "attaque-frappe-lourde-magique",
+        "nom": "Frappe lourde magique",
+        "armes": "EPÉE, HACHE",
+        "niveau": 2,
+        "affinite_magique": true,
+        "description": "Une attaque très puissante permettant d’infliger +3D10 DGT a une cible et détruisant l’armure. L’attaque provoque une puissante onde de choc.",
+        "degats": "3D10 ; 3D10DGT"
+      },
+      {
+        "id": "attaque-affutage-magique",
+        "nom": "Affûtage magique",
+        "armes": "DAGUE",
+        "niveau": 1,
+        "affinite_magique": true,
+        "description": "Lacible ne peut esquiver l’attaque. L’attaque traversera aussi l’armure. Utilise une action secondaire.",
+        "degats": null
+      },
+      {
+        "id": "attaque-faire-face",
+        "nom": "Faire face",
+        "armes": "BOUCLIER",
+        "niveau": 2,
+        "affinite_magique": true,
+        "description": "Hors du tour du joueur (act. secondaire), protège un allié d’une attaque. L’attaque est annulée, et toutes les cibles autour (4m) sont projetées au sol.",
+        "degats": null
+      },
+      {
+        "id": "attaque-frappe-parfaite",
+        "nom": "Frappe parfaite",
+        "armes": "EPÉE, DAGUE",
+        "niveau": 2,
+        "affinite_magique": true,
+        "description": "Une attaque parfaitement menée, aidée par une forte impulsion magique. Permet de viser un membre précis d’une cible (bras, jambes) et de lui infliger +2D6 DGT tout en l’incapacitant.",
+        "degats": "2D6 ; 2D6DGT"
+      },
+      {
+        "id": "attaque-emprise-arcanique",
+        "nom": "Emprise arcanique",
+        "armes": "DAGUE, PROJECTILE",
+        "niveau": 1,
+        "affinite_magique": true,
+        "description": "L’arme utilisée va, lorsqu’elle va s'enfoncer dans le corps de la cible, invoquer une chaîne magique la liant au sol, et l'empêchant de bouger.",
+        "degats": null
+      }
+    ]
+  },
+  "metamorphoses": {
+    "regles": "Lors d’une métamorphose, le druide utilise la Force, la Dextérité et la Constitution de sa forme animale. Il conserve cependant toutes ses autres caractéristiques..\nLes PV de la forme viennent s’ajouter en tant que PV bonus. SI les PV bonus arrivent à 0, le joueur se transforme automatiquement en sa forme originale, et est immobilisé pendant un tour.",
+    "formes": [
+      {
+        "id": "forme-colibri",
+        "nom": "Colibri",
+        "description": "Petit oiseau volant librement dans les forêts luxuriantes du continent",
+        "niveau": 1,
+        "for": 10,
+        "dex": 80,
+        "const": 10,
+        "taille": "petit",
+        "pv": 10,
+        "attaque_base": "1d4 + 2",
+        "competence": {
+          "nom": "Oeil du colibri",
+          "effet": "Permet de relancer un jet de PER raté avec un malus de 30."
+        }
+      },
+      {
+        "id": "forme-ours-brun-des-forets",
+        "nom": "Ours brun des forêts",
+        "description": "Ours vivant dans les forêts profondes, souvent en groupe de plusieurs individus",
+        "niveau": 3,
+        "for": 80,
+        "dex": 45,
+        "const": 80,
+        "taille": "Moyen",
+        "pv": 30,
+        "attaque_base": "1d12 + 4 - évolutif",
+        "competence": {
+          "nom": "charge de l’ours",
+          "effet": "Charge dans un groupe d’adversaire, les faisant tomber et infligeant 1d12 + 8."
+        }
+      },
+      {
+        "id": "forme-chat-de-race-polivir",
+        "nom": "Chat de race Polivir",
+        "description": "Félin commun dans les forêts proches des habitations humaines. Souvent domestiqué et apprécié pour son pelage doux.",
+        "niveau": 1,
+        "for": 30,
+        "dex": 75,
+        "const": 30,
+        "taille": "Petit",
+        "pv": 18,
+        "attaque_base": "1d8 + 2",
+        "competence": {
+          "nom": "Un peu trop mignon",
+          "effet": "Procure un bonus de +10 de CHR à un allié si le chat interagit avec une cible à convaincre."
+        }
+      },
+      {
+        "id": "forme-loup-des-steppes",
+        "nom": "Loup des steppes",
+        "description": "Un loup des montagnes, connu pour son extrême dangerosité. Se camoufle facilement en environnement enneigé grace a son pelage blanc.",
+        "niveau": 5,
+        "for": 50,
+        "dex": 75,
+        "const": 30,
+        "taille": "Moyen",
+        "pv": 26,
+        "attaque_base": "1d12 + 8",
+        "competence": {
+          "nom": "Attaque surprise",
+          "effet": "Si le loup surprend son adversaire, ou initie le combat : celui-ci inflige automatiquement 24 dégâts fixe à sa cible. Ces dégâts passent à 32 en environnement enneigé."
+        }
+      },
+      {
+        "id": "forme-at-gouar",
+        "nom": "At’gouar",
+        "description": "Ressemblant à un aigle, cet animal est bien plus massif, atteignant souvent les 20 kilos, il se perche dans les plus grands arbres des forêts elfes et n’y bougent que rarement.",
+        "niveau": 5,
+        "for": 60,
+        "dex": 60,
+        "const": 40,
+        "taille": "Moyen",
+        "pv": 24,
+        "attaque_base": "1d12 + 8",
+        "competence": null
+      },
+      {
+        "id": "forme-chevre-marteau",
+        "nom": "Chèvre marteau",
+        "description": "Chèvre largement domestiqué par les nains, les chèvres marteau sont connus pour être très territoriale, utilisant leurs large crâne pour charger les envahisseurs peu précautionneux",
+        "niveau": 5,
+        "for": 65,
+        "dex": 45,
+        "const": 20,
+        "taille": "Moyen",
+        "pv": 20,
+        "attaque_base": "1d10 + 8",
+        "competence": {
+          "nom": "Charge belliqueuse",
+          "effet": "Charge sur une distance de 10 mètres, infligeant 1d8 + 6 dégâts à toutes cibles se trouvant sur le passage. Cette compétence permet aussi d’enfoncer portes, murs en bois, ou autre surface non renforcées."
+        }
+      }
+    ]
+  }
+}

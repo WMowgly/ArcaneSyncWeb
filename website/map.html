@@ -95,6 +95,10 @@
     button:disabled{opacity:.45;cursor:not-allowed}
     button.primary{background:#e9dcbc;font-weight:600}
     button.danger{background:#f7e2e2;border-color:var(--danger);color:#7a2222}
+    .nuancier{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0 2px}
+    .nuancier button{width:24px;height:24px;padding:0;border-radius:50%;
+      border:2px solid #fffdf6;box-shadow:0 0 0 1px var(--bord)}
+    .nuancier button.active{box-shadow:0 0 0 3px var(--encre)}
     input[type=color]{padding:2px;height:28px}
     input[type=range]{padding:0;height:22px}
     textarea{resize:vertical}
@@ -117,16 +121,9 @@
     .tools .tool-btn.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
     #tool-title{font-size:13px;margin:9px 0 0}
 
-    /* Palette de decors : galerie groupee par categorie, propre au biome. */
-    .kind-palette{display:block;max-height:290px;overflow-y:auto;padding-right:2px}
-    .palette-groupe+.palette-groupe{margin-top:7px}
-    .palette-titre{display:block;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
-      opacity:.55;margin-bottom:3px}
-    .palette-grille{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
-    .palette-grille button{
-      text-align:left;font-size:10.5px;padding:4px 5px;overflow:hidden;
-      text-overflow:ellipsis;white-space:nowrap;border-left-width:4px}
-    .palette-grille button.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
+    /* Pinceau de décor : 16 couleurs, sur deux rangées de 8. */
+    .nuancier.nuancier-decor{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+    .nuancier.nuancier-decor button{width:100%;height:auto;aspect-ratio:1}
 
     /* Modale de propriétés d'entité */
     .modal-fond{position:fixed;inset:0;background:rgba(30,24,14,.55);z-index:50;
@@ -181,6 +178,7 @@
     .entity-item strong{display:block;font-size:12px;margin-bottom:3px}
     .entity-item .row{margin-top:5px}
     .entity-item button{padding:3px 5px;font-size:10.5px}
+    .entity-groupe-titre{margin:4px 0 0;font-size:12px;display:flex;align-items:center;gap:6px}
     .badge{display:inline-block;padding:1px 6px;border-radius:8px;background:#efe4cd;font-size:10px;margin:0 3px 2px 0}
     .badge.hidden-badge{background:#f7e2e2;color:#7a2222}
     .empty,#inspector-empty{font-size:11.5px;opacity:.65;margin:0}
@@ -238,19 +236,34 @@
             <button class="tool-btn"        data-tool="mesure"     type="button" title="Mesurer une distance">📏</button>
             <button class="tool-btn"        data-tool="dessin"     type="button" title="Dessiner">✏️</button>
             <button class="tool-btn"        data-tool="texte"      type="button" title="Écrire un texte">📝</button>
-            <button class="tool-btn"        data-tool="fog-hide"   type="button" title="Masquer une zone">🌫️</button>
-            <button class="tool-btn"        data-tool="fog-reveal" type="button" title="Révéler une zone">💡</button>
           </div>
 
           <h3 id="tool-title">Sélection</h3>
           <p class="hint" id="tool-hint">Cliquez pour inspecter, glissez pour déplacer.</p>
 
           <!-- Options du décor -->
+          <!-- Pinceau de couleur : 16 teintes simples, une case = un aplat. -->
           <div data-panel="paint" hidden>
             <div class="sep"></div>
-            <div id="kind-palette" class="kind-palette"></div>
-            <label for="element-name">Nom (optionnel)</label>
-            <input id="element-name" class="full" placeholder="nom du type par défaut">
+            <label>Couleur</label>
+            <div class="nuancier nuancier-decor" id="decor-nuancier">
+              <button type="button" data-couleur="#f3ead2" title="Parchemin" style="background:#f3ead2" class="active"></button>
+              <button type="button" data-couleur="#d9c193" title="Sable" style="background:#d9c193"></button>
+              <button type="button" data-couleur="#b08948" title="Terre" style="background:#b08948"></button>
+              <button type="button" data-couleur="#7a5230" title="Bois" style="background:#7a5230"></button>
+              <button type="button" data-couleur="#4a3423" title="Bois sombre" style="background:#4a3423"></button>
+              <button type="button" data-couleur="#a6a29a" title="Pierre claire" style="background:#a6a29a"></button>
+              <button type="button" data-couleur="#6e6a63" title="Pierre" style="background:#6e6a63"></button>
+              <button type="button" data-couleur="#2b2722" title="Noir" style="background:#2b2722"></button>
+              <button type="button" data-couleur="#a9c46c" title="Herbe" style="background:#a9c46c"></button>
+              <button type="button" data-couleur="#5b8a4a" title="Forêt" style="background:#5b8a4a"></button>
+              <button type="button" data-couleur="#2f5133" title="Forêt dense" style="background:#2f5133"></button>
+              <button type="button" data-couleur="#8fc3e0" title="Eau claire" style="background:#8fc3e0"></button>
+              <button type="button" data-couleur="#3c6ea3" title="Eau profonde" style="background:#3c6ea3"></button>
+              <button type="button" data-couleur="#b8342a" title="Rouge" style="background:#b8342a"></button>
+              <button type="button" data-couleur="#e2ad2b" title="Or" style="background:#e2ad2b"></button>
+              <button type="button" data-couleur="#7c5a90" title="Violet" style="background:#7c5a90"></button>
+            </div>
           </div>
 
           <!-- Options des créatures -->
@@ -264,10 +277,24 @@
           <!-- Options des annotations -->
           <div data-panel="annot" hidden>
             <div class="sep"></div>
-            <div class="row">
-              <div><label for="annot-color">Couleur</label><input id="annot-color" class="full" type="color" value="#9b2c2c"></div>
-              <div><label for="annot-size">Épaisseur</label><input id="annot-size" class="full" type="number" min="1" max="20" value="3"></div>
+            <!-- Nuancier fixe : quelques couleurs lisibles sur le parchemin,
+                 plutôt qu'un sélecteur libre. -->
+            <label>Couleur</label>
+            <div class="nuancier" id="annot-nuancier">
+              <button type="button" data-couleur="#9b2c2c" class="active" title="Rouge" style="background:#9b2c2c"></button>
+              <button type="button" data-couleur="#2b4c7e" title="Bleu" style="background:#2b4c7e"></button>
+              <button type="button" data-couleur="#2f6b3a" title="Vert" style="background:#2f6b3a"></button>
+              <button type="button" data-couleur="#c08a1e" title="Or" style="background:#c08a1e"></button>
+              <button type="button" data-couleur="#1f1a14" title="Noir" style="background:#1f1a14"></button>
+              <button type="button" data-couleur="#ffffff" title="Blanc" style="background:#ffffff"></button>
             </div>
+            <input type="hidden" id="annot-color" value="#9b2c2c">
+            <label for="annot-size">Épaisseur</label>
+            <select id="annot-size" class="full">
+              <option value="2">Fin</option>
+              <option value="4" selected>Moyen</option>
+              <option value="8">Épais</option>
+            </select>
             <label for="annot-layer">Calque</label>
             <select id="annot-layer" class="full">
               <option value="shared">Partagé</option>
@@ -284,12 +311,6 @@
               <button id="btn-clear-annot" class="danger fixed" title="Effacer">🗑️</button>
             </div>
           </div>
-
-          <!-- Rappel brouillard -->
-          <div data-panel="fog" hidden>
-            <div class="sep"></div>
-            <p class="hint">Actif en mode « Zones peintes ». Réglable plus bas.</p>
-          </div>
         </div>
 
         <details class="box" open>
@@ -305,62 +326,7 @@
               <button id="btn-duplicate" title="Dupliquer">⧉</button>
               <button id="btn-delete" class="danger" title="Supprimer">🗑️</button>
             </div>
-            <div class="row" style="margin-top:5px">
-              <button id="btn-portes-fermer" title="Fermer toutes les portes de la carte active">🚪 Fermer</button>
-              <button id="btn-portes-ouvrir" title="Ouvrir toutes les portes de la carte active">🚪 Ouvrir</button>
-            </div>
-            <p class="hint">« Charger » rend la carte active pour toute la table.
-               Les portes bloquent passage ET ligne de vue une fois fermées.</p>
-          </div>
-        </details>
-
-        <details class="box">
-          <summary>Générer un lieu</summary>
-          <div class="body">
-            <select id="gen-type" class="full"></select>
-            <p class="hint" id="gen-desc"></p>
-            <div class="row">
-              <div><label for="gen-cols">Colonnes</label><input id="gen-cols" class="full" type="number" min="8" max="80"></div>
-              <div><label for="gen-rows">Lignes</label><input id="gen-rows" class="full" type="number" min="8" max="80"></div>
-            </div>
-            <label for="gen-density">Densité : <span id="gen-density-val">100</span> %</label>
-            <input id="gen-density" class="full" type="range" min="20" max="200" step="10" value="100">
-            <label for="gen-seed">Graine</label>
-            <div class="row tight">
-              <input id="gen-seed" class="grow" placeholder="aléatoire">
-              <button id="gen-dice" class="fixed" type="button" title="Nouvelle graine">🎲</button>
-            </div>
-            <button id="btn-generate" class="full primary" style="margin-top:7px">🌍 Générer un aperçu</button>
-
-            <!-- L'aperçu n'est pas enregistré : rien n'est écrit tant que
-                 le MJ n'a pas cliqué « Conserver ». -->
-            <div id="apercu-actions" hidden>
-              <div class="sep"></div>
-              <p class="hint" id="apercu-info" style="margin-top:0"></p>
-              <button id="btn-apercu-garder" class="full primary">💾 Conserver et charger</button>
-              <div class="row" style="margin-top:5px">
-                <button id="btn-apercu-relancer">🎲 Autre variante</button>
-                <button id="btn-apercu-abandonner">✖ Abandonner</button>
-              </div>
-            </div>
-
-            <button id="btn-regenerate" class="full" style="margin-top:5px">♻️ Régénérer le décor</button>
-            <p class="hint">Le décor généré reste modifiable élément par élément.</p>
-          </div>
-        </details>
-
-        <details class="box">
-          <summary>Brouillard de guerre</summary>
-          <div class="body">
-            <label class="check"><input type="checkbox" id="fog-enabled"> Activer</label>
-            <label for="fog-mode">Mode</label>
-            <select id="fog-mode" class="full">
-              <option value="none">Aucun</option>
-              <option value="vision">Vision des personnages</option>
-              <option value="manual">Zones peintes par le MJ</option>
-            </select>
-            <label class="check"><input type="checkbox" id="fog-autoreveal" checked> Mémoriser les zones explorées</label>
-            <button id="btn-fog-reset" class="full danger" style="margin-top:7px">↺ Tout re-masquer</button>
+            <p class="hint">« Charger » rend la carte active pour toute la table.</p>
           </div>
         </details>
 
@@ -369,11 +335,9 @@
           <div class="body">
             <label for="map-name">Nom de la carte</label>
             <input id="map-name" class="full">
-            <label for="map-type">Type de lieu (détermine la palette de décors)</label>
-            <select id="map-type" class="full"><option value="">— générique —</option></select>
             <div class="row">
-              <div><label for="grid-cols">Colonnes</label><input id="grid-cols" class="full" type="number" min="4" max="80"></div>
-              <div><label for="grid-rows">Lignes</label><input id="grid-rows" class="full" type="number" min="4" max="80"></div>
+              <div><label for="grid-cols">Colonnes</label><input id="grid-cols" class="full" type="number" min="4" max="160"></div>
+              <div><label for="grid-rows">Lignes</label><input id="grid-rows" class="full" type="number" min="4" max="160"></div>
             </div>
             <div class="row">
               <div><label for="grid-cell">Taille de case</label><input id="grid-cell" class="full" type="number" min="16" max="160"></div>
@@ -391,7 +355,15 @@
           <span style="flex:1"></span>
           <label title="Afficher la grille"><input type="checkbox" id="opt-grid" checked> Grille</label>
           <label title="Numéros de colonnes et de lignes"><input type="checkbox" id="opt-coords" checked> Repères</label>
-          <label title="Prévisualiser ce que voient les joueurs"><input type="checkbox" id="opt-vision"> Vue joueurs</label>
+          <!-- Résolution du quadrillage, comme celle d'une image : ×2 découpe
+               chaque case de base en 2×2. Le contenu reste en place. -->
+          <label title="Finesse du quadrillage : plus de cases, plus petites">Quadrillage
+            <select id="opt-resolution">
+              <option value="1">×1</option>
+              <option value="2">×2</option>
+              <option value="3">×3</option>
+              <option value="4">×4</option>
+            </select></label>
           <label title="Cercle de portée autour du jeton sélectionné"><input type="checkbox" id="opt-aura"> Aura de portée
             <input id="opt-aura-cases" type="number" min="1" max="60" value="1" title="Portée en cases" style="width:52px" disabled></label>
           <span id="opt-aura-etat" hidden style="color:#8b3e3c">sélectionnez un jeton</span>
@@ -404,7 +376,7 @@
         </div>
 
         <p class="hint" id="map-empty-hint" hidden>
-          Aucune carte active — créez ou générez une carte, puis cliquez « Charger ».
+          Aucune carte active — créez une carte, puis cliquez « Charger ».
         </p>
       </section>
 
@@ -501,9 +473,7 @@
     let bibliotheque = [];
     let activeMapId = null;
     let outil = 'select';
-    let brushCourant = 'murPierre';   // pinceau de décor courant
-    let paletteType = null;            // type de lieu de la palette chargée
-    let kinds = [];
+    let couleurDecor = '#f3ead2';     // couleur du pinceau de décor
     let templates = [];
     let selection = null;           // {type:'token'|'element', id}
     let drag = null;                // déplacement de token en cours
@@ -513,6 +483,14 @@
     // --- Réglages d'annotation -------------------------------------------
 
     function couleurAnnotation() { return document.getElementById('annot-color').value; }
+
+    document.querySelectorAll('#annot-nuancier button').forEach(bouton => {
+      bouton.addEventListener('click', () => {
+        document.getElementById('annot-color').value = bouton.dataset.couleur;
+        document.querySelectorAll('#annot-nuancier button')
+          .forEach(b => b.classList.toggle('active', b === bouton));
+      });
+    });
     function tailleAnnotation() { return Number(document.getElementById('annot-size').value) || 3; }
     function partageAnnotation() { return document.getElementById('annot-layer').value !== 'gm'; }
 
@@ -595,117 +573,14 @@
       }
     }
 
-    /**
-     * Palette de décors adaptée au TYPE de la carte active.
-     * Rechargée dès que le type change (génération, régénération, ou
-     * choix manuel du MJ dans « Grille et fond »).
-     */
-    async function chargerPalette(type) {
-      if (paletteType === type && kinds.length) return;
-      paletteType = type;
-
-      const palette = await (await fetch(`/api/map/palette?type=${encodeURIComponent(type || '')}`)).json();
-      kinds = palette.groupes.flatMap(groupe => groupe.elements);
-
-      document.getElementById('kind-palette').innerHTML = palette.groupes.map(groupe => `
-        <div class="palette-groupe">
-          <span class="palette-titre">${escapeHtml(groupe.nom)}</span>
-          <div class="palette-grille">
-            ${groupe.elements.map(element => `
-              <button type="button" data-brush="${escapeHtml(element.id)}"
-                      style="border-left-color:${escapeHtml(element.color)}"
-                      title="${escapeHtml(element.nom)}${element.blocksVision ? ' — bloque la vue' : ''}${element.blocksMovement ? ' — infranchissable' : ''}">
-                ${element.icone || '▪'} ${escapeHtml(element.nom)}
-              </button>`).join('')}
-          </div>
-        </div>`).join('');
-
-      // Conserver le pinceau si le nouveau biome le propose encore.
-      if (!kinds.some(element => element.id === brushCourant)) {
-        brushCourant = kinds[0]?.id || '';
-      }
-
-      document.querySelectorAll('#kind-palette button').forEach(bouton => {
-        bouton.classList.toggle('active', bouton.dataset.brush === brushCourant);
-        bouton.addEventListener('click', () => {
-          brushCourant = bouton.dataset.brush;
-          document.querySelectorAll('#kind-palette button')
-            .forEach(b => b.classList.toggle('active', b.dataset.brush === brushCourant));
-          setTool('paint');
-        });
+    // Pinceau de décor : une couleur unie parmi 16 (case « couleur »).
+    document.querySelectorAll('#decor-nuancier button').forEach(bouton => {
+      bouton.addEventListener('click', () => {
+        couleurDecor = bouton.dataset.couleur;
+        document.querySelectorAll('#decor-nuancier button')
+          .forEach(b => b.classList.toggle('active', b === bouton));
       });
-    }
-
-    // ---------------------------------------------------------------------
-    // Générateur de lieux
-    // ---------------------------------------------------------------------
-
-    let generateurs = [];
-
-    function generateurCourant() {
-      return generateurs.find(g => g.id === document.getElementById('gen-type').value);
-    }
-
-    function graineAleatoire() {
-      // Graine lisible et reproductible, saisissable à la main.
-      return Math.random().toString(36).slice(2, 8).toUpperCase();
-    }
-
-    function optionsGeneration() {
-      return {
-        type: document.getElementById('gen-type').value,
-        cols: Number(document.getElementById('gen-cols').value),
-        rows: Number(document.getElementById('gen-rows').value),
-        density: Number(document.getElementById('gen-density').value) / 100,
-        seed: document.getElementById('gen-seed').value.trim() || graineAleatoire()
-      };
-    }
-
-    async function chargerGenerateurs() {
-      generateurs = await (await fetch('/api/map/generators')).json();
-
-      const options = generateurs
-        .map(g => `<option value="${escapeHtml(g.id)}">${g.icone} ${escapeHtml(g.nom)}</option>`)
-        .join('');
-
-      document.getElementById('gen-type').innerHTML = options;
-
-      // Une carte dessinée à la main peut aussi déclarer son biome pour
-      // obtenir la bonne palette de décors.
-      document.getElementById('map-type').innerHTML =
-        '<option value="">— générique —</option>' + options;
-
-      appliquerDefautsGenerateur();
-      document.getElementById('gen-seed').value = graineAleatoire();
-    }
-
-    function appliquerDefautsGenerateur() {
-      const generateur = generateurCourant();
-      if (!generateur) return;
-      document.getElementById('gen-desc').textContent = generateur.description;
-      document.getElementById('gen-cols').value = generateur.defaut.cols;
-      document.getElementById('gen-rows').value = generateur.defaut.rows;
-    }
-
-    document.getElementById('gen-type').addEventListener('change', appliquerDefautsGenerateur);
-
-    document.getElementById('gen-density').addEventListener('input', event => {
-      document.getElementById('gen-density-val').textContent = event.target.value;
     });
-
-    document.getElementById('gen-dice').addEventListener('click', () => {
-      document.getElementById('gen-seed').value = graineAleatoire();
-    });
-
-    // ---------------------------------------------------------------------
-    // APERÇU DE GÉNÉRATION — rien n'est enregistré tant que le MJ n'a pas
-    // cliqué « Conserver ».
-    //
-    // Générer écrivait auparavant directement dans la bibliothèque : on
-    // s'y retrouvait avec des cartes jamais utilisées, et des doublons
-    // exacts nés de clics répétés. L'aperçu vit uniquement dans ce
-    // navigateur — ni maps.json, ni session, ni diffusion temps réel.
-    // ---------------------------------------------------------------------
 
     // ---------------------------------------------------------------------
     // V1.13.10 — L'œil du joueur
@@ -716,8 +591,7 @@
     // produit par le chemin habituel du joueur. Toute autre méthode ferait
     // diverger ce que le MJ croit montrer de ce que le joueur voit.
     //
-    // C'est un mode de LECTURE : l'édition est bloquée, exactement comme
-    // pendant un aperçu de génération.
+    // C'est un mode de LECTURE : l'édition est bloquée.
     // ---------------------------------------------------------------------
 
     let vueJoueur = null;   // { playerId, nom } ou null
@@ -769,156 +643,15 @@
       setStatus('Retour à la vue MJ.');
     }
 
-    let apercu = null;   // brouillon non enregistré, ou null
-
-    /**
-     * Un aperçu n'existe pas côté serveur : il n'a pas d'identifiant, et
-     * toute mutation viserait « /api/maps/null/... ». On bloque donc les
-     * outils d'édition tant qu'il n'est pas conservé.
-     */
-    function refuserSiApercu() {
-      // V1.13.10 : deux modes de LECTURE SEULE passent par ici — l’aperçu
-      // non enregistré, et l’œil du joueur. Les sept points d’édition
-      // appelaient déjà cette garde : les couvrir tous n’a rien coûté.
-      if (vueJoueur) {
-        setStatus(`Vous regardez la carte par les yeux de ${vueJoueur.nom} : revenez à la vue MJ pour modifier.`, true);
-        return true;
-      }
-      if (!apercu) return false;
-      setStatus('Cet aperçu n’est pas enregistré : conservez-le d’abord pour le modifier.', true);
+    /** L'œil du joueur est un mode de LECTURE : toute édition est refusée. */
+    function refuserSiLectureSeule() {
+      if (!vueJoueur) return false;
+      setStatus(`Vous regardez la carte par les yeux de ${vueJoueur.nom} : revenez à la vue MJ pour modifier.`, true);
       return true;
     }
 
-    function projectionApercu(genere) {
-      // Le moteur de rendu attend une projection MJ : on en fabrique une,
-      // sans tokens ni brouillard, pour afficher le brouillon tel quel.
-      const elements = {};
-      genere.elements.forEach((element, index) => {
-        elements[`apercu_${index}`] = { ...element, id: `apercu_${index}` };
-      });
-
-      return {
-        role: 'mj',
-        id: null,
-        nom: genere.nom,
-        type: genere.type,
-        grid: genere.grid,
-        background: genere.background,
-        tokens: {},
-        elements,
-        annotations: {},
-        drawing: { playersAllowed: false },
-        fog: { enabled: false, mode: 'none', autoReveal: true, revealed: [] },
-        playerVision: { visible: [], explored: [] }
-      };
-    }
-
-    function afficherApercu(genere) {
-      apercu = genere;
-      selectionner(null);
-      renderer.setMap(projectionApercu(genere));
-
-      document.getElementById('apercu-actions').hidden = false;
-      document.getElementById('apercu-info').textContent =
-        `${genere.elements.length} éléments · ${genere.grid.cols}×${genere.grid.rows} · `
-        + `${genere.praticables} cases praticables · graine ${genere.seed}`;
-      document.getElementById('active-map-name').textContent =
-        `APERÇU — ${genere.nom} (non enregistré)`;
-      document.getElementById('gen-seed').value = genere.seed;
-
-      setStatus('Aperçu non enregistré : conservez-le, ou tirez une autre variante.');
-    }
-
-    function quitterApercu() {
-      apercu = null;
-      document.getElementById('apercu-actions').hidden = true;
-      // On redemande l'état officiel : le brouillon disparaît sans laisser
-      // de trace, et la carte réellement active revient.
-      socket.emit('mapRequest');
-    }
-
-    async function genererApercu() {
-      const bouton = document.getElementById('btn-generate');
-      try {
-        bouton.disabled = true;
-        setStatus('Génération en cours…');
-        const genere = await api('POST', '/api/map/generate-preview', optionsGeneration());
-        afficherApercu(genere);
-      } catch (error) {
-        setStatus(error.message, true);
-      } finally {
-        bouton.disabled = false;
-      }
-    }
-
-    document.getElementById('btn-generate').addEventListener('click', genererApercu);
-
-    document.getElementById('btn-apercu-relancer').addEventListener('click', () => {
-      // Nouvelle graine : on explore les variantes sans rien accumuler.
-      document.getElementById('gen-seed').value = graineAleatoire();
-      genererApercu();
-    });
-
     document.getElementById('btn-quitter-vue-joueur')
       .addEventListener('click', quitterVueJoueur);
-
-    document.getElementById('btn-apercu-abandonner').addEventListener('click', () => {
-      quitterApercu();
-      setStatus('Aperçu abandonné. Rien n’a été enregistré.');
-    });
-
-    document.getElementById('btn-apercu-garder').addEventListener('click', async () => {
-      if (!apercu) return;
-      const bouton = document.getElementById('btn-apercu-garder');
-
-      try {
-        bouton.disabled = true;
-        setStatus('Enregistrement…');
-
-        const nom = prompt('Nom de la carte :', apercu.nom);
-        if (nom === null) { bouton.disabled = false; setStatus('Enregistrement annulé.'); return; }
-
-        const data = await api('POST', '/api/maps', {
-          nom: nom.trim() || apercu.nom,
-          type: apercu.type,
-          grid: apercu.grid,
-          background: apercu.background,
-          elements: apercu.elements
-        });
-
-        apercu = null;
-        document.getElementById('apercu-actions').hidden = true;
-
-        await api('POST', `/api/maps/${encodeURIComponent(data.map.id)}/activate`);
-        await chargerBibliotheque();
-        document.getElementById('map-select').value = data.map.id;
-        setStatus(`Carte « ${data.map.nom} » enregistrée et chargée pour la table.`);
-      } catch (error) {
-        setStatus(error.message, true);
-      } finally {
-        bouton.disabled = false;
-      }
-    });
-
-    document.getElementById('btn-regenerate').addEventListener('click', async () => {
-      if (!map()) { setStatus('Aucune carte active à régénérer.', true); return; }
-      if (refuserSiApercu()) return;
-      if (!confirm('Régénérer le décor de la carte active ?\n\nTout le décor actuel sera remplacé. Les personnages et créatures sont conservés et repositionnés hors des obstacles.')) return;
-
-      const bouton = document.getElementById('btn-regenerate');
-      try {
-        bouton.disabled = true;
-        setStatus('Régénération en cours…');
-        const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/regenerate`, optionsGeneration());
-        document.getElementById('gen-seed').value = data.seed;
-        selectionner(null);
-        setStatus(data.message);
-      } catch (error) {
-        setStatus(error.message, true);
-      } finally {
-        bouton.disabled = false;
-      }
-    });
 
     // ---------------------------------------------------------------------
     // Outils
@@ -931,21 +664,17 @@
       select:       { titre: 'Sélection',  panneau: null,
                       aide: 'Cliquez pour inspecter, glissez pour déplacer.' },
       paint:        { titre: 'Poser du décor', panneau: 'paint',
-                      aide: 'Cliquez ou glissez pour poser des éléments.' },
+                      aide: 'Cliquez ou glissez pour peindre les cases. Ctrl + Z annule.' },
       mob:          { titre: 'Créature',   panneau: 'mob',
                       aide: 'Chaque clic crée la créature et la place.' },
       mesure:       { titre: 'Mesurer',    panneau: null,
                       aide: 'Glissez d’un point à l’autre. Rien n’est envoyé au serveur.' },
       erase:        { titre: 'Gomme',      panneau: null,
-                      aide: "Efface l'annotation sous le curseur, sinon le décor." },
+                      aide: "Efface l'annotation sous le curseur, sinon le décor. Ctrl + Z annule." },
       dessin:       { titre: 'Dessiner',   panneau: 'annot',
-                      aide: 'Glissez pour tracer. Visible en direct par la table.' },
+                      aide: 'Glissez pour tracer. Visible en direct par la table. Ctrl + Z annule.' },
       texte:        { titre: 'Écrire',     panneau: 'annot',
-                      aide: 'Cliquez pour poser un texte.' },
-      'fog-hide':   { titre: 'Masquer',    panneau: 'fog',
-                      aide: 'Glissez pour re-masquer des zones.' },
-      'fog-reveal': { titre: 'Révéler',    panneau: 'fog',
-                      aide: 'Glissez pour révéler des zones aux joueurs.' }
+                      aide: 'Cliquez pour poser un texte. Ctrl + Z annule.' }
     };
 
     function setTool(nom) {
@@ -978,13 +707,13 @@
 
       if (outil === 'mesure') {
         // Outil de LECTURE : local au poste du MJ, aucune requête. Autorisé
-        // même sur un aperçu non enregistré, contrairement à toute édition.
+        // même en vue joueur, contrairement à toute édition.
         renderer.demarrerMesure(renderer.pointFromEvent(event));
         canvas.setPointerCapture?.(event.pointerId);
         return;
       }
 
-      if (refuserSiApercu()) return;
+      if (refuserSiLectureSeule()) return;
 
       if (outil === 'select') {
         const token = renderer.tokenAt(cell);
@@ -1043,13 +772,6 @@
         peinture = { mode: 'paint', cells: new Map() };
         appliquerPeinture(cell);
         canvas.setPointerCapture?.(event.pointerId);
-        return;
-      }
-
-      if (outil === 'fog-hide' || outil === 'fog-reveal') {
-        peinture = { mode: outil, cells: new Map() };
-        appliquerPeinture(cell);
-        canvas.setPointerCapture?.(event.pointerId);
       }
     });
 
@@ -1101,7 +823,7 @@
     // l'inspecteur en pleine partie. Même chemin que les joueurs, donc même
     // recalcul d'exploration côté serveur.
     canvas.addEventListener('dblclick', event => {
-      if (refuserSiApercu()) return;
+      if (refuserSiLectureSeule()) return;
       const cell = renderer.cellFromEvent(event);
       if (!renderer.inBounds(cell)) return;
 
@@ -1136,13 +858,14 @@
     async function enregistrerTrace(fini, reglages) {
       if (!fini || fini.points.length < 2) return;
 
-      await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
+      const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
         type: 'trait',
         points: fini.points,
         color: reglages.color,
         size: reglages.size,
         visibleToPlayers: reglages.shared
       });
+      memoriser('tracé', mapId => retirerAnnotationPosee(mapId, data.annotationId));
 
       setStatus(reglages.shared ? 'Tracé partagé enregistré.' : 'Tracé MJ enregistré.');
     }
@@ -1152,7 +875,7 @@
       if (!contenu || !contenu.trim()) return;
 
       try {
-        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
+        const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/annotations`, {
           type: 'texte',
           text: contenu.trim(),
           points: [point],
@@ -1160,14 +883,25 @@
           size: tailleAnnotation(),
           visibleToPlayers: partageAnnotation()
         });
+        memoriser('texte', mapId => retirerAnnotationPosee(mapId, data.annotationId));
         setStatus('Texte posé sur la carte.');
       } catch (error) { setStatus(error.message, true); }
     }
 
     async function effacerAnnotation(annotationId) {
+      const copie = map().annotations?.[annotationId];
       try {
         await api('DELETE',
           `/api/maps/${encodeURIComponent(map().id)}/annotations/${encodeURIComponent(annotationId)}`);
+        if (copie) {
+          memoriser('effacement', async mapId => {
+            const data = await api('POST', `/api/maps/${encodeURIComponent(mapId)}/annotations`, {
+              type: copie.type, points: copie.points, text: copie.text,
+              color: copie.color, size: copie.size, visibleToPlayers: copie.visibleToPlayers
+            });
+            idsRecrees.set(annotationId, data.annotationId);
+          });
+        }
         setStatus('Annotation effacée.');
       } catch (error) { setStatus(error.message, true); }
     }
@@ -1179,36 +913,41 @@
       coordEl.textContent = 'Case : —';
     });
 
-    /** Accumule les cases pendant le glissé : une seule requête à la fin. */
+    /**
+     * Accumule les cases pendant le glissé : une seule requête à la fin.
+     * Un geste rapide saute des cases entre deux événements souris : on
+     * relie donc la case précédente à la nouvelle, case par case.
+     */
     function appliquerPeinture(cell) {
-      const cle = `${cell.x},${cell.y}`;
-      if (peinture.cells.has(cle)) return;
-      peinture.cells.set(cle, { x: cell.x, y: cell.y });
+      const depart = peinture.derniere || cell;
+      const pas = Math.max(Math.abs(cell.x - depart.x), Math.abs(cell.y - depart.y), 1);
+      for (let i = 1; i <= pas; i += 1) {
+        const x = Math.round(depart.x + (cell.x - depart.x) * i / pas);
+        const y = Math.round(depart.y + (cell.y - depart.y) * i / pas);
+        const cle = `${x},${y}`;
+        if (!peinture.cells.has(cle)) peinture.cells.set(cle, { x, y });
+      }
+      peinture.derniere = { x: cell.x, y: cell.y };
     }
 
     async function validerPeinture(travail) {
-      const cells = [...travail.cells.values()];
+      // Une case déjà peinte de la même couleur n'est pas repeinte : sans
+      // cela, chaque passage du pinceau empilerait des cases identiques.
+      const dejaPeintes = new Set(Object.values(map().elements || {})
+        .filter(e => e.kind === 'couleur' && e.color === couleurDecor && e.w === 1 && e.h === 1)
+        .map(e => `${e.x},${e.y}`));
+      const cells = [...travail.cells.values()].filter(c => !dejaPeintes.has(`${c.x},${c.y}`));
       if (!cells.length) return;
 
-      if (travail.mode === 'paint') {
-        const nom = document.getElementById('element-name').value.trim();
-        // V1.13.6 : UNE seule requête pour tout le tracé. Auparavant on
-        // envoyait une requête, une mutation et une diffusion temps réel
-        // PAR CASE : trente cases coûtaient trente allers-retours.
-        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/elements/batch`, {
-          brush: brushCourant, cells, nom: nom || undefined
-        });
-        setStatus(`${cells.length} élément(s) posé(s).`);
-        return;
-      }
-
-      await api('POST', `/api/maps/${encodeURIComponent(map().id)}/fog/cells`, {
-        cells,
-        revealed: travail.mode === 'fog-reveal'
+      // V1.13.6 : UNE seule requête pour tout le tracé.
+      const data = await api('POST', `/api/maps/${encodeURIComponent(map().id)}/elements/batch`, {
+        kind: 'couleur', color: couleurDecor, cells
       });
-      setStatus(travail.mode === 'fog-reveal'
-        ? `${cells.length} case(s) révélée(s).`
-        : `${cells.length} case(s) masquée(s).`);
+      const ids = data.elementIds || [];
+      memoriser(`peinture de ${ids.length} case(s)`, mapId =>
+        api('DELETE', `/api/maps/${encodeURIComponent(mapId)}/elements`,
+          { elementIds: ids.map(idActuel) }));
+      setStatus(`${cells.length} case(s) peinte(s).`);
     }
 
     async function placerCreature(cell) {
@@ -1236,12 +975,93 @@
     }
 
     async function supprimerElement(elementId) {
+      const copie = map().elements?.[elementId];
       try {
         await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/elements/${encodeURIComponent(elementId)}`);
         if (selection?.id === elementId) selectionner(null);
+        if (copie) {
+          memoriser(`suppression de « ${copie.nom || 'élément'} »`, async mapId => {
+            const { id, ...donnees } = copie;
+            const data = await api('POST', `/api/maps/${encodeURIComponent(mapId)}/elements`, donnees);
+            idsRecrees.set(elementId, data.elementId);
+          });
+        }
         setStatus('Élément supprimé.');
       } catch (error) { setStatus(error.message, true); }
     }
+
+    // ---------------------------------------------------------------------
+    // Annulation (Ctrl + Z)
+    //
+    // Historique LOCAL des modifications du MJ sur la carte active. Chaque
+    // entrée sait se défaire par les routes existantes : annuler est donc
+    // une nouvelle mutation, diffusée à toute la table comme les autres.
+    //
+    // Pris en charge : pose et suppression de décor, tracés et textes
+    // (pose et effacement). Jetons, brouillard, PV... ne s'annulent pas.
+    // ---------------------------------------------------------------------
+
+    const HISTORIQUE_MAX = 50;
+    let historique = [];               // [{ mapId, libelle, annuler(mapId) }]
+    const idsRecrees = new Map();      // id supprimé -> id de sa recréation
+
+    // Un élément supprimé puis restauré change d'identifiant : les entrées
+    // plus anciennes qui le visent doivent suivre.
+    function idActuel(id) {
+      while (idsRecrees.has(id)) id = idsRecrees.get(id);
+      return id;
+    }
+
+    function memoriser(libelle, annuler) {
+      const m = map();
+      if (!m?.id) return;
+      historique.push({ mapId: m.id, libelle, annuler });
+      if (historique.length > HISTORIQUE_MAX) historique.shift();
+    }
+
+    function viderHistorique() {
+      historique = [];
+      idsRecrees.clear();
+    }
+
+    function retirerAnnotationPosee(mapId, annotationId) {
+      return api('DELETE',
+        `/api/maps/${encodeURIComponent(mapId)}/annotations/${encodeURIComponent(idActuel(annotationId))}`);
+    }
+
+    let annulationEnCours = false;
+
+    async function annulerDerniere() {
+      if (annulationEnCours || refuserSiLectureSeule()) return;
+      const entree = historique.pop();
+      if (!entree) { setStatus('Rien à annuler.'); return; }
+      if (entree.mapId !== map()?.id) {
+        viderHistorique();
+        setStatus('Rien à annuler sur cette carte.');
+        return;
+      }
+
+      annulationEnCours = true;
+      try {
+        await entree.annuler(entree.mapId);
+        setStatus(`Annulé : ${entree.libelle}.`);
+      } catch (error) {
+        setStatus(`Annulation impossible : ${error.message}`, true);
+      } finally {
+        annulationEnCours = false;
+      }
+    }
+
+    document.addEventListener('keydown', event => {
+      if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) return;
+      if (event.key.toLowerCase() !== 'z') return;
+      // Dans un champ de saisie, Ctrl + Z garde son rôle natif.
+      const cible = event.target;
+      if (cible?.closest?.('input, textarea, select') || cible?.isContentEditable) return;
+      if (modaleTokenId) return;
+      event.preventDefault();
+      annulerDerniere();
+    });
 
     // ---------------------------------------------------------------------
     // Modale de propriétés d'une entité (PV / PM / visibilité / position)
@@ -1489,7 +1309,7 @@
 
     // Double-clic sur un token : accès direct aux propriétés.
     canvas.addEventListener('dblclick', event => {
-      if (!map() || apercu) return;
+      if (!map()) return;
       const token = renderer.tokenAt(renderer.cellFromEvent(event));
       if (token) ouvrirModaleEntite(token.id);
     });
@@ -1979,9 +1799,19 @@
         return;
       }
 
-      conteneur.innerHTML = tokens
-        .sort((a, b) => a.kind.localeCompare(b.kind) || (a.entity?.nom || '').localeCompare(b.entity?.nom || ''))
-        .map(token => `
+      // Deux groupes : PJ puis MOB, chacun trié par nom.
+      const parNom = (a, b) => (a.entity?.nom || '').localeCompare(b.entity?.nom || '');
+      const groupes = [
+        { titre: 'PJ', liste: tokens.filter(t => t.kind !== 'mob').sort(parNom) },
+        { titre: 'MOB', liste: tokens.filter(t => t.kind === 'mob').sort(parNom) }
+      ];
+
+      conteneur.innerHTML = groupes.map(groupe => `
+        <h4 class="entity-groupe-titre">${groupe.titre} <span class="badge">${groupe.liste.length}</span></h4>
+        ${groupe.liste.length ? groupe.liste.map(ligneEntite).join('') : '<p class="empty">Aucun.</p>'}`).join('');
+
+      function ligneEntite(token) {
+        return `
           <div class="entity-item">
             <strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.label || token.entity?.nom || token.entityId)}</strong>
             <span class="badge">${token.x},${token.y}</span>
@@ -1994,7 +1824,8 @@
               ${token.kind === 'mob'
                 ? `<button data-act="remove" data-id="${escapeHtml(token.id)}" class="danger">✖</button>` : ''}
             </div>
-          </div>`).join('');
+          </div>`;
+      }
 
       conteneur.querySelectorAll('button[data-act]').forEach(bouton => {
         bouton.addEventListener('click', async () => {
@@ -2029,16 +1860,33 @@
       document.getElementById('grid-cell').value = m.grid.cellSize;
       document.getElementById('map-bg').value = m.background?.color || '#fffdf7';
       document.getElementById('map-name').value = m.nom;
-      document.getElementById('fog-enabled').checked = !!m.fog?.enabled;
-      document.getElementById('fog-mode').value = m.fog?.mode || 'none';
-      document.getElementById('fog-autoreveal').checked = m.fog?.autoReveal !== false;
       document.getElementById('annot-players').checked = m.drawing?.playersAllowed === true;
-      document.getElementById('map-type').value = m.type || '';
-
-      // La palette suit le type de lieu : décors forestiers sur une forêt,
-      // mobilier de donjon dans un donjon.
-      chargerPalette(m.type || '').catch(error => setStatus(error.message, true));
+      document.getElementById('opt-resolution').value = String(m.grid.resolution || 1);
     }
+
+    // Résolution du quadrillage : la carte est convertie côté serveur, le
+    // décor, les jetons et les tracés restent au même endroit.
+    document.getElementById('opt-resolution').addEventListener('change', async event => {
+      const select = event.target;
+      const m = map();
+      if (!m?.id || refuserSiLectureSeule()) { syncFormulaires(); return; }
+      const actuelle = m.grid.resolution || 1;
+      const cible = Number(select.value);
+      if (cible < actuelle && !confirm(
+        `Passer le quadrillage de ×${actuelle} à ×${cible} ?\n\n`
+        + 'Les cases seront regroupées : le décor peint finement sera simplifié.')) {
+        select.value = String(actuelle);
+        return;
+      }
+      try {
+        const data = await api('POST', `/api/maps/${encodeURIComponent(m.id)}/resolution`, { resolution: cible });
+        viderHistorique();   // les coordonnées ont changé : l'annulation ne s'applique plus
+        setStatus(data.message);
+      } catch (error) {
+        select.value = String(actuelle);
+        setStatus(error.message, true);
+      }
+    });
 
     document.getElementById('annot-players').addEventListener('change', async event => {
       if (!map()) return;
@@ -2062,11 +1910,10 @@
     });
 
     document.getElementById('btn-save-grid').addEventListener('click', async () => {
-      if (refuserSiApercu()) return;
+      if (refuserSiLectureSeule()) return;
       try {
         await api('PUT', `/api/maps/${encodeURIComponent(map().id)}`, {
           nom: document.getElementById('map-name').value,
-          type: document.getElementById('map-type').value,
           background: { color: document.getElementById('map-bg').value },
           grid: {
             cols: Number(document.getElementById('grid-cols').value),
@@ -2076,31 +1923,6 @@
         });
         await chargerBibliotheque();
         setStatus('Carte enregistrée.');
-      } catch (error) { setStatus(error.message, true); }
-    });
-
-    async function majBrouillard() {
-      if (refuserSiApercu()) return;
-      try {
-        await api('PUT', `/api/maps/${encodeURIComponent(map().id)}/fog`, {
-          enabled: document.getElementById('fog-enabled').checked,
-          mode: document.getElementById('fog-mode').value,
-          autoReveal: document.getElementById('fog-autoreveal').checked
-        });
-        setStatus('Brouillard mis à jour.');
-      } catch (error) { setStatus(error.message, true); }
-    }
-
-    ['fog-enabled', 'fog-mode', 'fog-autoreveal'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => { if (map()) majBrouillard(); });
-    });
-
-    document.getElementById('btn-fog-reset').addEventListener('click', async () => {
-      if (!map() || refuserSiApercu()) return;
-      if (!confirm('Re-masquer toutes les zones explorées ?')) return;
-      try {
-        await api('POST', `/api/maps/${encodeURIComponent(map().id)}/fog/reset`);
-        setStatus('Brouillard réinitialisé.');
       } catch (error) { setStatus(error.message, true); }
     });
 
@@ -2148,7 +1970,6 @@
 
     document.getElementById('opt-grid').addEventListener('change', e => renderer.setOption('showGrid', e.target.checked));
     document.getElementById('opt-coords').addEventListener('change', e => renderer.setOption('showCoords', e.target.checked));
-    document.getElementById('opt-vision').addEventListener('change', e => renderer.setOption('showPlayerVision', e.target.checked));
 
     // V1.13.11 — Aura de portée. Le champ de saisie ne s'active qu'avec la
     // case cochée : un nombre modifiable sans effet visible passerait pour
@@ -2160,19 +1981,6 @@
       renderer.setAura(actif, cases.value);
       majIndicationAura();
     }
-    // V1.13.11 — Portes en lot. Un donjon généré en compte une vingtaine :
-    // les fermer une à une rendait la fonctionnalité théorique.
-    async function basculerPortes(fermer) {
-      if (refuserSiApercu()) return;
-      const m = map();
-      if (!m?.id) return setStatus('Aucune carte active.', true);
-      try {
-        const data = await api('POST', `/api/maps/${encodeURIComponent(m.id)}/portes`, { fermer });
-        setStatus(data.message);
-      } catch (error) { setStatus(error.message, true); }
-    }
-    document.getElementById('btn-portes-fermer').addEventListener('click', () => basculerPortes(true));
-    document.getElementById('btn-portes-ouvrir').addEventListener('click', () => basculerPortes(false));
 
     document.getElementById('opt-aura').addEventListener('change', majAura);
     document.getElementById('opt-aura-cases').addEventListener('input', majAura);
@@ -2192,10 +2000,6 @@
 
     // Le serveur pousse la projection MJ complète : c'est la source de vérité.
     socket.on('mapState', payload => {
-      // Un aperçu en cours a priorité : il disparaîtrait sinon au premier
-      // événement venu (déplacement d’un joueur, modification de PV...).
-      if (apercu) { renderEntityList(); renderMobsEnJeu(); return; }
-
       // V1.13.10 : en vue joueur, la projection MJ écraserait ce que le MJ
       // est venu observer. On redemande LA MÊME vue, à jour : le brouillard
       // d’un personnage change quand il bouge ou qu’une lumière s’allume.
@@ -2209,6 +2013,8 @@
         socket.emit('mapRequest');
         return;
       }
+      // L'historique d'annulation ne vaut que pour la carte qui l'a produit.
+      if ((payload?.id || null) !== activeMapId) viderHistorique();
       activeMapId = payload?.id || null;
       syncFormulaires();
       renderInspector();
@@ -2262,8 +2068,6 @@
     });
 
     setTool('select');
-    chargerPalette('').catch(error => setStatus(error.message, true));
-    chargerGenerateurs().catch(error => setStatus(error.message, true));
     chargerTemplates();
     chargerBibliotheque();
 

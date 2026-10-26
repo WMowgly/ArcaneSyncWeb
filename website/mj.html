@@ -135,9 +135,9 @@
        =============================================================== */
     #mob-management.mob-manager {
       width: 100%;
-      max-width: 1200px;
+      max-width: none;
       box-sizing: border-box;
-      margin: 20px auto;
+      margin: 0 0 14px;
       text-align: left;
     }
 
@@ -303,6 +303,35 @@
       #mob-management .active-mob-resource-controls { grid-template-columns: 1fr; }
     }
 
+    /* Liste des mobs en jeu : grille de cartes compactes, comme les
+       joueurs, plutôt qu'une pile de blocs pleine largeur. */
+    #active-mobs-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+      gap: 10px;
+    }
+    #mob-management #active-mobs-list .active-mob-card { margin: 0; }
+    #mob-management .active-mob-card.dead .stat-bar { opacity: .6; }
+    .active-mob-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    }
+    .active-mob-head h4 { margin: 0; }
+    #mob-management .active-mob-head .mob-status { margin: 0; font-size: .8em; }
+    .active-mob-desc { margin: 4px 0 0; font-size: .9em; opacity: .85; }
+    .active-mob-meta { margin: 6px 0 0; font-size: .9em; }
+    .active-mob-card .stat-bar-container label { font-size: .85em; font-weight: 600; }
+    .active-mob-buttons { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; }
+
+    /* Les huit caractéristiques tiennent sur deux lignes. */
+    #mob-management .mob-form-grid.mob-form-grid-stats {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 130px), 1fr));
+    }
+
+    .mob-templates-box { margin-top: 14px; }
+    .mob-templates-box > summary {
+      cursor: pointer; font-family: 'Uncial Antiqua', cursive; font-size: 1.05rem;
+    }
+
 
     /* V1.8.1 — Gestion rapide directement dans les cartes joueurs */
     #joueurs-list {
@@ -342,42 +371,6 @@
       max-width: 100%;
       box-sizing: border-box;
     }
-    .gm-player-statuses {
-      border-top: 1px solid #8b5e3c;
-      margin-top: 12px;
-      padding-top: 10px;
-    }
-    .gm-player-status-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 7px 0;
-    }
-    .gm-player-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      border: 1px solid #8b5e3c;
-      border-radius: 7px;
-      background: #fff4d6;
-    }
-    .gm-player-status-badge.agony {
-      border-color: #7b1e1e;
-      background: #f8d7da;
-      color: #7b1e1e;
-      font-weight: 700;
-    }
-    .gm-player-status-add {
-      display: flex;
-      gap: 7px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .gm-player-status-add select {
-      min-width: 150px;
-      max-width: 100%;
-    }
     .gm-player-card-message {
       margin: 7px 0 0;
       min-height: 1.2em;
@@ -385,60 +378,7 @@
     }
     @media (max-width: 600px) {
       .gm-player-resource-controls { grid-template-columns: 1fr; }
-      .gm-player-status-add {
-        align-items: stretch;
-        flex-direction: column;
-      }
-      .gm-player-status-add select,
-      .gm-player-status-add button { width: 100%; }
     }
-
-
-    /* V1.9 — communication privée joueur / MJ */
-    .gm-private-notes {
-      margin-top: 12px;
-      border-top: 1px solid #8b5e3c;
-      padding-top: 10px;
-    }
-    .gm-private-notes summary {
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .gm-private-notes-thread {
-      max-height: 260px;
-      overflow-y: auto;
-      margin: 8px 0;
-      padding: 8px;
-      border: 1px solid #8b5e3c;
-      border-radius: 6px;
-      background: #fff8dc;
-    }
-    .private-note {
-      margin: 6px 0;
-      padding: 7px 9px;
-      border-radius: 7px;
-      border: 1px solid #8b5e3c;
-    }
-    .private-note-mj { background: #eadfcf; }
-    .private-note-player { background: #fefae0; }
-    .private-note-meta {
-      font-size: .78em;
-      margin-bottom: 3px;
-      opacity: .8;
-    }
-    .gm-private-notes-compose {
-      display: flex;
-      gap: 7px;
-      align-items: stretch;
-    }
-    .gm-private-notes-compose textarea {
-      flex: 1;
-      min-width: 0;
-      min-height: 55px;
-      resize: vertical;
-      font-family: 'Uncial Antiqua', cursive;
-    }
-    .gm-private-notes-compose button { flex: 0 0 auto; }
 
 
     /* V1.9.1 — notes publiques et séparation des espaces privés */
@@ -475,11 +415,6 @@
       white-space:pre-wrap;
       min-height:40px;
     }
-    .gm-private-messages {
-      margin-top:12px;
-      border-top:1px solid #8b5e3c;
-      padding-top:10px;
-    }
 
 </style>
 </head>
@@ -491,10 +426,84 @@
       <h1>Interface du Maître du Jeu</h1>
       <!-- V1.13 : accès direct à la table de jeu, pendant du lien
            « Ouvrir ma carte » de l'Interface de Jeu du joueur. -->
+      <a class="mj-cta" href="modification.html">📚 Données de jeu</a>
       <a class="mj-cta" href="map.html">🗺️ Ouvrir la carte de jeu</a>
     </header>
 
-    <!-- Bandeau supérieur : deux panneaux courts côte à côte. -->
+    <!-- Ordre de la page : ce qui sert pendant la partie d'abord
+         (joueurs, puis mobs), l'administration ensuite. -->
+    <section class="card" id="players-management">
+      <h2>Liste des joueurs</h2>
+      <div id="joueurs-list"></div>
+    </section>
+
+  <section class="card mob-manager" id="mob-management">
+    <h2>Gestion des Mobs / NPC</h2>
+
+    <div class="mob-actions">
+      <button id="new-mob-btn" class="game-button" type="button">Créer un mob</button>
+      <button id="new-mob-template-btn" class="game-button" type="button">Créer un template</button>
+    </div>
+
+    <!-- Formulaire masqué hors création / modification. -->
+    <div id="mob-form-container" class="mob-form-container" hidden>
+      <h3 id="mob-form-title">Nouveau mob</h3>
+      <input type="hidden" id="mob-id">
+
+      <div class="mob-form-grid">
+        <label>Nom<input id="mob-name" type="text"></label>
+        <label>Description<input id="mob-description" type="text"></label>
+        <label>HP max<input id="mob-hp-max" type="number" min="0" value="10"></label>
+        <label>HP actuel<input id="mob-hp-current" type="number" min="0" value="10"></label>
+        <label>Mana max<input id="mob-mana-max" type="number" min="0" value="0"></label>
+        <label>Mana actuel<input id="mob-mana-current" type="number" min="0" value="0"></label>
+        <label>Type d'armure<input id="mob-armor-type" type="text"></label>
+        <label>Résistance<input id="mob-armor-resistance" type="text"></label>
+        <label>Durabilité max<input id="mob-dura-max" type="number" min="0" value="0"></label>
+        <label>Durabilité actuelle<input id="mob-dura-current" type="number" min="0" value="0"></label>
+        <label>Protection max<input id="mob-protection-max" type="number" min="0" value="0"></label>
+        <label>Protection actuelle<input id="mob-protection-current" type="number" min="0" value="0"></label>
+        <label>Bonus de vie<input id="mob-bonus-hp" type="number" value="0"></label>
+        <label>Intoxication<input id="mob-intox" type="number" value="0"></label>
+      </div>
+
+      <h4>Statistiques</h4>
+      <div class="mob-form-grid mob-form-grid-stats">
+        <label>Force<input id="mob-force" type="number" value="0"></label>
+        <label>Dextérité<input id="mob-dexterite" type="number" value="0"></label>
+        <label>Magie<input id="mob-magie" type="number" value="0"></label>
+        <label>Constitution<input id="mob-constitution" type="number" value="0"></label>
+        <label>Charisme<input id="mob-charisme" type="number" value="0"></label>
+        <label>Perception<input id="mob-perception" type="number" value="0"></label>
+        <label>Chance<input id="mob-chance" type="number" value="0"></label>
+        <label>Intelligence<input id="mob-intelligence" type="number" value="0"></label>
+      </div>
+
+      <div class="mob-form-grid">
+        <label>Armes (une par ligne)<textarea id="mob-weapons" rows="4"></textarea></label>
+        <label>Sorts (un par ligne)<textarea id="mob-spells" rows="4"></textarea></label>
+        <label>Compétences (une par ligne)<textarea id="mob-skills" rows="4"></textarea></label>
+        <label>Notes<textarea id="mob-notes" rows="4"></textarea></label>
+      </div>
+
+      <div class="mob-actions">
+        <button id="save-mob-btn" class="game-button" type="button">Ajouter le mob à la partie</button>
+        <button id="save-mob-template-btn" class="game-button" type="button" hidden>Enregistrer le template</button>
+        <button id="cancel-mob-btn" class="game-button" type="button">Annuler</button>
+      </div>
+    </div>
+    <p id="mob-form-status"></p>
+
+    <h3>Mobs de la partie active</h3>
+    <div id="active-mobs-list"></div>
+
+    <details class="mob-templates-box">
+      <summary>Templates de mobs</summary>
+      <div id="mob-templates-list"></div>
+    </details>
+  </section>
+
+    <!-- Administration : deux panneaux courts côte à côte. -->
     <div class="mj-top">
   <section class="card" id="session-management">
     <h2>Gestion de la partie active</h2>
@@ -529,74 +538,6 @@
     <div id="public-notes-list"><p>Chargement...</p></div>
   </section>
     </div><!-- /.mj-top -->
-
-  <section class="card mob-manager" id="mob-management">
-    <h2>Gestion des Mobs / NPC</h2>
-    <p>Le MJ crée et gère les mobs. ArcaneSync ne calcule pas les combats.</p>
-
-    <div class="mob-actions">
-      <button id="new-mob-btn" class="game-button" type="button">Créer un mob</button>
-      <button id="new-mob-template-btn" class="game-button" type="button">Créer un template</button>
-    </div>
-
-    <div id="mob-form-container" class="mob-form-container">
-      <h3 id="mob-form-title">Nouveau mob</h3>
-      <input type="hidden" id="mob-id">
-
-      <div class="mob-form-grid">
-        <label>Nom<input id="mob-name" type="text"></label>
-        <label>Description<input id="mob-description" type="text"></label>
-        <label>HP max<input id="mob-hp-max" type="number" min="0" value="10"></label>
-        <label>HP actuel<input id="mob-hp-current" type="number" min="0" value="10"></label>
-        <label>Mana max<input id="mob-mana-max" type="number" min="0" value="0"></label>
-        <label>Mana actuel<input id="mob-mana-current" type="number" min="0" value="0"></label>
-        <label>Type d'armure<input id="mob-armor-type" type="text"></label>
-        <label>Résistance<input id="mob-armor-resistance" type="text"></label>
-        <label>Durabilité max<input id="mob-dura-max" type="number" min="0" value="0"></label>
-        <label>Durabilité actuelle<input id="mob-dura-current" type="number" min="0" value="0"></label>
-        <label>Protection max<input id="mob-protection-max" type="number" min="0" value="0"></label>
-        <label>Protection actuelle<input id="mob-protection-current" type="number" min="0" value="0"></label>
-        <label>Bonus de vie<input id="mob-bonus-hp" type="number" value="0"></label>
-        <label>Intoxication<input id="mob-intox" type="number" value="0"></label>
-      </div>
-
-      <h4>Statistiques</h4>
-      <div class="mob-form-grid">
-        <label>Force<input id="mob-force" type="number" value="0"></label>
-        <label>Dextérité<input id="mob-dexterite" type="number" value="0"></label>
-        <label>Magie<input id="mob-magie" type="number" value="0"></label>
-        <label>Constitution<input id="mob-constitution" type="number" value="0"></label>
-        <label>Charisme<input id="mob-charisme" type="number" value="0"></label>
-        <label>Perception<input id="mob-perception" type="number" value="0"></label>
-        <label>Chance<input id="mob-chance" type="number" value="0"></label>
-        <label>Intelligence<input id="mob-intelligence" type="number" value="0"></label>
-      </div>
-
-      <div class="mob-form-grid">
-        <label>Armes (une par ligne)<textarea id="mob-weapons" rows="4"></textarea></label>
-        <label>Sorts (un par ligne)<textarea id="mob-spells" rows="4"></textarea></label>
-        <label>Compétences (une par ligne)<textarea id="mob-skills" rows="4"></textarea></label>
-        <label>Notes<textarea id="mob-notes" rows="4"></textarea></label>
-      </div>
-
-      <div class="mob-actions">
-        <button id="save-mob-btn" class="game-button" type="button">Ajouter le mob à la partie</button>
-        <button id="save-mob-template-btn" class="game-button" type="button" hidden>Enregistrer le template</button>
-        <button id="cancel-mob-btn" class="game-button" type="button">Annuler</button>
-      </div>
-      <p id="mob-form-status"></p>
-    </div>
-
-    <h3>Templates de mobs</h3>
-    <div id="mob-templates-list"></div>
-
-    <h3>Mobs de la partie active</h3>
-    <div id="active-mobs-list"></div>
-  </section>
-    <section class="card" id="players-management">
-      <h2>Liste des joueurs</h2>
-      <div id="joueurs-list"></div>
-    </section>
   </div><!-- /.mj-page -->
 
   <script src="navbar.js"></script>
@@ -634,14 +575,6 @@
     // ---------------------------------------------------------------
     // Gestion MJ intégrée des joueurs
     // ---------------------------------------------------------------
-    let availablePlayerStatuses = [];
-
-    async function loadAvailablePlayerStatuses() {
-      const response = await fetch('/api/statuses');
-      if (!response.ok) throw new Error('Impossible de charger les statuts.');
-      availablePlayerStatuses = await response.json();
-    }
-
     function escapeHtml(value) {
       return String(value ?? '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -672,72 +605,9 @@
       }
     }
 
-    async function applyGMPlayerStatus(player, statusId, messageElement) {
-      try {
-        const response = await fetch(`/api/session/player/${encodeURIComponent(player.id)}/statuses`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({statutId: statusId})
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Impossible d’appliquer le statut.');
-        if (messageElement) {
-          messageElement.textContent = `Statut ${result.message || 'appliqué.'}`;
-          messageElement.style.color = '#2e7d32';
-        }
-        await loadAndDisplayPlayers();
-      } catch (error) {
-        console.error('Erreur application statut joueur:', error);
-        if (messageElement) {
-          messageElement.textContent = error.message;
-          messageElement.style.color = '#a52a2a';
-        }
-      }
-    }
-
-    async function removeGMPlayerStatus(player, statusId, messageElement) {
-      try {
-        const response = await fetch(
-          `/api/session/player/${encodeURIComponent(player.id)}/statuses/${encodeURIComponent(statusId)}`,
-          {method: 'DELETE'}
-        );
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Impossible de retirer le statut.');
-        if (messageElement) {
-          messageElement.textContent = `Statut retiré de ${player.nom}.`;
-          messageElement.style.color = '#2e7d32';
-        }
-        await loadAndDisplayPlayers();
-      } catch (error) {
-        console.error('Erreur retrait statut joueur:', error);
-        if (messageElement) {
-          messageElement.textContent = error.message;
-          messageElement.style.color = '#a52a2a';
-        }
-      }
-    }
-
-
     function formatNotesDate(value) {
       try { return new Date(value).toLocaleString('fr-FR'); }
       catch { return value || ''; }
-    }
-
-    function renderPrivateMessages(container, messages) {
-      if (!messages.length) {
-        container.innerHTML='<p>Aucun message privé.</p>';
-        return;
-      }
-      container.innerHTML=messages.map(message=>`
-        <div class="private-note private-note-${message.author==='mj'?'mj':'player'}">
-          <div class="private-note-meta">
-            <strong>${message.author==='mj'?'MJ':'Joueur'}</strong>
-            — ${escapeHtml(formatNotesDate(message.createdAt))}
-          </div>
-          <div>${escapeHtml(message.content).replace(/\n/g,'<br>')}</div>
-        </div>
-      `).join('');
-      container.scrollTop=container.scrollHeight;
     }
 
     async function loadPlayerPersonalNotes(player, viewElement) {
@@ -751,42 +621,6 @@
           : '<em>Aucune note personnelle.</em>';
       } catch(error) {
         viewElement.innerHTML=`<span>${escapeHtml(error.message)}</span>`;
-      }
-    }
-
-    async function loadPlayerPrivateMessages(player, threadElement) {
-      try {
-        const response=await fetch(`/api/session/player/${encodeURIComponent(player.id)}/private-messages?role=mj`);
-        const result=await response.json();
-        if(!response.ok) throw new Error(result.message||'Impossible de charger les messages privés.');
-        renderPrivateMessages(threadElement,result.messages||[]);
-      } catch(error) {
-        threadElement.innerHTML=`<p>${escapeHtml(error.message)}</p>`;
-      }
-    }
-
-    async function sendPrivateMessageFromMJ(player, textarea, messageElement, threadElement) {
-      const content=textarea.value.trim();
-      if(!content){
-        messageElement.textContent='Le message est vide.';
-        messageElement.style.color='#a52a2a';
-        return;
-      }
-      try{
-        const response=await fetch(`/api/session/player/${encodeURIComponent(player.id)}/private-messages`,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({role:'mj',content})
-        });
-        const result=await response.json();
-        if(!response.ok) throw new Error(result.message||'Impossible d’envoyer le message.');
-        textarea.value='';
-        renderPrivateMessages(threadElement,result.messages||[]);
-        messageElement.textContent='Message privé envoyé.';
-        messageElement.style.color='#2e7d32';
-      }catch(error){
-        messageElement.textContent=error.message;
-        messageElement.style.color='#a52a2a';
       }
     }
 
@@ -870,8 +704,6 @@
 
     async function loadAndDisplayPlayers() {
       try {
-        if (!availablePlayerStatuses.length) await loadAvailablePlayerStatuses();
-
         const response = await fetch('/api/session/players');
         if (!response.ok) throw new Error('Impossible de charger les joueurs.');
         const joueurs = await response.json();
@@ -899,23 +731,6 @@
           const duraMax = joueur.armure?.durabilite?.max || 0;
           const armorState = getArmorState(duraCurrent, duraMax);
 
-          const activeStatuses = Array.isArray(joueur.statuts) ? joueur.statuts : [];
-          const statusBadges = activeStatuses.length
-            ? activeStatuses.map(status => `
-                <span class="gm-player-status-badge ${status.id === 'agonie' ? 'agony' : ''}">
-                  <strong>${escapeHtml(status.nom)}</strong>
-                  ${status.id === 'agonie'
-                    ? '<small>automatique</small>'
-                    : `<button type="button" data-remove-player-status="${escapeHtml(status.id)}">Retirer</button>`}
-                </span>`).join('')
-            : '<span>Aucun statut actif.</span>';
-
-          const statusOptions = availablePlayerStatuses.map(status => {
-            const alreadyActive = activeStatuses.some(active => active.id === status.id);
-            const disabled = alreadyActive || status.id === 'agonie';
-            return `<option value="${escapeHtml(status.id)}" ${disabled ? 'disabled' : ''}>${escapeHtml(status.nom)}${status.id === 'agonie' ? ' (automatique)' : ''}</option>`;
-          }).join('');
-
           card.innerHTML = `
             <h3>${escapeHtml(joueur.nom)}</h3>
             <div class="stat-bar-container">
@@ -923,6 +738,13 @@
               <div class="stat-bar">
                 <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
                 <div class="stat-bar-text">${hpCurrent} / ${hpMax}</div>
+              </div>
+            </div>
+            <div class="stat-bar-container">
+              <label>Points de Mana</label>
+              <div class="stat-bar">
+                <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
+                <div class="stat-bar-text">${manaCurrent} / ${manaMax}</div>
               </div>
             </div>
 
@@ -944,14 +766,6 @@
             </div>
 
             <p>Bonus HP: ${joueur.bonus_vie ?? 0}</p>
-            <div class="stat-bar-container">
-              <label>Points de Mana</label>
-              <div class="stat-bar">
-                <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
-                <div class="stat-bar-text">${manaCurrent} / ${manaMax}</div>
-              </div>
-            </div>
-
             <p>Intox: ${joueur.intox ?? 0} / ${joueur?.stats?.constitution ?? 0}</p>
             <p>
               <span style="color: ${armorState.couleur}">${escapeHtml(armorState.etat)}</span><br>
@@ -965,27 +779,7 @@
               </div>
             </details>
 
-            <details class="gm-private-messages">
-              <summary>🔒 Messages privés avec ${escapeHtml(joueur.nom)}</summary>
-              <div class="gm-private-notes-thread" data-a="private-thread">
-                <p>Chargement...</p>
-              </div>
-              <div class="gm-private-notes-compose">
-                <textarea data-a="private-compose" placeholder="Écrire un message privé à ce joueur..."></textarea>
-                <button type="button" data-a="private-send">Envoyer</button>
-              </div>
-              <p data-a="private-message" class="gm-player-card-message"></p>
-            </details>
-
-            <div class="gm-player-statuses">
-              <strong>Statuts</strong>
-              <div class="gm-player-status-badges">${statusBadges}</div>
-              <div class="gm-player-status-add">
-                <select data-a="status-select" aria-label="Statut à appliquer">${statusOptions}</select>
-                <button type="button" data-a="apply-status">Appliquer</button>
-              </div>
-              <p class="gm-player-card-message" data-a="player-message"></p>
-            </div>
+            <p class="gm-player-card-message" data-a="player-message"></p>
           `;
 
           // Clic sur la carte = éditeur complet V1.8.
@@ -995,30 +789,11 @@
 
           const personalNotesView=card.querySelector('[data-a="personal-notes-view"]');
 
-          const privateThread=card.querySelector('[data-a="private-thread"]');
-          const privateCompose=card.querySelector('[data-a="private-compose"]');
-          const privateSend=card.querySelector('[data-a="private-send"]');
-          const privateMessage=card.querySelector('[data-a="private-message"]');
-
           card.querySelectorAll('details').forEach(details=>{
             details.addEventListener('click',event=>event.stopPropagation());
           });
 
-          privateSend.addEventListener('click',async event=>{
-            event.stopPropagation();
-            await sendPrivateMessageFromMJ(joueur,privateCompose,privateMessage,privateThread);
-          });
-
-          privateCompose.addEventListener('keydown',event=>{
-            event.stopPropagation();
-            if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
-              event.preventDefault();
-              privateSend.click();
-            }
-          });
-
           loadPlayerPersonalNotes(joueur,personalNotesView);
-          loadPlayerPrivateMessages(joueur,privateThread);
 
           card.querySelector('[data-a="damage-hp"]').addEventListener('click', async event => {
             event.stopPropagation();
@@ -1044,24 +819,6 @@
             const amount = Math.max(1, Number(card.querySelector('[data-a="mana-amount"]').value) || 1);
             const newMana = Math.min(manaMax, manaCurrent + amount);
             await updateGMPlayerResources(joueur, {mana: {current: newMana}}, messageElement);
-          });
-
-          card.querySelector('[data-a="apply-status"]').addEventListener('click', async event => {
-            event.stopPropagation();
-            const select = card.querySelector('[data-a="status-select"]');
-            if (!select.value) {
-              messageElement.textContent = 'Aucun statut sélectionné.';
-              messageElement.style.color = '#a52a2a';
-              return;
-            }
-            await applyGMPlayerStatus(joueur, select.value, messageElement);
-          });
-
-          card.querySelectorAll('[data-remove-player-status]').forEach(button => {
-            button.addEventListener('click', async event => {
-              event.stopPropagation();
-              await removeGMPlayerStatus(joueur, button.dataset.removePlayerStatus, messageElement);
-            });
           });
 
           // Aucun contrôle de la carte ne doit ouvrir l'éditeur complet.
@@ -1125,10 +882,6 @@
     socket.on('playerStatusUpdated', () => loadAndDisplayPlayers());
 
     socket.on('personalNotesUpdated', (event) => {
-      if (event?.playerId) loadAndDisplayPlayers();
-    });
-
-    socket.on('privateMessagesUpdated', (event) => {
       if (event?.playerId) loadAndDisplayPlayers();
     });
 
@@ -1317,6 +1070,15 @@
 
     let mobFormMode='mob';
 
+    // Le formulaire reste masqué hors création / modification : la liste
+    // des mobs en jeu passe ainsi juste sous les boutons.
+    const mobFormContainer=document.getElementById('mob-form-container');
+    function ouvrirFormulaireMob(){
+      mobFormContainer.hidden=false;
+      mobFormContainer.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    function fermerFormulaireMob(){ mobFormContainer.hidden=true; }
+
     function resetMobForm(mode='mob'){
       mobFormMode=mode;
       fillMobForm({hp:{max:10,current:10},mana:{max:0,current:0},armure:{durabilite:{max:0,current:0},protection:{max:0,current:0}},stats:{}});
@@ -1324,11 +1086,16 @@
       const isTemplate=mode==='template';
       mobFormTitle.textContent=isTemplate?'Nouveau template de mob':'Nouveau mob';
       document.getElementById('save-mob-btn').hidden=isTemplate;
+      document.getElementById('save-mob-btn').textContent='Ajouter le mob à la partie';
       document.getElementById('save-mob-template-btn').hidden=!isTemplate;
-      setMobStatus(isTemplate
+    }
+
+    function nouveauFormulaireMob(mode){
+      resetMobForm(mode);
+      setMobStatus(mode==='template'
         ? 'Mode template : ce formulaire enregistrera un modèle réutilisable.'
         : 'Mode mob : ce formulaire créera directement un mob dans la partie active, sans créer de template.');
-      document.getElementById('mob-form-container').scrollIntoView({behavior:'smooth',block:'start'});
+      ouvrirFormulaireMob();
     }
 
     function setMobStatus(msg,error=false){mobFormStatus.textContent=msg;mobFormStatus.style.color=error?'#a52a2a':'#2e7d32';}
@@ -1350,7 +1117,7 @@
           setMobStatus(`Mob "${x.mob.nom}" créé dans la partie.`);
           await loadActiveMobs();
         };
-        c.querySelector('[data-a="edit"]').onclick=()=>{resetMobForm('template');fillMobForm(t);mobForm.id.value='';mobFormTitle.textContent=`Nouveau template depuis : ${t.nom}`;setMobStatus('Template chargé comme base. Son enregistrement créera un nouveau template.');};
+        c.querySelector('[data-a="edit"]').onclick=()=>{resetMobForm('template');fillMobForm(t);mobForm.id.value='';mobFormTitle.textContent=`Nouveau template depuis : ${t.nom}`;setMobStatus('Template chargé comme base. Son enregistrement créera un nouveau template.');ouvrirFormulaireMob();};
         c.querySelector('[data-a="delete"]').onclick=async()=>{
           if(!confirm(`Supprimer le template "${t.nom}" ?`))return;
           const r=await fetch(`/api/mob-templates/${encodeURIComponent(t.id)}`,{method:'DELETE'});const x=await r.json();
@@ -1375,11 +1142,22 @@
         const isDead=cur<=0;
         const statusText=isDead?'MORT':'VIVANT';
 
-        c.innerHTML=`<h4>${m.nom}</h4><p>${m.description||''}</p>
-          <p class="mob-status ${isDead?'dead':''}"><strong>Statut : ${statusText}</strong></p>
-          <p><strong>HP :</strong> ${cur} / ${max}</p>
-          <div class="stat-bar"><div class="stat-bar-fill hp-bar" style="width:${pct}%"></div><div class="stat-bar-text">${cur} / ${max}</div></div>
-          <p><strong>Mana :</strong> ${manaCur} / ${manaMax}</p>
+        const manaPct=manaMax>0?Math.max(0,Math.min(100,manaCur/manaMax*100)):0;
+        if(isDead)c.classList.add('dead');
+
+        c.innerHTML=`<div class="active-mob-head">
+            <h4>${escapeHtml(m.nom)}</h4>
+            <span class="mob-status ${isDead?'dead':''}">${statusText}</span>
+          </div>
+          ${m.description?`<p class="active-mob-desc">${escapeHtml(m.description)}</p>`:''}
+          <div class="stat-bar-container">
+            <label>Points de Vie</label>
+            <div class="stat-bar"><div class="stat-bar-fill hp-bar" style="width:${pct}%"></div><div class="stat-bar-text">${cur} / ${max}</div></div>
+          </div>
+          <div class="stat-bar-container">
+            <label>Points de Mana</label>
+            <div class="stat-bar"><div class="stat-bar-fill mana-bar" style="width:${manaPct}%"></div><div class="stat-bar-text">${manaCur} / ${manaMax}</div></div>
+          </div>
 
           <div class="active-mob-resource-controls">
             <div class="active-mob-resource">
@@ -1398,10 +1176,13 @@
             </div>
           </div>
 
-          <p><strong>Protection :</strong> ${m.armure?.protection?.current??0} / ${m.armure?.protection?.max??0}</p>
-          ${isDead
-            ? '<button data-a="edit">Modifier</button><button data-a="delete">Retirer de la partie</button><button data-a="revive">Réanimer</button>'
-            : '<button data-a="edit">Modifier</button><button data-a="delete">Retirer de la partie</button>'}`;
+          <p class="active-mob-meta"><strong>Protection :</strong> ${m.armure?.protection?.current??0} / ${m.armure?.protection?.max??0}</p>
+          <div class="active-mob-buttons">
+            <button data-a="edit" type="button">Modifier</button>
+            <button data-a="duplicate" type="button" title="Ajouter une copie indépendante à la partie">⧉ Dupliquer</button>
+            ${isDead?'<button data-a="revive" type="button">Réanimer</button>':''}
+            <button data-a="delete" type="button">Retirer de la partie</button>
+          </div>`;
 
         async function updateMobResources(changes, successMessage){
           try{
@@ -1475,7 +1256,27 @@
           mobFormMode='mob';
           fillMobForm(m);
           document.getElementById('save-mob-btn').hidden=false;
+          document.getElementById('save-mob-btn').textContent='Enregistrer les modifications';
           document.getElementById('save-mob-template-btn').hidden=true;
+          setMobStatus('');
+          ouvrirFormulaireMob();
+        };
+
+        c.querySelector('[data-a="duplicate"]').onclick=async()=>{
+          try{
+            const response=await fetch(`/api/mobs/${encodeURIComponent(m.id)}/duplicate`,{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({role:'mj'})
+            });
+            const result=await response.json();
+            if(!response.ok){setMobStatus(result.message||'Erreur lors de la duplication.',true);return;}
+            setMobStatus(result.message);
+            await loadActiveMobs();
+          }catch(error){
+            console.error('Erreur duplication mob:',error);
+            setMobStatus('Impossible de dupliquer le mob.',true);
+          }
         };
 
         c.querySelector('[data-a="delete"]').onclick=async()=>{
@@ -1490,9 +1291,9 @@
       });
     }
 
-    document.getElementById('new-mob-btn').onclick=()=>resetMobForm('mob');
-    document.getElementById('new-mob-template-btn').onclick=()=>resetMobForm('template');
-    document.getElementById('cancel-mob-btn').onclick=()=>resetMobForm('mob');
+    document.getElementById('new-mob-btn').onclick=()=>nouveauFormulaireMob('mob');
+    document.getElementById('new-mob-template-btn').onclick=()=>nouveauFormulaireMob('template');
+    document.getElementById('cancel-mob-btn').onclick=()=>{resetMobForm('mob');fermerFormulaireMob();setMobStatus('');};
 
     document.getElementById('save-mob-btn').onclick=async()=>{
       try{
@@ -1512,7 +1313,8 @@
           ? `Mob "${x.mob.nom}" modifié.`
           : `Mob "${x.mob.nom}" ajouté directement à la partie active (aucun template créé).`);
         await loadActiveMobs();
-        if(!id) resetMobForm('mob');
+        resetMobForm('mob');
+        fermerFormulaireMob();
       }catch(error){
         console.error('Erreur création/modification mob:',error);
         setMobStatus(`Erreur : ${error.message||'Impossible de créer le mob.'}`,true);
@@ -1532,6 +1334,7 @@
         if(!r.ok){setMobStatus(x.message||'Erreur.',true);return;}
         await loadMobTemplates();
         resetMobForm('template');
+        fermerFormulaireMob();
         setMobStatus(`Template "${x.template.nom}" créé. Aucun mob n'a été ajouté à la partie.`);
       }catch(error){
         console.error('Erreur création template:',error);
@@ -1541,7 +1344,7 @@
 
     socket.on('mobUpdated',()=>loadActiveMobs());
     socket.on('mobTemplateUpdated',()=>loadMobTemplates());
-    await Promise.all([loadMobTemplates(),loadActiveMobs(),loadStatusPlayers()]);
+    await Promise.all([loadMobTemplates(),loadActiveMobs()]);
     resetMobForm('mob');
 
 </script>

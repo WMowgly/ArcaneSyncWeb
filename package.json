@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js",
+    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js && node tests/sorts.test.js && node tests/quadrillage.test.js",
     "start": "node server.js",
+    "test:sorts": "node tests/sorts.test.js",
+    "test:quadrillage": "node tests/quadrillage.test.js",
     "test:session": "node tests/session.test.js",
     "test:mobs": "node tests/mob.test.js",
     "test:map": "node tests/map.test.js",

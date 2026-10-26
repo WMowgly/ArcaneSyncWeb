@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Écran — ArcaneSync</title>
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Écran partagé de la table : affichage seul, plein cadre.
+       Deux vues : la carte (ce que voit le groupe) et le tableau blanc. */
+    :root { --parchemin: #fdf6e3; --encre: #3b2f1e; --bord: #8b5e3c; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex; flex-direction: column;
+      background: var(--parchemin); color: var(--encre);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ecran-barre {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 6px 12px; background: var(--bord); color: #fefae0;
+    }
+    .ecran-barre h1 {
+      margin: 0 8px 0 0; font-family: 'Uncial Antiqua', cursive;
+      font-size: 18px; font-weight: 400;
+    }
+    .ecran-barre button, .ecran-barre a {
+      font: inherit; font-size: 14px; padding: 5px 12px; border-radius: 6px;
+      border: 1px solid #fefae0; background: transparent; color: #fefae0;
+      cursor: pointer; text-decoration: none;
+    }
+    .ecran-barre button.actif { background: #fefae0; color: var(--encre); font-weight: 600; }
+    #ecran-titre { flex: 1; font-size: 14px; opacity: .9; }
+    #ecran-statut { font-size: 13px; }
+
+    .vue { flex: 1; min-height: 0; }
+    .vue[hidden] { display: none; }
+    #vue-carte { position: relative; padding: 8px; }
+    #vue-carte .canvas-wrap {
+      width: 100%; height: 100%; display: flex;
+      align-items: center; justify-content: center; overflow: auto;
+    }
+    #carte-vide {
+      position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 20px; opacity: .7;
+    }
+    #carte-vide[hidden] { display: none; }
+    #vue-tableau iframe { width: 100%; height: 100%; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <header class="ecran-barre">
+    <h1>🖥️ Écran</h1>
+    <button type="button" data-vue="carte" class="actif">🗺️ Carte</button>
+    <button type="button" data-vue="tableau">📝 Tableau blanc</button>
+    <span id="ecran-titre"></span>
+    <span id="ecran-statut">Connexion…</span>
+    <button type="button" id="btn-plein-ecran" title="Plein écran">⛶</button>
+    <a href="index.html" title="Retour à l'accueil">Accueil</a>
+  </header>
+
+  <section id="vue-carte" class="vue">
+    <div class="canvas-wrap"><canvas id="map-canvas" width="600" height="400"></canvas></div>
+    <p id="carte-vide" hidden>Aucune carte active.</p>
+  </section>
+
+  <section id="vue-tableau" class="vue" hidden>
+    <!-- Chargé à la première ouverture : le tableau blanc en spectateur. -->
+  </section>
+
+  <script src="map-core.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // --- Carte : projection « écran » du serveur (vision du groupe) --------
+    const socket = ArcaneMap.connect('ecran', '');
+    const renderer = ArcaneMap.createRenderer(document.getElementById('map-canvas'), {});
+    renderer.setOption('showCoords', false);
+
+    const statut = document.getElementById('ecran-statut');
+    const titre = document.getElementById('ecran-titre');
+
+    function appliquerCarte(payload) {
+      // Projection éventuellement allégée : voir map-core.setMap().
+      if (!renderer.setMap(payload)) {
+        socket.emit('mapRequest');
+        return;
+      }
+      document.getElementById('carte-vide').hidden = !!payload;
+      titre.textContent = payload?.nom || '';
+    }
+
+    socket.on('mapState', appliquerCarte);
+    socket.on('mapDrawPreview', apercu => renderer.pushPreview(apercu));
+    socket.on('connect', () => {
+      statut.textContent = '🟢 Synchronisé';
+      socket.emit('mapRequest');
+    });
+    socket.on('disconnect', () => { statut.textContent = '🔴 Reconnexion…'; });
+    socket.on('connect_error', () => { statut.textContent = '🔴 Serveur injoignable'; });
+
+    // --- Choix de la vue ------------------------------------------------------
+    function afficher(vue) {
+      document.querySelectorAll('[data-vue]').forEach(b => b.classList.toggle('actif', b.dataset.vue === vue));
+      document.getElementById('vue-carte').hidden = vue !== 'carte';
+      document.getElementById('vue-tableau').hidden = vue !== 'tableau';
+
+      const conteneur = document.getElementById('vue-tableau');
+      if (vue === 'tableau' && !conteneur.firstElementChild) {
+        const cadre = document.createElement('iframe');
+        cadre.src = 'tableau.html?role=viewer&embed=1';
+        cadre.title = 'Tableau blanc';
+        conteneur.appendChild(cadre);
+      }
+      if (vue === 'carte') renderer.resize();
+      try { localStorage.setItem('arcanesync-ecran-vue', vue); } catch (_) {}
+    }
+
+    document.querySelectorAll('[data-vue]').forEach(bouton =>
+      bouton.addEventListener('click', () => afficher(bouton.dataset.vue)));
+
+    document.getElementById('btn-plein-ecran').addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen?.();
+      else document.documentElement.requestFullscreen?.();
+    });
+
+    let vueInitiale = 'carte';
+    try { vueInitiale = localStorage.getItem('arcanesync-ecran-vue') || 'carte'; } catch (_) {}
+    afficher(vueInitiale === 'tableau' ? 'tableau' : 'carte');
+  })();
+  </script>
+</body>
+</html>

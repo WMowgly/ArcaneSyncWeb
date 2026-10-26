@@ -7,12 +7,107 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function jsonText(value) {
-  try {
-    return JSON.stringify(value ?? [], null, 2);
-  } catch {
-    return '[]';
-  }
+// ---------------------------------------------------------------------------
+// Listes du personnage (sorts, sorts mineurs, attaques, compétences) :
+// une ligne de champs par entrée, au lieu d'un JSON à éditer à la main.
+// Chaque ligne garde l'objet d'origine (data-origine) : les champs qui ne
+// sont pas affichés sont conservés tels quels à l'enregistrement.
+// ---------------------------------------------------------------------------
+const LISTES_PERSO = [
+  { champ: 'spells', titre: 'Sorts majeurs', ref: 'sorts_majeurs', colonnes: ['nom', 'degats', 'niveau'] },
+  { champ: 'sorts_mineurs', titre: 'Sorts mineurs', ref: 'sorts_mineurs', colonnes: ['nom', 'degats'] },
+  { champ: 'attaques_speciales', titre: 'Attaques spéciales', ref: 'attack_special', colonnes: ['nom', 'degats', 'niveau'] },
+  { champ: 'competences', titre: 'Compétences', ref: null, colonnes: ['nom', 'effet', 'niveau', 'type'] }
+];
+const LIBELLES_COLONNES = { nom: 'Nom', degats: 'Dégâts', niveau: 'Niveau', effet: 'Effet', type: 'Type' };
+const TYPES_COMPETENCE = [['classe', 'Classe'], ['racial', 'Raciale'], ['autre', 'Autre']];
+
+function ligneListe(liste, entree = {}) {
+  const champs = liste.colonnes.map(colonne => {
+    const valeur = entree[colonne] ?? '';
+    if (colonne === 'type') {
+      const types = TYPES_COMPETENCE.some(([v]) => v === valeur) ? TYPES_COMPETENCE : [...TYPES_COMPETENCE, [valeur, valeur]];
+      return `<select data-col="type" aria-label="Type">${types.map(([v, l]) =>
+        `<option value="${escapeHtml(v)}" ${v === (valeur || 'classe') ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+    }
+    const attributs = colonne === 'niveau' ? 'type="number" min="0"' : 'type="text"';
+    const liste_ = colonne === 'nom' && liste.ref ? ` list="mj-ref-${liste.champ}"` : '';
+    return `<input ${attributs} data-col="${colonne}"${liste_} value="${escapeHtml(valeur)}" aria-label="${LIBELLES_COLONNES[colonne]}">`;
+  }).join('');
+  return `<div class="mj-liste-ligne mj-liste-${liste.colonnes.length}" data-origine="${escapeHtml(JSON.stringify(entree))}">
+      ${champs}<button type="button" class="mj-liste-retirer" title="Retirer">✖</button></div>`;
+}
+
+function sectionListe(liste, entrees) {
+  const enTetes = liste.colonnes.map(c => `<span>${LIBELLES_COLONNES[c]}</span>`).join('');
+  return `
+    <div class="mj-liste" data-liste="${liste.champ}">
+      <h4>${escapeHtml(liste.titre)}</h4>
+      <div class="mj-liste-ligne mj-liste-entetes mj-liste-${liste.colonnes.length}">${enTetes}<span></span></div>
+      <div class="mj-liste-corps">${(Array.isArray(entrees) ? entrees : []).map(e => ligneListe(liste, e)).join('')}</div>
+      <button type="button" class="mj-liste-ajouter">+ Ajouter</button>
+      ${liste.ref ? `<datalist id="mj-ref-${liste.champ}"></datalist>` : ''}
+    </div>`;
+}
+
+/** Lignes → tableau d'objets, en conservant les champs non affichés. */
+function collecterListe(form, liste) {
+  return [...form.querySelectorAll(`[data-liste="${liste.champ}"] .mj-liste-corps .mj-liste-ligne`)]
+    .map(ligne => {
+      let origine = {};
+      try { origine = JSON.parse(ligne.dataset.origine || '{}'); } catch { origine = {}; }
+      const entree = { ...origine };
+      ligne.querySelectorAll('[data-col]').forEach(champ => {
+        const valeur = champ.value.trim();
+        if (champ.dataset.col === 'niveau') {
+          if (valeur === '') delete entree.niveau; else entree.niveau = Number(valeur);
+        } else {
+          entree[champ.dataset.col] = valeur;
+        }
+      });
+      return entree;
+    })
+    .filter(entree => entree.nom);
+}
+
+/**
+ * Ajout / retrait de lignes, et suggestions issues de la référence : choisir
+ * un sort connu remplit ses dégâts et son niveau s'ils sont encore vides.
+ */
+async function preparerListes(form) {
+  form.querySelectorAll('.mj-liste').forEach(bloc => {
+    const liste = LISTES_PERSO.find(l => l.champ === bloc.dataset.liste);
+    bloc.querySelector('.mj-liste-ajouter').addEventListener('click', () => {
+      bloc.querySelector('.mj-liste-corps').insertAdjacentHTML('beforeend', ligneListe(liste));
+      bloc.querySelector('.mj-liste-corps .mj-liste-ligne:last-child [data-col="nom"]')?.focus();
+    });
+    bloc.addEventListener('click', event => {
+      if (event.target.closest('.mj-liste-retirer')) event.target.closest('.mj-liste-ligne')?.remove();
+    });
+  });
+
+  let reference;
+  try { reference = await (await fetch('/api/game-database')).json(); } catch { return; }
+
+  LISTES_PERSO.filter(l => l.ref).forEach(liste => {
+    const entrees = Array.isArray(reference[liste.ref]) ? reference[liste.ref] : [];
+    const datalist = form.querySelector(`#mj-ref-${liste.champ}`);
+    if (datalist) {
+      datalist.innerHTML = entrees.map(e =>
+        `<option value="${escapeHtml(e.nom)}">${e.affinite_magique ? '✨ ' : ''}${escapeHtml(e.ecole_nom || e.armes || '')}</option>`).join('');
+    }
+    form.querySelector(`[data-liste="${liste.champ}"]`)?.addEventListener('change', event => {
+      const champ = event.target;
+      if (champ.dataset.col !== 'nom') return;
+      const connu = entrees.find(e => e.nom === champ.value.trim());
+      if (!connu) return;
+      const ligne = champ.closest('.mj-liste-ligne');
+      const degats = ligne.querySelector('[data-col="degats"]');
+      const niveau = ligne.querySelector('[data-col="niveau"]');
+      if (degats && !degats.value) degats.value = connu.degats || '';
+      if (niveau && !niveau.value && connu.niveau !== '' && connu.niveau != null) niveau.value = connu.niveau;
+    });
+  });
 }
 
 function numberValue(form, name, fallback = 0) {
@@ -22,16 +117,6 @@ function numberValue(form, name, fallback = 0) {
 
 function textValue(form, name, fallback = '') {
   return form.elements[name]?.value ?? fallback;
-}
-
-function parseJsonField(form, name, label) {
-  const raw = textValue(form, name, '');
-  if (!raw.trim()) return [];
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error(`${label} contient un JSON invalide.`);
-  }
 }
 
 
@@ -103,14 +188,17 @@ function buildEditForm(joueur) {
   const protection = armure.protection || {};
   const armes = Array.isArray(joueur.armes) ? joueur.armes : [];
 
-  const weaponFields = Array.from({ length: 5 }, (_, index) => {
-    const arme = armes[index] || {};
-    return `
-      <div class="mj-edit-grid mj-edit-weapon">
-        <label>Arme ${index + 1} — Type<input name="weapon_type_${index + 1}" value="${escapeHtml(arme.type || '')}"></label>
-        <label>Dégâts<input name="weapon_dmg_${index + 1}" value="${escapeHtml(arme.degats || '')}"></label>
+  // Cinq emplacements d'armes, en lignes compactes (type | dégâts).
+  const weaponFields = `
+    <div class="mj-liste-ligne mj-liste-armes mj-liste-entetes"><span>Type</span><span>Dégâts</span></div>
+    ${Array.from({ length: 5 }, (_, index) => {
+      const arme = armes[index] || {};
+      return `
+      <div class="mj-liste-ligne mj-liste-armes">
+        <input name="weapon_type_${index + 1}" value="${escapeHtml(arme.type || '')}" aria-label="Arme ${index + 1} — type">
+        <input name="weapon_dmg_${index + 1}" value="${escapeHtml(arme.degats || '')}" aria-label="Arme ${index + 1} — dégâts">
       </div>`;
-  }).join('');
+    }).join('')}`;
 
   return `
     <form id="mj-player-edit-form" class="mj-player-edit-form">
@@ -191,11 +279,10 @@ function buildEditForm(joueur) {
 
       <section class="mj-edit-section">
         <h3>Sorts et compétences</h3>
-        <p class="mj-edit-help">Les champs JSON permettent au MJ de modifier directement la liste complète.</p>
-        <label>Sorts majeurs (JSON)<textarea name="spells" spellcheck="false">${escapeHtml(jsonText(joueur.spells))}</textarea></label>
-        <label>Sorts mineurs (JSON)<textarea name="sorts_mineurs" spellcheck="false">${escapeHtml(jsonText(joueur.sorts_mineurs))}</textarea></label>
-        <label>Attaques spéciales (JSON)<textarea name="attaques_speciales" spellcheck="false">${escapeHtml(jsonText(joueur.attaques_speciales))}</textarea></label>
-        <label>Compétences (JSON)<textarea name="competences" spellcheck="false">${escapeHtml(jsonText(joueur.competences))}</textarea></label>
+        <p class="mj-edit-help">Les noms de la référence sont proposés à la saisie ; un sort connu remplit ses dégâts et son niveau.</p>
+        <div class="mj-listes">
+          ${LISTES_PERSO.map(liste => sectionListe(liste, joueur[liste.champ])).join('')}
+        </div>
       </section>
 
       <section class="mj-edit-section">
@@ -262,10 +349,7 @@ function collectEditData(form) {
     ceinture: textValue(form, 'ceinture'),
     inventaire: collectMJInventory(form),
     armes: weapons,
-    spells: parseJsonField(form, 'spells', 'Sorts majeurs'),
-    sorts_mineurs: parseJsonField(form, 'sorts_mineurs', 'Sorts mineurs'),
-    attaques_speciales: parseJsonField(form, 'attaques_speciales', 'Attaques spéciales'),
-    competences: parseJsonField(form, 'competences', 'Compétences'),
+    ...Object.fromEntries(LISTES_PERSO.map(liste => [liste.champ, collecterListe(form, liste)])),
     skills_speciales: textValue(form, 'skills_speciales'),
     bio: textValue(form, 'bio'),
     levelup: textValue(form, 'levelup')
@@ -348,6 +432,7 @@ export function showMJPopup(joueur) {
     overlay.querySelector('.close-btn').addEventListener('click', close);
     const form = overlay.querySelector('#mj-player-edit-form');
     setupMJInventoryEditor(form, joueur.inventaire || []);
+    preparerListes(form);
     form.querySelector('.mj-cancel-btn').addEventListener('click', () => showMJPopup(joueur));
 
     form.addEventListener('submit', async event => {

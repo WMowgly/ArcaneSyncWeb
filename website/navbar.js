@@ -1,4 +1,66 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+
+  // Page intégrée dans l'Écran partagé : pas de barre de navigation.
+  if (params.get('embed') === '1') return;
+
+  // -------------------------------------------------------------------------
+  // Interface courante : MJ, Joueur ou Écran.
+  //
+  // La page ouverte fait foi quand elle appartient à une seule interface
+  // (une page MJ affiche toujours la barre MJ). Pour les pages partagées
+  // (création de personnage, tableau blanc sans contexte), on reprend le
+  // choix fait sur l'accueil, mémorisé dans ce navigateur.
+  // -------------------------------------------------------------------------
+  const page = window.location.pathname.split('/').pop() || 'index.html';
+  const playerId = params.get('PlayerId');
+  const PAGES_MJ = ['mj.html', 'map.html', 'modification.html'];
+  const PAGES_JOUEUR = ['selecte_player.html', 'interface_jeu.html', 'fiche_perso.html', 'map_joueur.html'];
+
+  let choixMemorise = null;
+  try { choixMemorise = localStorage.getItem('arcanesync-interface'); } catch (_) {}
+
+  let iface;
+  if (PAGES_MJ.includes(page) || (page === 'tableau.html' && params.get('role') === 'mj')) iface = 'mj';
+  else if (PAGES_JOUEUR.includes(page) || playerId) iface = 'joueur';
+  else iface = ['mj', 'joueur', 'ecran'].includes(choixMemorise) ? choixMemorise : 'joueur';
+
+  try { localStorage.setItem('arcanesync-interface', iface); } catch (_) {}
+
+  const id = playerId ? encodeURIComponent(playerId) : '';
+  const LIENS = {
+    mj: [
+      ['index.html', 'Accueil'],
+      ['mj.html', 'MJ'],
+      ['map.html', 'Carte (MJ)'],
+      ['tableau.html?role=mj', 'Tableau blanc'],
+      ['modification.html', 'Données de jeu']
+    ],
+    joueur: [
+      ['index.html', 'Accueil'],
+      ['selecte_player.html', 'Personnages'],
+      ['create_player.html', 'Créer un personnage'],
+      // Raccourcis du personnage en cours, quand la page le connaît.
+      ...(playerId ? [
+        [`interface_jeu.html?PlayerId=${id}`, 'Jeu'],
+        [`fiche_perso.html?PlayerId=${id}`, 'Fiche'],
+        [`map_joueur.html?PlayerId=${id}`, 'Ma carte'],
+        [`tableau.html?role=player&PlayerId=${id}`, 'Tableau blanc']
+      ] : [])
+    ],
+    ecran: [
+      ['index.html', 'Accueil'],
+      ['ecran.html', 'Écran']
+    ]
+  };
+
+  const liens = LIENS[iface]
+    .map(([href, libelle]) => {
+      const actif = href.split('?')[0] === page ? ' class="actif"' : '';
+      return `<a href="${href}"${actif}>${libelle}</a>`;
+    })
+    .join('');
+
   const navbar = document.createElement('div');
   navbar.className = 'navbar-container';
   navbar.innerHTML = `
@@ -32,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .navbar-links {
         display: flex;
         justify-content: center;
-        flex-grow: 8; 
+        flex-grow: 8;
         gap: 1rem;
       }
 
@@ -43,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 0.5rem;
       }
 
-      .navbar a:hover {
+      .navbar a:hover,
+      .navbar a.actif {
         background-color: #575757;
         border-radius: 4px;
       }
@@ -75,46 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="navbar-brand">
         <span class="navbar-toggle" id="js-navbar-toggle">&#9776;</span>
       </div>
-      <div class="navbar-links" id="js-menu">
-        <a href="index.html">Accueil</a>
-        <a href="mj.html">MJ</a>
-        <a href="selecte_player.html">Liste des joueurs</a>
-        <a href="create_player.html">Créer un joueur</a>
-        <a href="map.html" data-nav="map">Carte</a>
-        <a href="tableau.html">Tableau blanc</a>
-      </div>
+      <div class="navbar-links" id="js-menu" data-interface="${iface}">${liens}</div>
     </div>
   `;
   document.body.insertBefore(navbar, document.body.firstChild);
-
-  // V1.10 : conserver le contexte de l'utilisateur lors de l'ouverture
-  // de la scène de jeu depuis la barre de navigation.
-  const params = new URLSearchParams(window.location.search);
-  const pathname = window.location.pathname;
-  const estPageMj = pathname.endsWith('/mj.html') || pathname.endsWith('/map.html');
-  const playerId = params.get('PlayerId');
-
-  const tableauLink = navbar.querySelector('a[href="tableau.html"]');
-  if (tableauLink) {
-    if (pathname.endsWith('/mj.html')) {
-      tableauLink.href = 'tableau.html?role=mj';
-    } else if (playerId) {
-      tableauLink.href = `tableau.html?role=player&PlayerId=${encodeURIComponent(playerId)}`;
-    }
-  }
-
-  // V1.13 : la carte a deux interfaces distinctes. Le lien pointe vers
-  // l'outil MJ ou vers la vue joueur selon le contexte de la page.
-  const mapLink = navbar.querySelector('a[data-nav="map"]');
-  if (mapLink) {
-    if (estPageMj) {
-      mapLink.href = 'map.html';
-      mapLink.textContent = 'Carte (MJ)';
-    } else if (playerId) {
-      mapLink.href = `map_joueur.html?PlayerId=${encodeURIComponent(playerId)}`;
-      mapLink.textContent = 'Ma carte';
-    }
-  }
 
   // Toggle menu on small screens
   document.getElementById('js-navbar-toggle').addEventListener('click', () => {

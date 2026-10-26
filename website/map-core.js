@@ -253,9 +253,9 @@ window.ArcaneMap = (function () {
         return true;
       }
 
-      // Vue joueur : le serveur transmet les cases autorisées.
+      // Vue joueur ou écran partagé : le serveur transmet les cases autorisées.
       // Vue MJ : `playerVision` est un aperçu, pas une restriction.
-      if (map.role === 'player' && map.vision) {
+      if ((map.role === 'player' || map.role === 'ecran') && map.vision) {
         state.visible = map.vision.visible ? new Set(map.vision.visible) : null;
         state.explored = map.vision.explored ? new Set(map.vision.explored) : null;
       } else {
@@ -345,6 +345,13 @@ window.ArcaneMap = (function () {
       ctx.globalAlpha = element.remembered ? 0.45 : 1;
 
       ctx.fillStyle = element.color || '#6b4b2f';
+      if (element.kind === 'couleur') {
+        // Case peinte : aplat plein, sans bordure, pour que les zones de
+        // même couleur se raccordent comme des pixels.
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+        return;
+      }
       ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
       ctx.strokeStyle = 'rgba(59,47,30,0.55)';
       ctx.lineWidth = 1.5;

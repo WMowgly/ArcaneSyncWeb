@@ -259,6 +259,26 @@ function createMobFromTemplate(templateId, overrides = {}, options = {}) {
   }, { id: generateId('mob') });
 }
 
+/**
+ * Duplique une INSTANCE de la partie : « Gobelin #2 » -> « Gobelin #3 ».
+ *
+ * Copie conforme de l'état courant (PV, mana, statuts...), mais clonée en
+ * profondeur et sous un nouvel id : modifier la copie ne touche jamais
+ * l'original. La filiation (templateId) est conservée ; la position sur
+ * la carte, elle, appartient au token et n'est pas copiée.
+ */
+function duplicateMob(source, mobsExistants = {}) {
+  if (!source || !source.nom) return null;
+
+  const copie = clone(source);
+  delete copie.id;
+  delete copie.createdAt;
+  const base = String(source.nom).replace(/\s+#\d+$/, '');
+  copie.nom = nommerInstance(base, mobsExistants);
+
+  return normaliserMob(copie, { id: generateId('mob') });
+}
+
 lireTemplates();
 
 module.exports = {
@@ -273,5 +293,6 @@ module.exports = {
   templateDepuisMob,
   deleteMobTemplate,
   createMobFromTemplate,
+  duplicateMob,
   normaliserMob
 };

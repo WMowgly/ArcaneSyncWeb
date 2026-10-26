@@ -52,11 +52,13 @@ FICHIERS.forEach(nom => {
   if (fs.existsSync(source)) fs.copyFileSync(source, path.join(bacASable, nom));
 });
 
-const baseDeJeu = path.join(racine, 'database', 'game_database.json');
-if (fs.existsSync(baseDeJeu)) {
-  fs.mkdirSync(path.join(bacASable, 'database'), { recursive: true });
-  fs.copyFileSync(baseDeJeu, path.join(bacASable, 'database', 'game_database.json'));
-}
+['game_database.json', 'sorts.json'].forEach(nom => {
+  const source = path.join(racine, 'database', nom);
+  if (fs.existsSync(source)) {
+    fs.mkdirSync(path.join(bacASable, 'database'), { recursive: true });
+    fs.copyFileSync(source, path.join(bacASable, 'database', nom));
+  }
+});
 
 process.env.ARCANESYNC_DATA_DIR = bacASable;
 

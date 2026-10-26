@@ -451,8 +451,6 @@
 
       const hp = token.entity?.hp || { current: 0, max: 0 };
       const pct = Math.max(0, Math.min(100, (Number(hp.current) / Math.max(1, Number(hp.max))) * 100));
-      const statuts = (token.entity?.statuts || []).map(s => s.nom).join(', ') || 'Aucun';
-
       conteneur.innerHTML = `
         <div class="self-card">
           <strong>👤 ${escapeHtml(token.entity?.nom || 'Mon personnage')}</strong>
@@ -460,12 +458,8 @@
           <div class="stat-line">❤️ ${escapeHtml(hp.current)} / ${escapeHtml(hp.max)} PV</div>
           <div class="stat-line">📍 Position : ${token.x} , ${token.y}</div>
           <div class="stat-line">👁️ Portée de vue : ${m.self.visionRange} case(s)</div>
-          <div class="stat-line">✨ Statuts : ${escapeHtml(statuts)}</div>
           ${m.self.locked ? '<div class="stat-line warn">🔒 Déplacement verrouillé par le MJ</div>' : ''}
-        </div>
-        <p class="hint" style="margin-top:8px">
-          Brouillard : <strong>${m.fog?.enabled ? (m.fog.mode === 'vision' ? 'vision du personnage' : 'zones révélées par le MJ') : 'désactivé'}</strong>
-        </p>`;
+        </div>`;
     }
 
     function renderVisibleList() {

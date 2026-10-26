@@ -39,17 +39,23 @@ const KINDS_ELEMENT = Object.freeze({
   porte:    { id:'porte',    nom:'Porte',    icone:'🚪', blocksMovement:true,  blocksVision:true,  color:'#8b5e3c' },
   objet:    { id:'objet',    nom:'Objet',    icone:'📦', blocksMovement:false, blocksVision:false, color:'#b08948' },
   piege:    { id:'piege',    nom:'Piège',    icone:'⚠️', blocksMovement:false, blocksVision:false, color:'#9b2c2c' },
-  marqueur: { id:'marqueur', nom:'Marqueur', icone:'📍', blocksMovement:false, blocksVision:false, color:'#3f6287' }
+  marqueur: { id:'marqueur', nom:'Marqueur', icone:'📍', blocksMovement:false, blocksVision:false, color:'#3f6287' },
+  // Case de couleur unie posée au pinceau du MJ : ni icône, ni obstacle.
+  couleur:  { id:'couleur',  nom:'Couleur',  icone:'',   blocksMovement:false, blocksVision:false, color:'#4f7a4a' }
 });
 
 const MODES_BROUILLARD = Object.freeze(['none', 'vision', 'manual']);
 
-const DEFAULT_GRID = Object.freeze({ cols: 24, rows: 16, cellSize: 48, showGrid: true });
+// Quadrillage par défaut : résolution 2, soit deux fois plus de cases par
+// côté que l'ancien 24×16 (cases de 48 px), pour la même surface.
+const DEFAULT_GRID = Object.freeze({ cols: 48, rows: 32, cellSize: 24, showGrid: true, resolution: 2 });
+const MAX_RESOLUTION = 4;
 const DEFAULT_BACKGROUND = Object.freeze({ color: '#fffdf7' });
 const DEFAULT_VISION_RANGE = 6;
 
-const MIN_COLS = 4,  MAX_COLS = 80;
-const MIN_ROWS = 4,  MAX_ROWS = 80;
+// 160 : une carte de 40 cases de base reste possible en résolution 4.
+const MIN_COLS = 4,  MAX_COLS = 160;
+const MIN_ROWS = 4,  MAX_ROWS = 160;
 const MIN_CELL = 16, MAX_CELL = 160;
 const MAX_MAPS = 60;
 
@@ -102,12 +108,32 @@ function cellKey(x, y) {
 // ---------------------------------------------------------------------------
 
 function normaliserGrid(input = {}) {
+  // Résolution du quadrillage : chaque case de base est découpée en
+  // résolution × résolution cases. Une carte antérieure (sans le champ)
+  // est en résolution 1 ; une carte neuve prend DEFAULT_GRID.resolution.
+  const neuve = input.cols === undefined && input.rows === undefined;
   return {
     cols: entier(input.cols, DEFAULT_GRID.cols, MIN_COLS, MAX_COLS),
     rows: entier(input.rows, DEFAULT_GRID.rows, MIN_ROWS, MAX_ROWS),
     cellSize: entier(input.cellSize, DEFAULT_GRID.cellSize, MIN_CELL, MAX_CELL),
-    showGrid: input.showGrid !== false
+    showGrid: input.showGrid !== false,
+    resolution: entier(input.resolution, neuve ? DEFAULT_GRID.resolution : 1, 1, MAX_RESOLUTION)
   };
+}
+
+// ---------------------------------------------------------------------------
+// Brouillard de guerre : désactivé dans l'application (les réglages des
+// cartes sont conservés mais ignorés). Le mécanisme reste intact et testé :
+// activerBrouillard(true) le rétablit.
+// ---------------------------------------------------------------------------
+let brouillardActif = false;
+
+function activerBrouillard(actif) {
+  brouillardActif = actif === true;
+}
+
+function brouillardEffectif(map) {
+  return brouillardActif && map.fog.enabled && map.fog.mode !== 'none';
 }
 
 function normaliserToken(input = {}, grid, options = {}) {
@@ -121,6 +147,8 @@ function normaliserToken(input = {}, grid, options = {}) {
     entityId,
     x: entier(input.x, 0, 0, grid.cols - 1),
     y: entier(input.y, 0, 0, grid.rows - 1),
+    // Un jeton occupe une case du quadrillage, quelle que soit sa
+    // résolution : un quadrillage plus fin donne des pions plus petits.
     size: entier(input.size, 1, 1, 6),
     // Un token invisible reste dans la carte côté MJ mais n'est JAMAIS
     // sérialisé dans la charge utile envoyée aux joueurs.
@@ -573,6 +601,89 @@ function updateMap(id, donnees = {}) {
 
       brouillon.fog = normaliserFog(brouillon.fog, grid);
     }
+  });
+}
+
+/**
+ * Change la RÉSOLUTION du quadrillage, comme celle d'une image : à 2, chaque
+ * case de base devient 2×2 cases. Le décor et les tracés sont convertis pour
+ * rester au même endroit et garder la même taille à l'écran ; les jetons
+ * suivent en position mais gardent leur taille en cases (un quadrillage plus
+ * fin donne des pions plus petits). Augmenter est sans perte ; diminuer
+ * regroupe les cases (deux éléments identiques qui se superposent alors
+ * n'en font plus qu'un).
+ */
+function changerResolution(mapId, resolution) {
+  const cible = Number(resolution);
+  if (!Number.isInteger(cible) || cible < 1 || cible > MAX_RESOLUTION) {
+    return { success: false, message: `Résolution invalide (1 à ${MAX_RESOLUTION}).` };
+  }
+
+  return muterMap(mapId, brouillon => {
+    const actuelle = brouillon.grid.resolution || 1;
+    if (cible === actuelle) return { success: false, unchanged: true, message: 'La carte est déjà à cette résolution.' };
+
+    const f = cible / actuelle;
+    const cols = Math.round(brouillon.grid.cols * f);
+    const rows = Math.round(brouillon.grid.rows * f);
+    if (cols > MAX_COLS || rows > MAX_ROWS) {
+      return { success: false, message: `Trop de cases : ${cols}×${rows} (maximum ${MAX_COLS}×${MAX_ROWS}).` };
+    }
+    if (cols < MIN_COLS || rows < MIN_ROWS) {
+      return { success: false, message: `Pas assez de cases : ${cols}×${rows} (minimum ${MIN_COLS}×${MIN_ROWS}).` };
+    }
+
+    const position = (v, max) => Math.max(0, Math.min(max - 1, Math.floor(v * f)));
+    const dimension = v => Math.max(1, Math.round(v * f));
+
+    brouillon.grid = {
+      ...brouillon.grid,
+      cols,
+      rows,
+      resolution: cible,
+      // Même surface affichée : des cases plus nombreuses sont plus petites.
+      cellSize: entier(brouillon.grid.cellSize / f, DEFAULT_GRID.cellSize, MIN_CELL, MAX_CELL)
+    };
+
+    const vus = new Set();
+    const elements = {};
+    Object.values(brouillon.elements).forEach(element => {
+      const x = position(element.x, cols);
+      const y = position(element.y, rows);
+      const converti = {
+        ...element, x, y,
+        w: Math.min(dimension(element.w), cols - x),
+        h: Math.min(dimension(element.h), rows - y),
+        ...(element.lightRange ? { lightRange: Math.min(40, dimension(element.lightRange)) } : {})
+      };
+      const empreinte = [converti.kind, x, y, converti.w, converti.h, converti.color, converti.nom].join('|');
+      if (vus.has(empreinte)) return;
+      vus.add(empreinte);
+      elements[element.id] = converti;
+    });
+    brouillon.elements = elements;
+
+    // Les jetons gardent leur taille en cases (réglable dans l'inspecteur) :
+    // seule leur position suit la conversion.
+    Object.values(brouillon.tokens).forEach(token => {
+      token.size = Math.min(token.size || 1, cols, rows);
+      token.x = Math.min(position(token.x, cols), cols - token.size);
+      token.y = Math.min(position(token.y, rows), rows - token.size);
+      token.vision = { ...token.vision, range: Math.min(40, Math.round((token.vision?.range ?? DEFAULT_VISION_RANGE) * f)) };
+    });
+
+    // Les tracés sont en coordonnées continues : simple mise à l'échelle.
+    Object.values(brouillon.annotations).forEach(annotation => {
+      annotation.points = annotation.points.map(point => ({
+        x: Math.round(Math.min(cols, point.x * f) * 100) / 100,
+        y: Math.round(Math.min(rows, point.y * f) * 100) / 100
+      }));
+    });
+
+    // La mémoire d'exploration ne se convertit pas fidèlement : on la vide.
+    brouillon.fog = normaliserFog({ ...brouillon.fog, revealed: [] }, brouillon.grid);
+
+    return { resolution: cible, cols, rows };
   });
 }
 
@@ -1121,6 +1232,22 @@ function supprimerElement(mapId, elementId) {
   });
 }
 
+/**
+ * Retire PLUSIEURS éléments en une seule mutation (annulation d'une pose
+ * au pinceau). Les identifiants déjà absents sont ignorés.
+ */
+function supprimerElements(mapId, elementIds = []) {
+  if (!Array.isArray(elementIds) || !elementIds.length) {
+    return { success: false, message: 'Aucun élément à retirer.' };
+  }
+
+  return muterMap(mapId, brouillon => {
+    const retires = elementIds.filter(id => typeof id === 'string' && brouillon.elements[id]);
+    retires.forEach(id => { delete brouillon.elements[id]; });
+    return { retires: retires.length };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // ANNOTATIONS — le tableau blanc, posé sur la carte
 //
@@ -1224,7 +1351,7 @@ function viderAnnotations(mapId, scope = 'all', contexte = {}) {
 
 /** Cases connues d'un joueur : visibles maintenant, ou déjà explorées. */
 function casesConnuesJoueur(map, playerId) {
-  if (!map.fog.enabled || map.fog.mode === 'none') return null;
+  if (!brouillardEffectif(map)) return null;
 
   if (map.fog.mode === 'vision') {
     const visibles = visionDuPersonnage(map, playerId);
@@ -1489,7 +1616,16 @@ function visionEffective(map, originesPerso) {
 }
 
 /** Vision d'un personnage donné, lumières comprises. */
+/**
+ * Identifiant réservé à l'ÉCRAN partagé de la table : il voit ce que voit
+ * le groupe (union des visions des PJ). Passé à la place d'un playerId, il
+ * réutilise toute la chaîne joueur — projection filtrée, annotations,
+ * aperçu des tracés — sans jamais correspondre à un personnage réel.
+ */
+const VUE_GROUPE = '__vue_groupe__';
+
 function visionDuPersonnage(map, playerId) {
+  if (playerId === VUE_GROUPE) return visionDuGroupe(map);
   return visionEffective(map, originesVisionJoueur(map, playerId));
 }
 
@@ -1547,7 +1683,7 @@ function resetFog(mapId) {
 function rafraichirExploration(mapId) {
   const map = maps[mapId];
   if (!map) return { success: false, message: 'Carte introuvable.' };
-  if (!map.fog.enabled || map.fog.mode !== 'vision' || !map.fog.autoReveal) {
+  if (!brouillardEffectif(map) || map.fog.mode !== 'vision' || !map.fog.autoReveal) {
     return { success: true, modifie: false };
   }
 
@@ -1626,7 +1762,7 @@ function entiteAffichable(entities, token, pourMj) {
 function projectionMj(map, entities) {
   // Le MJ dispose d'un aperçu de ce que le groupe voit réellement :
   // c'est son outil de contrôle du brouillard de guerre.
-  const visibles = map.fog.enabled && map.fog.mode === 'vision'
+  const visibles = brouillardEffectif(map) && map.fog.mode === 'vision'
     ? visionDuGroupe(map)
     : new Set();
 
@@ -1671,7 +1807,7 @@ function projectionMj(map, entities) {
 }
 
 function projectionJoueur(map, entities, playerId) {
-  const fogActif = map.fog.enabled && map.fog.mode !== 'none';
+  const fogActif = brouillardEffectif(map);
 
   let visibles = null;   // null = aucune restriction spatiale
   let explorees = [];
@@ -1816,9 +1952,14 @@ function getMapForViewer(mapId, { role, playerId, entities } = {}) {
   if (!map) return null;
 
   const donnees = entities || { players: [], mobs: [] };
-  return role === 'mj'
-    ? projectionMj(map, donnees)
-    : projectionJoueur(map, donnees, playerId || null);
+  if (role === 'mj') return projectionMj(map, donnees);
+
+  // Écran partagé : même filtrage qu'un joueur, vision du groupe entier.
+  if (role === 'ecran') {
+    return { ...projectionJoueur(map, donnees, VUE_GROUPE), role: 'ecran', playerId: null };
+  }
+
+  return projectionJoueur(map, donnees, playerId || null);
 }
 
 lireMaps();
@@ -1829,14 +1970,18 @@ module.exports = {
   MODES_BROUILLARD,
   DEFAULT_GRID,
   DEFAULT_VISION_RANGE,
+  VUE_GROUPE,
+  MAX_RESOLUTION,
 
   flush,
   signatureCarte,
+  activerBrouillard,
 
   getMaps,
   getMapById,
   createMap,
   updateMap,
+  changerResolution,
   deleteMap,
   duplicateMap,
 
@@ -1850,6 +1995,7 @@ module.exports = {
   ajouterElements,
   updateElement,
   supprimerElement,
+  supprimerElements,
   basculerPorte,
   basculerPortes,
   remplacerDecor,

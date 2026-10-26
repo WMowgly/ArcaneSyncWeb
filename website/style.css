@@ -81,6 +81,21 @@ input[type="text"] {
   background-color: #ffeeee;
 }
 
+/* Champ numérique non modifiable (lecture seule ou désactivé) : pas de
+   flèches d'incrément, qui laisseraient croire qu'on peut le changer. */
+input[type="number"][readonly],
+input[type="number"]:disabled {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"][readonly]::-webkit-inner-spin-button,
+input[type="number"][readonly]::-webkit-outer-spin-button,
+input[type="number"]:disabled::-webkit-inner-spin-button,
+input[type="number"]:disabled::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 input[type="radio"] {
   width: auto;
   margin-right: 5px;
@@ -423,13 +438,37 @@ button {
   resize: vertical;
 }
 
-.mj-edit-section textarea[name="spells"],
-.mj-edit-section textarea[name="sorts_mineurs"],
-.mj-edit-section textarea[name="attaques_speciales"],
-.mj-edit-section textarea[name="competences"] {
-  min-height: 160px;
-  font-family: Consolas, monospace;
-  font-size: 0.9em;
+/* Listes du personnage (sorts, attaques, compétences) : une ligne par entrée. */
+.mj-listes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 14px;
+}
+.mj-liste h4 { margin: 0 0 6px; }
+.mj-liste-ligne {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.mj-liste-3 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 70px 32px; }
+.mj-liste-2 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 32px; }
+.mj-liste-4 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr) 70px 90px 32px; }
+.mj-liste-armes { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); max-width: 640px; }
+.mj-liste-entetes { font-size: 0.85em; color: #665c47; margin-bottom: 2px; }
+.mj-edit-section .mj-liste-ligne input,
+.mj-edit-section .mj-liste-ligne select { padding: 6px; }
+.mj-liste-retirer {
+  border: 1px solid #8b5e3c; border-radius: 5px; background: #eadfcf;
+  color: #7a2222; cursor: pointer; padding: 5px 0; font: inherit;
+}
+.mj-liste-ajouter {
+  border: 1px solid #8b5e3c; border-radius: 6px; padding: 6px 12px;
+  background: #fefae0; color: #5c3b21; font: inherit; font-weight: 600; cursor: pointer;
+}
+@media (max-width: 560px) {
+  .mj-liste-4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; }
+  .mj-liste-4 [data-col="niveau"], .mj-liste-4 [data-col="type"] { display: none; }
 }
 
 .mj-edit-help {
@@ -476,4 +515,52 @@ button {
     max-width: 96vw;
     padding: 15px;
   }
+}
+
+/* ===========================================================================
+   Mise en page adaptative commune : marges proportionnées à l'écran,
+   champs qui remplissent leur colonne, sections larges sur grand écran et
+   empilées sur téléphone.
+   =========================================================================== */
+body { padding: 16px clamp(10px, 2.5vw, 40px) 30px; }
+
+input, select, textarea { box-sizing: border-box; max-width: 100%; }
+input[type="number"], input[type="text"] { width: 100%; }
+.dual-input input { flex: 1 1 0; min-width: 0; width: auto; }
+
+/* Les colonnes de grille peuvent rétrécir sous la largeur de leur contenu :
+   sinon un champ large pousse la dernière colonne hors de l'écran. */
+.grid > * { min-width: 0; }
+
+.section { max-width: min(1500px, 100%); box-sizing: border-box; }
+
+/* Sections secondaires (sac, armes, armure, sorts...) : deux colonnes
+   quand la place le permet, une seule sur petit écran. */
+.sections-container,
+.double-section-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 0 26px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.sections-container > .section,
+.double-section-container > .section { max-width: none; margin: 0 0 26px; }
+
+/* Liste des personnages : grille qui occupe toute la largeur. */
+.page-personnages #joueurs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 14px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.page-personnages #joueurs-list > .card { width: auto; margin: 0; }
+.page-personnages h2 { max-width: 1500px; margin: 10px auto; }
+
+@media (max-width: 600px) {
+  h1 { font-size: 1.5rem; margin-bottom: 20px; }
+  .section { padding-left: 12px; padding-right: 12px; }
+  .section h2 { font-size: 16px; }
+  .page-index button { width: min(300px, 90vw); }
 }

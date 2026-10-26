@@ -34,8 +34,6 @@ const {
   retirerStatutMob,
   getPlayerPersonalNotes,
   setPlayerPersonalNotes,
-  getPrivatePlayerMessages,
-  ajouterMessagePriveJoueur,
   getPublicNotes,
   savePublicNote,
   deletePublicNote,
@@ -52,6 +50,8 @@ const mapStore = require('./map');
 const mapGen = require('./mapgen');
 const { sauvegarderFichiers, cheminDonnees } = require('./storage');
 const allegement = require('./allegement');
+const sortsRef = require('./sorts');
+const { listesSortsReference } = sortsRef;
 
 const {
   getMobTemplates,
@@ -64,6 +64,7 @@ const {
   nommerInstance,
   getCategoriesMob,
   duplicateMobTemplate,
+  duplicateMob,
   templateDepuisMob
 } = require('./mob');
 
@@ -239,30 +240,9 @@ app.put('/api/session/player/:id/personal-notes',(req,res)=>{
   res.json({message:'Notes personnelles sauvegardées.',playerId:req.params.id,content:result.content});
 });
 
-// 2) Messages privés joueur <-> MJ.
-app.get('/api/session/player/:id/private-messages',(req,res)=>{
-  if(!getJoueurById(req.params.id)) return res.status(404).json({message:'Joueur non trouvé.'});
-  if(!accessAllowed(req,req.params.id)) return res.status(403).json({message:'Accès aux messages privés refusé.'});
-  res.json({playerId:req.params.id,messages:getPrivatePlayerMessages(req.params.id)});
-});
-
-app.post('/api/session/player/:id/private-messages',(req,res)=>{
-  if(!getJoueurById(req.params.id)) return res.status(404).json({message:'Joueur non trouvé.'});
-  if(!accessAllowed(req,req.params.id)) return res.status(403).json({message:'Accès aux messages privés refusé.'});
-
-  const result=ajouterMessagePriveJoueur(req.params.id,req.body?.role,req.body?.content);
-  if(!result.success) return res.status(400).json({message:result.message});
-
-  if(!sauvegardeData({id:req.params.id},{privateMessages:result.messages})) {
-    return res.status(500).json({message:'Message sauvegardé dans la session mais pas dans le personnage.'});
-  }
-
-  io.to(`private-player:${req.params.id}`).emit('privateMessagesUpdated',{playerId:req.params.id});
-  io.to('private-mj').emit('privateMessagesUpdated',{playerId:req.params.id});
-  res.status(201).json({message:'Message privé envoyé.',playerId:req.params.id,messages:result.messages});
-});
-
-// 3) Notes publiques du MJ.
+// 2) Notes publiques du MJ.
+// (Les messages privés joueur <-> MJ ont été retirés : les anciens
+// privateMessages restent dans les fichiers mais ne sont plus lus.)
 app.get('/api/session/public-notes',(req,res)=>{
   res.json({notes:getPublicNotes()});
 });
@@ -486,6 +466,27 @@ app.delete('/api/mobs/:id', (req, res) => {
   } catch (error) {
     console.error('Erreur suppression mob:', error);
     res.status(500).json({ message: 'Impossible de supprimer le mob.' });
+  }
+});
+
+/** Copie indépendante d'un mob de la partie (nouvel id, nom numéroté). */
+app.post('/api/mobs/:id/duplicate', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  try {
+    const source = getSessionMobById(req.params.id);
+    if (!source) return res.status(404).json({ message: 'Mob introuvable dans la partie active.' });
+
+    const mob = duplicateMob(source, getSessionMobs());
+    if (!mob || !sauvegarderMobSession(mob)) {
+      return res.status(500).json({ message: 'Impossible de dupliquer le mob.' });
+    }
+    io.emit('mobUpdated', { type: 'duplicated', mob });
+    io.emit('sceneUpdated');
+    emitMapState();
+    res.status(201).json({ message: `« ${mob.nom} » ajouté à la partie.`, mob });
+  } catch (error) {
+    console.error('Erreur duplication mob:', error);
+    res.status(500).json({ message: 'Impossible de dupliquer le mob.' });
   }
 });
 
@@ -983,7 +984,7 @@ app.get('/api/game-database', (req, res) => {
       }
       try {
         const jsonData = JSON.parse(data);
-        res.json(jsonData);
+        res.json({ ...jsonData, ...(listesSortsReference() || {}) });
       } catch (parseError) {
         console.error('Erreur lors du parsing JSON:', parseError);
         res.status(500).json({ error: 'Erreur lors du parsing des données' });
@@ -993,6 +994,68 @@ app.get('/api/game-database', (req, res) => {
     console.error('Erreur lors de l\'accès au fichier:', error);
     res.status(500).json({ error: 'Erreur lors de l\'accès au fichier' });
   }
+});
+
+// ------------------------------------------------------------------
+// Interface Modification — édition de la référence (sorts.json).
+// Lecture libre ; toute écriture est réservée au MJ.
+// ------------------------------------------------------------------
+
+app.get('/api/reference', (req, res) => {
+  try {
+    res.json(sortsRef.lireReference());
+  } catch (error) {
+    console.error('Lecture de sorts.json impossible:', error);
+    res.status(500).json({ message: 'Lecture de sorts.json impossible.' });
+  }
+});
+
+function routeReference(res, action, statutSucces = 200) {
+  try {
+    const result = action();
+    if (!result.success) {
+      return res.status(result.introuvable ? 404 : 400).json({ message: result.message });
+    }
+    io.emit('referenceUpdated');
+    res.status(statutSucces).json(result);
+  } catch (error) {
+    console.error('Modification de sorts.json impossible:', error);
+    res.status(500).json({ message: 'Modification de sorts.json impossible.' });
+  }
+}
+
+app.post('/api/reference/sorts', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.creerSort(req.body), 201);
+});
+app.put('/api/reference/sorts/:id', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.modifierSort(req.params.id, req.body));
+});
+app.delete('/api/reference/sorts/:id', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.supprimerSort(req.params.id));
+});
+app.post('/api/reference/sorts/:id/duplicate', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.dupliquerSort(req.params.id), 201);
+});
+
+app.post('/api/reference/attaques', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.creerAttaque(req.body), 201);
+});
+app.put('/api/reference/attaques/:id', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.modifierAttaque(req.params.id, req.body));
+});
+app.delete('/api/reference/attaques/:id', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.supprimerAttaque(req.params.id));
+});
+app.post('/api/reference/attaques/:id/duplicate', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  routeReference(res, () => sortsRef.dupliquerAttaque(req.params.id), 201);
 });
 
 // ------------------------------------------------------------------
@@ -1107,9 +1170,11 @@ function emitMapState(socketCible) {
     : [...io.sockets.sockets.values()];
 
   sockets.forEach(socket => {
-    const role = socket.handshake.query?.role === 'mj' ? 'mj' : 'player';
-    const playerId = socket.handshake.query?.playerId || null;
-    const cle = role === 'mj' ? 'mj' : `player|${playerId}`;
+    // Trois projections : MJ, écran partagé (vision du groupe), joueur.
+    const roleDemande = socket.handshake.query?.role;
+    const role = roleDemande === 'mj' || roleDemande === 'ecran' ? roleDemande : 'player';
+    const playerId = role === 'player' ? socket.handshake.query?.playerId || null : null;
+    const cle = role === 'player' ? `player|${playerId}` : role;
 
     if (!cache.has(cle)) {
       cache.set(cle, contexte
@@ -1186,6 +1251,24 @@ app.put('/api/maps/:mapId', (req, res) => {
   io.emit('mapLibraryUpdated');
   emitMapState();
   res.json({ message: 'Carte modifiée.', map: result.map });
+});
+
+/** Résolution du quadrillage (1 à 4) : convertit la carte, voir map.js. */
+app.post('/api/maps/:mapId/resolution', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+
+  const result = mapStore.changerResolution(req.params.mapId, req.body?.resolution);
+  if (!result.success) {
+    if (result.unchanged) return res.json({ message: result.message });
+    return res.status(result.message === 'Carte introuvable.' ? 404 : 400).json({ message: result.message });
+  }
+
+  io.emit('mapLibraryUpdated');
+  emitMapState();
+  res.json({
+    message: `Quadrillage ×${result.resolution} : ${result.cols}×${result.rows} cases.`,
+    resolution: result.resolution
+  });
 });
 
 app.delete('/api/maps/:mapId', (req, res) => {
@@ -1284,11 +1367,10 @@ app.get('/api/map/active', (req, res) => {
   }
 });
 
-// --- Génération procédurale par type de lieu -----------------------
+// --- Types de lieu et palette de décors ----------------------------
 //
-// Un générateur ne produit que des `elements` standards : une carte
-// générée est donc un simple point de départ, entièrement modifiable
-// ensuite avec les outils habituels du MJ.
+// La génération automatique de cartes a été retirée : mapgen.js ne sert
+// plus qu'au catalogue des types de lieu et des décors posés par le MJ.
 
 app.get('/api/map/generators', (req, res) => {
   res.json(mapGen.getGenerateurs());
@@ -1304,114 +1386,6 @@ app.get('/api/map/generators', (req, res) => {
  */
 app.get('/api/map/palette', (req, res) => {
   res.json(mapGen.getPalette(typeof req.query?.type === 'string' ? req.query.type : ''));
-});
-
-/**
- * APERÇU de génération — n'écrit RIEN.
- *
- * Générer ne doit pas remplir la bibliothèque : le MJ tire des variantes
- * jusqu'à en trouver une qui lui plaît, puis décide de la conserver. Sans
- * cela on accumule des cartes jamais utilisées — le dépôt en comptait 15,
- * dont 4 strictement identiques nées de clics répétés.
- *
- * L'aperçu ne touche ni maps.json, ni la session, ni la carte active, et
- * n'émet aucun événement : il ne quitte pas l'écran du MJ.
- */
-app.post('/api/map/generate-preview', (req, res) => {
-  if (refuserSiPasMj(req, res)) return;
-
-  const genere = mapGen.genererCarte(req.body?.type, req.body || {});
-  if (!genere.success) return res.status(400).json({ message: genere.message });
-
-  res.json({
-    type: genere.type,
-    nom: genere.nom,
-    seed: genere.seed,
-    grid: genere.grid,
-    background: genere.background,
-    elements: genere.elements,
-    spawn: genere.spawn,
-    praticables: genere.praticables
-  });
-});
-
-app.post('/api/maps/generate', (req, res) => {
-  if (refuserSiPasMj(req, res)) return;
-
-  const genere = mapGen.genererCarte(req.body?.type, req.body || {});
-  if (!genere.success) return res.status(400).json({ message: genere.message });
-
-  const result = mapStore.createMap({
-    nom: req.body?.nom || genere.nom,
-    description: req.body?.description,
-    // Le type est conservé : c'est lui qui pilote la palette de décors
-    // proposée au MJ pour cette carte.
-    type: genere.type,
-    grid: genere.grid,
-    background: genere.background,
-    elements: genere.elements
-  });
-
-  if (!result.success) {
-    // Même graine, même type, mêmes dimensions : la carte existe déjà.
-    // On le dit au MJ plutôt que d'empiler une copie de plus.
-    return res.status(result.duplicate ? 409 : 500)
-      .json({ message: result.message, existingMapId: result.existingMapId });
-  }
-
-  if (!getActiveMapId() || req.body?.activate === true) {
-    setActiveMapId(result.map.id);
-  }
-
-  io.emit('mapLibraryUpdated');
-  emitMapState();
-  res.status(201).json({
-    message: `Carte « ${result.map.nom} » générée (${genere.elements.length} éléments).`,
-    map: result.map,
-    seed: genere.seed,
-    type: genere.type
-  });
-});
-
-/**
- * Régénère le décor d'une carte existante.
- * Les tokens sont conservés et repositionnés hors des obstacles ; seule
- * la mémoire d'exploration est remise à zéro.
- */
-app.post('/api/maps/:mapId/regenerate', (req, res) => {
-  if (refuserSiPasMj(req, res)) return;
-
-  const carte = mapStore.getMapById(req.params.mapId);
-  if (!carte) return res.status(404).json({ message: 'Carte introuvable.' });
-
-  const genere = mapGen.genererCarte(req.body?.type, {
-    ...req.body,
-    // Par défaut on conserve les dimensions actuelles de la carte.
-    cols: req.body?.cols ?? carte.grid.cols,
-    rows: req.body?.rows ?? carte.grid.rows,
-    cellSize: req.body?.cellSize ?? carte.grid.cellSize
-  });
-
-  if (!genere.success) return res.status(400).json({ message: genere.message });
-
-  const result = mapStore.remplacerDecor(req.params.mapId, {
-    grid: genere.grid,
-    background: genere.background,
-    elements: genere.elements,
-    spawn: genere.spawn,
-    type: genere.type
-  });
-
-  if (!result.success) return res.status(500).json({ message: result.message });
-
-  io.emit('mapLibraryUpdated');
-  emitMapState();
-  res.json({
-    message: `Décor régénéré (${result.elementCount} éléments).`,
-    seed: genere.seed,
-    type: genere.type,
-    elementCount: result.elementCount
-  });
 });
 
 // --- Tokens (entités mobiles) --------------------------------------
@@ -1540,6 +1514,8 @@ app.post('/api/maps/:mapId/elements/batch', (req, res) => {
   }
 
   if (req.body?.nom) modele = { ...modele, nom: req.body.nom };
+  // Pinceau de couleur du MJ : la couleur est validée par map.js (#rrggbb).
+  if (typeof req.body?.color === 'string') modele = { ...modele, color: req.body.color };
 
   const liste = cellules.map(cellule => ({ ...modele, x: cellule?.x, y: cellule?.y }));
   const result = mapStore.ajouterElements(req.params.mapId, liste);
@@ -1570,6 +1546,22 @@ app.delete('/api/maps/:mapId/elements/:elementId', (req, res) => {
 
   emitMapState();
   res.json({ message: 'Élément supprimé.' });
+});
+
+/** Retrait par lot : une seule mutation pour annuler toute une pose. */
+app.delete('/api/maps/:mapId/elements', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+
+  const ids = Array.isArray(req.body?.elementIds) ? req.body.elementIds : [];
+  if (ids.length > 2000) {
+    return res.status(400).json({ message: 'Trop d\'éléments en une seule fois (2000 maximum).' });
+  }
+
+  const result = mapStore.supprimerElements(req.params.mapId, ids);
+  if (!result.success) return res.status(400).json({ message: result.message });
+
+  emitMapState();
+  res.json({ message: `${result.retires} élément(s) retiré(s).`, retires: result.retires });
 });
 
 // --- Annotations : le tableau blanc posé sur la carte --------------
@@ -1962,7 +1954,10 @@ io.on('connection', (socket) => {
       if (destinataire.id === socket.id) return;
 
       const roleCible = destinataire.handshake.query?.role === 'mj' ? 'mj' : 'player';
-      const joueurCible = destinataire.handshake.query?.playerId || null;
+      // L'écran partagé connaît ce que le groupe connaît.
+      const joueurCible = destinataire.handshake.query?.role === 'ecran'
+        ? mapStore.VUE_GROUPE
+        : destinataire.handshake.query?.playerId || null;
 
       // Le MJ voit tout, y compris les tracés en cours des joueurs.
       if (roleCible === 'mj') {
@@ -2089,7 +2084,9 @@ function getLocalIPAddress() {
 // ------------------------------------------------------------------
 function sauvegarderDonnees() {
   const fichiers = ['data.json', 'session.json', 'maps.json', 'mob_templates.json']
-    .map(nom => cheminDonnees(nom));
+    .map(nom => cheminDonnees(nom))
+    // La référence des sorts, éditable par le MJ : sauvegardes dans database/sauvegardes/.
+    .concat(cheminDonnees('database', 'sorts.json'));
 
   try {
     const nombre = sauvegarderFichiers(fichiers, { generations: 5 });

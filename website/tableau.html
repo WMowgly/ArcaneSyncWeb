@@ -122,6 +122,14 @@
       body { padding: 0 6px 20px; }
       .scene-toolbar > * { flex: 1 1 auto; }
     }
+
+    /* Intégré dans l'Écran partagé (?embed=1) : le tableau seul. */
+    body.integre { padding: 0 8px; }
+    body.integre .scene-container { margin: 8px auto; }
+    body.integre .scene-header,
+    body.integre .scene-toolbar,
+    body.integre .scene-help,
+    body.integre #scene-role { display: none; }
   </style>
 </head>
 <body>
@@ -184,6 +192,9 @@
     const params = new URLSearchParams(location.search);
     let role = params.get('role');
     const playerId = params.get('PlayerId');
+
+    // Intégré dans l'Écran partagé : affichage seul, sans outils.
+    if (params.get('embed') === '1') document.body.classList.add('integre');
 
     if (!role) {
       if (location.pathname.endsWith('/mj.html')) role = 'mj';

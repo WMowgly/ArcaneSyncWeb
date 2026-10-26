@@ -76,6 +76,7 @@ try {
   delete require.cache[require.resolve('../map')];
   const mapGen = require('../mapgen');
   const mapStore = require('../map');
+  mapStore.activerBrouillard(true); // désactivé dans l'appli, toujours testé
 
   // ---------------------------------------------------------------------
   // 1. Catalogue
@@ -332,22 +333,26 @@ try {
   const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
   assert(serverSource.includes("app.get('/api/map/generators'"), 'Catalogue de générateurs absent du serveur.');
   assert(serverSource.includes("app.get('/api/map/palette'"), 'Route de palette absente du serveur.');
-  assert(serverSource.includes("app.post('/api/maps/generate'"), 'Route de génération absente.');
-  assert(serverSource.includes("app.post('/api/maps/:mapId/regenerate'"), 'Route de régénération absente.');
-  assert(serverSource.includes("require('./mapgen')"), 'Module de génération non branché.');
+  assert(serverSource.includes("require('./mapgen')"), 'Catalogue de décors non branché.');
   assert(serverSource.includes('mapGen.getMateriau'),
     'Le serveur doit résoudre lui-même le pinceau envoyé par le client.');
-  assert(serverSource.includes('type: genere.type'),
-    'Le type de lieu doit être conservé sur la carte générée.');
+  // La génération automatique a été retirée de l'application : le moteur
+  // reste testé ci-dessus, mais n'est plus exposé.
+  assert(!serverSource.includes("app.post('/api/maps/generate'"), 'Route de génération encore exposée.');
+  assert(!serverSource.includes("app.post('/api/maps/:mapId/regenerate'"), 'Route de régénération encore exposée.');
+  assert(!serverSource.includes("app.post('/api/map/generate-preview'"), "Route d'aperçu encore exposée.");
 
   const mjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
-  assert(mjSource.includes('btn-generate'), 'Bouton de génération absent de l\'interface MJ.');
-  assert(mjSource.includes('btn-regenerate'), 'Bouton de régénération absent de l\'interface MJ.');
-  assert(mjSource.includes('gen-seed'), 'Champ de graine absent de l\'interface MJ.');
+  assert(!mjSource.includes('btn-generate') && !mjSource.includes('btn-regenerate') && !mjSource.includes('gen-seed'),
+    "L'interface MJ ne doit plus proposer de génération.");
   assert(mjSource.includes('ins-door'), 'Bascule ouvrir/fermer des portes absente de l\'inspecteur.');
-  assert(mjSource.includes('chargerPalette'), 'Palette contextuelle absente de l\'interface MJ.');
-  assert(mjSource.includes('data-brush'), 'La palette doit poser des pinceaux nommés.');
-  assert(mjSource.includes('map-type'), 'Le MJ doit pouvoir déclarer le type de lieu.');
+  // Le pinceau de décor du MJ est désormais un nuancier de 16 couleurs ;
+  // la palette par biome reste disponible côté serveur (testée ci-dessus).
+  assert((mjSource.match(/data-couleur="#[0-9a-f]{6}"/gi) || []).length >= 6 + 16,
+    'Le nuancier de 16 couleurs du décor (et les 6 des annotations) doit être présent.');
+  assert(mjSource.includes("kind: 'couleur'"), 'Le pinceau doit poser des cases de couleur.');
+  assert(!mjSource.includes('data-brush') && !mjSource.includes('fog-reveal'),
+    'Palette de décors et outils de brouillard retirés de l’interface MJ.');
   assert(mjSource.includes('ouvrirModaleEntite'), 'Modale de propriétés absente de l\'interface MJ.');
   assert(mjSource.includes('mod-hp-cur') && mjSource.includes('mod-mana-cur'),
     'La modale doit permettre de modifier PV et mana.');

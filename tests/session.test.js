@@ -206,7 +206,9 @@ for(const id of ['agonie','poison','brulure','paralysie']){
   if(!idsV17.includes(id))throw new Error(`Statut ${id} absent.`);
 }
 if(statusModuleV17.normaliserStatutsJoueur(['poison','poison']).length!==1)throw new Error('Doublon statut.');
-if(!gameSourceV17.includes('id="player-statuses"'))throw new Error('Affichage joueur absent.');
+// Les statuts restent gérés par le MJ mais ne sont plus affichés aux joueurs.
+if(gameSourceV17.includes('id="player-statuses"'))throw new Error('Les statuts ne doivent plus être affichés au joueur.');
+if(!gameSourceV17.includes('id="player-stats"'))throw new Error('Statistiques absentes de l’interface de jeu.');
 
 // v1.8 MJ full player management checks
 const serverSourceV18 = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
@@ -293,17 +295,23 @@ const mjSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website
 const tableauSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'tableau.html'), 'utf8');
 
 if (!sessionSourceV191.includes('personalNotes')) throw new Error('Notes personnelles séparées absentes.');
-if (!sessionSourceV191.includes('privateMessages')) throw new Error('Messages privés séparés absents.');
 if (!sessionSourceV191.includes('publicNotes')) throw new Error('Notes publiques absentes de la session.');
 if (!serverSourceV191.includes('/personal-notes')) throw new Error('API notes personnelles absente.');
-if (!serverSourceV191.includes('/private-messages')) throw new Error('API messages privés absente.');
 if (!serverSourceV191.includes('/api/session/public-notes')) throw new Error('API notes publiques absente.');
 if (!jeuSourceV191.includes('id="personal-notes-panel"')) throw new Error('Notes personnelles absentes de Interface de Jeu.');
-if (!jeuSourceV191.includes('id="private-messages-panel"')) throw new Error('Messages privés absents de Interface de Jeu.');
 if (!jeuSourceV191.includes('id="public-notes-panel"')) throw new Error('Notes publiques absentes de Interface de Jeu.');
 if (ficheSourceV191.includes('id="private-notes-section"')) throw new Error('Ancienne communication encore présente dans Fiche de Perso.');
 if (!mjSourceV191.includes('data-a="personal-notes-view"')) throw new Error('Lecture des notes personnelles absente du MJ.');
-if (!mjSourceV191.includes('data-a="private-thread"')) throw new Error('Conversation privée absente du MJ.');
+
+// Les messages privés joueur <-> MJ ont été retirés de bout en bout.
+if (sessionSourceV191.includes('ajouterMessagePriveJoueur')) throw new Error('Logique des messages privés encore présente.');
+if (serverSourceV191.includes("'/api/session/player/:id/private-messages'")) throw new Error('API messages privés encore présente.');
+if (jeuSourceV191.includes('private-message')) throw new Error('Messages privés encore présents dans Interface de Jeu.');
+if (mjSourceV191.includes('private-thread') || mjSourceV191.includes('privateMessagesUpdated')) {
+  throw new Error('Messages privés encore présents côté MJ.');
+}
+// Les rooms privées restent : elles portent les notes personnelles.
+if (!serverSourceV191.includes("socket.join('private-mj')")) throw new Error('Room MJ des notes personnelles absente.');
 if (!mjSourceV191.includes('id="public-notes-management"')) throw new Error('Gestion des notes publiques absente du MJ.');
 
 if (!serverSourceV191.includes("function personalNotesWriteAllowed")) throw new Error('Contrôle d’écriture des notes personnelles absent.');

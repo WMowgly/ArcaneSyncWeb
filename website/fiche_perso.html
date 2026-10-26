@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fiche de Personnage</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/>
@@ -335,11 +336,63 @@
   .description-content.visible {
     display: block;
   }
+  .description-content { white-space: pre-line; }
+
+  /* Mise en page compacte : sections courtes deux par deux, marges
+     resserrées, zones de texte moins hautes. */
+  /* style.css borne chaque section à 800 px et la centre : on élargit la
+     fiche à 1500 px, et les sections côte à côte remplissent leur colonne. */
+  .section { padding-top: 38px; margin: 0 auto 26px; max-width: 1500px; box-sizing: border-box; }
+  .duo, .double-section-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 26px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  .duo > .section, .double-section-container > .section { max-width: none; margin: 0 0 26px; }
+  /* La fiche organise elle-même ce conteneur (paires, puis pleine largeur) :
+     pas de la grille commune de style.css. */
+  .sections-container { display: block; max-width: 1500px; margin: 0 auto; }
+  #sorts-mineurs-container .sort-row { grid-template-columns: 2fr 1fr auto; }
+  .grid.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  textarea { height: 110px; }
+  textarea.textarea-courte { height: 80px; }
+  .weapons-table { width: 100%; }
+  @media (max-width: 900px) { .duo, .double-section-container { grid-template-columns: 1fr; } }
+
+  /* En-têtes des listes de sorts et d'attaques. */
+  .sort-entetes {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 10px;
+    padding: 0 15px 4px;
+    font-size: 13px;
+    color: #6b5135;
+  }
+  .sort-entetes.sans-niveau { grid-template-columns: 2fr 1fr auto; }
+  .sort-hors-base { color: #9b2c2c; }
+
+  .fiche-nav { display: flex; justify-content: center; margin: -20px 0 24px; }
+  .retour-jeu-btn {
+    font-family: 'Uncial Antiqua', cursive;
+    padding: 8px 20px;
+    font-size: 16px;
+    background: #fefae0;
+    color: #5c3b21;
+    border: 2px solid #8b5e3c;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .retour-jeu-btn:hover { background: #f0e2c4; }
 </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
   <h1>Fiche de Personnage</h1>
+  <div class="fiche-nav">
+    <button type="button" class="retour-jeu-btn" id="retour-jeu-btn">← Retour à l'interface de jeu</button>
+  </div>
 
   <div class="section">
     <h2>Informations Générales</h2>
@@ -351,70 +404,125 @@
     </div>
   </div>
 
-  <div class="section">
-    <h2>Statistiques</h2>
-    <div class="grid">
-      <div class="field"><label>Force</label><input type="number" id="stat_force"></div>
-      <div class="field"><label>Dexterite</label><input type="number" id="stat_dexterite"></div>
-      <div class="field"><label>Magie</label><input type="number" id="stat_magie"></div>
-      <div class="field"><label>Constitution</label><input type="number" id="stat_constitution"></div>
-      <div class="field"><label>Charisme</label><input type="number" id="stat_charisme"></div>
-      <div class="field"><label>Perception</label><input type="number" id="stat_perception"></div>
-      <div class="field"><label>Chance</label><input type="number" id="stat_chance"></div>
-      <div class="field"><label>Intelligence</label><input type="number" id="stat_intelligence"></div>
+  <!-- Mise en page compacte : sections courtes deux par deux. -->
+  <div class="duo">
+    <div class="section">
+      <h2>Statistiques</h2>
+      <div class="grid">
+        <div class="field"><label>Force</label><input type="number" id="stat_force"></div>
+        <div class="field"><label>Dexterite</label><input type="number" id="stat_dexterite"></div>
+        <div class="field"><label>Magie</label><input type="number" id="stat_magie"></div>
+        <div class="field"><label>Constitution</label><input type="number" id="stat_constitution"></div>
+        <div class="field"><label>Charisme</label><input type="number" id="stat_charisme"></div>
+        <div class="field"><label>Perception</label><input type="number" id="stat_perception"></div>
+        <div class="field"><label>Chance</label><input type="number" id="stat_chance"></div>
+        <div class="field"><label>Intelligence</label><input type="number" id="stat_intelligence"></div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Survie et Défense</h2>
+      <div class="grid grid-2">
+          <div class="field">
+          <label>Vie</label>
+          <div class="dual-input">
+            <input type="number" id="player_hp_current" min="0" placeholder="Min">
+            <span class="divider-span">/</span>
+            <input type="number" id="player_hp">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Mana</label>
+          <div class="dual-input">
+            <input type="number" id="player_mana_current" min="0" placeholder="Min">
+            <span class="divider-span">/</span>
+            <input type="number" id="player_mana">
+          </div>
+        </div>
+
+          <div style="display: flex; flex-direction: column;">
+            <label>Vie bonus</label>
+            <input type="number" id="player_vie_bonus" min="0" placeholder="0">
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <label>Intox.</label>
+            <input type="number" id="player_intox" placeholder="0" min="0" max="100">
+          </div>
+
+      </div><!-- fin du grid -->
     </div>
   </div>
 
-  <div class="section">
-    <h2>Survie et Défense</h2>
-    <div class="grid">
-        <div class="field">
-        <label>Vie</label>
-        <div class="dual-input">
-          <input type="number" id="player_hp_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_hp">
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Mana</label>
-        <div class="dual-input">
-          <input type="number" id="player_mana_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_mana">
-        </div>
-      </div>
-
-        <div style="display: flex; flex-direction: column;">
-          <label>Vie bonus</label>
-          <input type="number" id="player_vie_bonus" min="0" placeholder="0">
-        </div>
-        <div style="display: flex; flex-direction: column;">
-          <label>Intox.</label>
-          <input type="number" id="player_intox" placeholder="0" min="0" max="100">
-        </div>
-
-    </div><!-- fin du grid -->
-  </div>
-
     <div class="sections-container">
-        <!-- Section Sac -->
-        <div class="section">
-            <h2>Sac</h2>
-            <div class="content-area">
-                <textarea id="eq_sac"></textarea>
-            </div>
-        </div>
-    
-        <!-- Section Ceinture/dos -->
-        <div class="section">
-            <h2>Ceinture/dos</h2>
-            <div class="content-area">
-                <textarea id="eq_ceinture"></textarea>
-            </div>
-        </div>
-    
+      <div class="duo">
+          <!-- Section Armure -->
+          <div class="section">
+              <h2>Armure</h2>
+              <div class="armor-section">
+                  <div class="armor-fields">
+                      <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
+                      <div class="field"><label>Résistance</label><input type="text" id="eq_resistance"></div>
+                      <div class="field">
+                        <label>Durabilité</label>
+                        <div class="dual-input">
+                          <input type="number" id="player_dura_current" min="0" placeholder="0">
+                          <span class="divider-span">/</span>
+                          <input type="number" id="player_dura_max" placeholder="Max">
+                        </div>
+                      </div>
+        
+                      <div class="field">
+                        <label>État de l'armure</label>
+                        <input type="text" id="player_armor" readonly>
+                        <div id="armor_effect" class="status-text"></div>
+                      </div>
+                      <div class="field">
+                        <label>Valeur de Protection</label>
+                        <div class="dual-input">
+                          <input type="number" id="def_protection" min="0" placeholder="0">
+                          <span class="divider-span">/</span>
+                          <input type="number" id="def_protection_max" placeholder="Max">
+                        </div>
+                      </div>
+                    </div>
+              </div>
+          </div>
+          <!-- Section Armes -->
+          <div class="section">
+              <h2>Armes</h2>
+              <table class="weapons-table">
+                  <thead>
+                      <tr>
+                          <th>Type</th>
+                          <th>Dégâts</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td><input type="text" id="weapon_type_1"></td>
+                          <td><input type="text" id="weapon_dmg_1"></td>
+                      </tr>
+                      <tr>
+                          <td><input type="text" id="weapon_type_2"></td>
+                          <td><input type="text" id="weapon_dmg_2"></td>
+                      </tr>
+                      <tr>
+                          <td><input type="text" id="weapon_type_3"></td>
+                          <td><input type="text" id="weapon_dmg_3"></td>
+                      </tr>
+                      <tr>
+                          <td><input type="text" id="weapon_type_4"></td>
+                          <td><input type="text" id="weapon_dmg_4"></td>
+                      </tr>
+                      <tr>
+                          <td><input type="text" id="weapon_type_5"></td>
+                          <td><input type="text" id="weapon_dmg_5"></td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+      </div>
+
         <!-- V1.11 : Inventaire structuré et équipement -->
         <div class="section">
             <h2>Inventaire & équipement</h2>
@@ -434,79 +542,24 @@
             </div>
         </div>
 
-        <!-- Section Armes -->
+        <!-- Section Sac -->
         <div class="section">
-            <h2>Armes</h2>
-            <table class="weapons-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Dégâts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" id="weapon_type_1"></td>
-                        <td><input type="text" id="weapon_dmg_1"></td>
-                    </tr>
-                    <tr>
-                        <td><input type="text" id="weapon_type_2"></td>
-                        <td><input type="text" id="weapon_dmg_2"></td>
-                    </tr>
-                    <tr>
-                        <td><input type="text" id="weapon_type_3"></td>
-                        <td><input type="text" id="weapon_dmg_3"></td>
-                    </tr>
-                    <tr>
-                        <td><input type="text" id="weapon_type_4"></td>
-                        <td><input type="text" id="weapon_dmg_4"></td>
-                    </tr>
-                    <tr>
-                        <td><input type="text" id="weapon_type_5"></td>
-                        <td><input type="text" id="weapon_dmg_5"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    
-        <!-- Section Armure -->
-        <div class="section">
-            <h2>Armure</h2>
-            <div class="armor-section">
-                <div class="armor-fields">
-                    <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
-                    <div class="field"><label>Résistance</label><input type="text" id="eq_resistance"></div>
-                    <div class="field">
-                      <label>Durabilité</label>
-                      <div class="dual-input">
-                        <input type="number" id="player_dura_current" min="0" placeholder="0">
-                        <span class="divider-span">/</span>
-                        <input type="number" id="player_dura_max" placeholder="Max">
-                      </div>
-                    </div>
-      
-                    <div class="field">
-                      <label>État de l'armure</label>
-                      <input type="text" id="player_armor" readonly>
-                      <div id="armor_effect" class="status-text"></div>
-                    </div>
-                    <div class="field">
-                      <label>Valeur de Protection</label>
-                      <div class="dual-input">
-                        <input type="number" id="def_protection" min="0" placeholder="0">
-                        <span class="divider-span">/</span>
-                        <input type="number" id="def_protection_max" placeholder="Max">
-                      </div>
-                    </div>
-                  </div>
+            <h2>Sac</h2>
+            <div class="content-area">
+                <textarea id="eq_sac" class="textarea-courte"></textarea>
             </div>
         </div>
+
+        <!-- Ceinture / dos : bloc retiré de la fiche. La valeur reste
+             chargée et réenregistrée telle quelle pour ne rien perdre. -->
+        <input type="hidden" id="eq_ceinture">
     </div>
 
 
     <div class="double-section-container">
         <div class="section">
             <h2>Sorts</h2>
+            <div class="sort-entetes"><span>Sort</span><span>Dégâts</span><span>Niveau</span><span></span></div>
             <div id="sorts-container">
                 <!-- Les sorts seront ajoutés ici dynamiquement -->
             </div>
@@ -515,6 +568,7 @@
             
         <div class="section">
             <h2>Attaques Spéciales</h2>
+            <div class="sort-entetes"><span>Attaque</span><span>Dégâts</span><span>Niveau</span><span></span></div>
             <div id="attack-special-container">
                 <!-- Les attaques seront ajoutées ici dynamiquement -->
             </div>
@@ -524,6 +578,7 @@
 
     <div class="section">
         <h2>Sorts mineurs</h2>
+        <div class="sort-entetes sans-niveau"><span>Sort mineur</span><span>Dégâts</span><span></span></div>
         <div id="sorts-mineurs-container">
             <!-- Les sorts mineurs seront ajoutés ici dynamiquement -->
         </div>
@@ -588,6 +643,7 @@
 
   <div style="text-align: center;">
 <button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
+    <button type="button" class="retour-jeu-btn" id="retour-jeu-btn-bas">← Retour à l'interface de jeu</button>
     <button
       id="import-session-btn"
       type="button"
@@ -1341,6 +1397,37 @@ document.getElementById('add-attack-spe-btn').addEventListener('click', async ()
 });
 
 
+/**
+ * Un sort ou une attaque enregistré sur le personnage mais absent de la
+ * base de jeu (renommé, retiré...) n'avait pas d'option dans la liste :
+ * il disparaissait silencieusement à la sauvegarde suivante. On le garde,
+ * signalé « hors base », avec ses valeurs enregistrées.
+ */
+/** Description affichée sous un sort : texte de référence + durée et action. */
+function texteDescriptionSort(sortData) {
+  const details = [
+    sortData.duree ? `Durée : ${sortData.duree}` : '',
+    sortData.type_action ? `Action : ${sortData.type_action}` : '',
+    sortData.cout_charges != null ? `Coût : ${sortData.cout_charges} charge(s) d'imposition` : '',
+    sortData.armes ? `Armes : ${sortData.armes}` : ''
+  ].filter(Boolean).join(' · ');
+  return [sortData.description || '', details].filter(Boolean).join('\n');
+}
+
+function conserverHorsBase(select, enregistre) {
+  if (!enregistre?.nom) return null;
+  if (Array.from(select.options).some(opt => opt.value === enregistre.nom)) return null;
+  const option = document.createElement('option');
+  option.value = enregistre.nom;
+  option.textContent = `${enregistre.nom} (hors base)`;
+  option.className = 'sort-hors-base';
+  option.dataset.degats = enregistre.degats || '';
+  option.dataset.niveau = enregistre.niveau || '';
+  option.dataset.description = 'Absent de la base de jeu : valeurs enregistrées sur le personnage.';
+  select.appendChild(option);
+  return option;
+}
+
 async function createSortElement(sort, container, isMineur = false) {
   try {
     const response = await fetch('/api/game-database');
@@ -1353,10 +1440,12 @@ async function createSortElement(sort, container, isMineur = false) {
     const nomSelect = document.createElement('select');
     nomSelect.className = isMineur ? 'minispell_name' : 'spell_name';
     
+    // Dégâts : pré-remplis par la référence au choix du sort, puis propres
+    // au personnage (modifiables).
     const degatsInput = document.createElement('input');
     degatsInput.type = 'text';
     degatsInput.className = isMineur ? 'minispell_dmg' : 'spell_dmg';
-    degatsInput.readOnly = true;
+    degatsInput.placeholder = 'ex. 1d6+2';
 
     const descBtn = document.createElement('button');
     descBtn.className = 'description-btn';
@@ -1383,22 +1472,34 @@ async function createSortElement(sort, container, isMineur = false) {
       throw new Error('La liste des sorts n\'est pas un tableau valide');
     }
 
+    // Les sorts de référence (sorts.json) sont regroupés par école.
+    const groupes = {};
     sorts.forEach(sortData => {
       const option = document.createElement('option');
       option.value = sortData.nom;
       option.textContent = sortData.nom;
-      option.dataset.degats = sortData.degats;
-      option.dataset.niveau = sortData.niveau;
-      option.dataset.description = sortData.description;
+      option.dataset.degats = sortData.degats || '';
+      option.dataset.niveau = sortData.niveau ?? '';
+      option.dataset.description = texteDescriptionSort(sortData);
       // Sélectionner l'option si c'est le sort sauvegardé
       if (sortData.nom === sort.nom) {
         option.selected = true;
         descContent.textContent = option.dataset.description || 'Aucune description disponible';
       }
-      nomSelect.appendChild(option);
+      if (sortData.ecole_nom) {
+        if (!groupes[sortData.ecole_nom]) {
+          groupes[sortData.ecole_nom] = document.createElement('optgroup');
+          groupes[sortData.ecole_nom].label = sortData.ecole_nom;
+          nomSelect.appendChild(groupes[sortData.ecole_nom]);
+        }
+        groupes[sortData.ecole_nom].appendChild(option);
+      } else {
+        nomSelect.appendChild(option);
+      }
     });
 
         // Sélectionner le sort si fourni
+    conserverHorsBase(nomSelect, sort);
     if (sort && sort.nom) {
       const option = Array.from(nomSelect.options).find(opt => opt.value === sort.nom);
       if (option) {
@@ -1419,6 +1520,8 @@ async function createSortElement(sort, container, isMineur = false) {
     nomSelect.addEventListener('change', (e) => {
       const selectedOption = e.target.options[e.target.selectedIndex];
       degatsInput.value = selectedOption.dataset.degats || '';
+      // Le niveau suit le sort choisi (il restait figé sur l'ancien).
+      if (niveauInput) niveauInput.value = selectedOption.dataset.niveau || '1';
       descContent.textContent = selectedOption.dataset.description || 'Aucune description disponible';
     });
 
@@ -1434,7 +1537,7 @@ async function createSortElement(sort, container, isMineur = false) {
 
     let niveauInput;
     if (!isMineur) {
-      const niveauInput = document.createElement('input');
+      niveauInput = document.createElement('input');
       niveauInput.type = 'number';
       niveauInput.min = '1';
       niveauInput.className = 'spell_lvl';
@@ -1479,22 +1582,34 @@ async function createAttackElement(attack) {
     nomSelect.appendChild(defaultOption);
 
     // Ajouter les options depuis la base de données
+    // Deux groupes ; les attaques avec affinité magique portent ✨ (le
+    // symbole n'est qu'affiché : la valeur enregistrée reste le nom).
     const attacks = gameData.attack_special || [];
+    const groupesAttaques = {};
+    const groupeAttaque = magique => {
+      const label = magique ? '✨ Avec affinité magique' : 'Attaques spéciales';
+      if (!groupesAttaques[label]) {
+        groupesAttaques[label] = document.createElement('optgroup');
+        groupesAttaques[label].label = label;
+        nomSelect.appendChild(groupesAttaques[label]);
+      }
+      return groupesAttaques[label];
+    };
     attacks.forEach(attackData => {
       const option = document.createElement('option');
       option.value = attackData.nom;
-      option.textContent = attackData.nom;
-      option.dataset.degats = attackData.degats;
-      option.dataset.niveau = attackData.niveau;
-      option.dataset.description = attackData.description;
-      nomSelect.appendChild(option);
+      option.textContent = attackData.affinite_magique ? `✨ ${attackData.nom}` : attackData.nom;
+      option.dataset.degats = attackData.degats || '';
+      option.dataset.niveau = attackData.niveau ?? '';
+      option.dataset.description = texteDescriptionSort(attackData);
+      groupeAttaque(attackData.affinite_magique === true).appendChild(option);
     });
 
-    // Input pour les dégâts
+    // Input pour les dégâts : valeur propre au personnage.
     const degatsInput = document.createElement('input');
     degatsInput.type = 'text';
     degatsInput.className = 'attack_dmg';
-    degatsInput.readOnly = true;
+    degatsInput.placeholder = 'ex. 1d8+2';
 
     // Input pour le niveau
     const niveauInput = document.createElement('input');
@@ -1535,6 +1650,7 @@ async function createAttackElement(attack) {
     attackRow.appendChild(deleteBtn);
 
     // Sélectionner l'attaque existante si elle existe
+    conserverHorsBase(nomSelect, attack);
     if (attack && attack.nom) {
       const option = Array.from(nomSelect.options).find(opt => opt.value === attack.nom);
       if (option) {
@@ -1655,6 +1771,26 @@ window.addEventListener('DOMContentLoaded', () => {
       importButton.addEventListener('click', importerEtatPartieDansFiche);
     }
   });
+</script>
+<script>
+  // Retour à l'interface de jeu : même mécanisme que « Voir Fiche de
+  // Perso » en sens inverse, les paramètres de l'URL sont transmis tels
+  // quels. Une modification non sauvegardée est signalée avant de partir.
+  (function () {
+    let modifiee = false;
+    document.addEventListener('input', () => { modifiee = true; });
+    document.addEventListener('change', () => { modifiee = true; });
+
+    function retournerAuJeu() {
+      if (modifiee && !confirm('Des modifications ne sont pas sauvegardées. Revenir quand même à l\'interface de jeu ?')) return;
+      const params = new URLSearchParams(window.location.search);
+      if (window.arcanePlayerId && !params.get('PlayerId')) params.set('PlayerId', window.arcanePlayerId);
+      window.location.href = `interface_jeu.html?${params.toString()}`;
+    }
+
+    document.getElementById('retour-jeu-btn').addEventListener('click', retournerAuJeu);
+    document.getElementById('retour-jeu-btn-bas').addEventListener('click', retournerAuJeu);
+  })();
 </script>
 
 

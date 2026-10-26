@@ -44,19 +44,6 @@ function normaliserNotesPersonnelles(notes){
   return typeof notes === 'string' ? notes : '';
 }
 
-function normaliserMessagesPrives(messages){
-  if(!Array.isArray(messages)) return [];
-  return messages
-    .filter(item => item && typeof item === 'object' && typeof item.content === 'string')
-    .map(item => ({
-      id: item.id || crypto.randomUUID(),
-      author: item.author === 'mj' ? 'mj' : 'player',
-      content: item.content.trim(),
-      createdAt: item.createdAt || new Date().toISOString()
-    }))
-    .filter(item => item.content.length > 0);
-}
-
 function normaliserNotesPubliques(notes){
   if(!Array.isArray(notes)) return [];
   return notes
@@ -304,14 +291,10 @@ function lireSession() {
       : {};
 
     Object.values(loadedPlayers).forEach(player => {
-      // Migration V1.9 : l'ancien privateNotes était la conversation.
-      if (player.privateNotes && !player.privateMessages) {
-        player.privateMessages = normaliserMessagesPrives(player.privateNotes);
-      }
+      // Les messages privés (privateMessages, ex-privateNotes) ont été
+      // retirés : ces champs ne sont plus lus, mais laissés en place.
       player.personalNotes = normaliserNotesPersonnelles(player.personalNotes);
-      player.privateMessages = normaliserMessagesPrives(player.privateMessages);
       player.inventaire = normaliserInventaireSession(player.inventaire);
-      delete player.privateNotes;
     });
 
     session = {
@@ -392,9 +375,8 @@ function extraireEtatSessionDepuisPersonnage(joueur) {
     // Inventaire structuré du personnage.
     inventaire: normaliserInventaireSession(joueur.inventaire),
 
-    // Notes personnelles du joueur, séparées de la conversation avec le MJ.
+    // Notes personnelles du joueur.
     personalNotes: normaliserNotesPersonnelles(joueur.personalNotes),
-    privateMessages: normaliserMessagesPrives(joueur.privateMessages),
 
     lastSaved: null
   };
@@ -800,29 +782,6 @@ function setPlayerPersonalNotes(id, content) {
   return {success:true,content};
 }
 
-function getPrivatePlayerMessages(id) {
-  const joueur=session.players[id];
-  return joueur ? normaliserMessagesPrives(joueur.privateMessages) : null;
-}
-
-function ajouterMessagePriveJoueur(id, author, content) {
-  const joueur=session.players[id];
-  if(!joueur) return {success:false,message:'Joueur introuvable.'};
-  const normalizedAuthor=author==='mj'?'mj':author==='player'?'player':null;
-  const normalizedContent=typeof content==='string'?content.trim():'';
-  if(!normalizedAuthor) return {success:false,message:'Auteur invalide.'};
-  if(!normalizedContent) return {success:false,message:'Le message est vide.'};
-  if(normalizedContent.length>5000) return {success:false,message:'Le message est trop long (5000 caractères maximum).'};
-
-  const message={id:crypto.randomUUID(),author:normalizedAuthor,content:normalizedContent,createdAt:new Date().toISOString()};
-  const messages=[...normaliserMessagesPrives(joueur.privateMessages),message];
-  const updatedPlayer={...joueur,privateMessages:messages,lastSaved:new Date().toISOString()};
-  const nouvelleSession={...session,players:{...session.players,[id]:updatedPlayer},lastSaved:new Date().toISOString()};
-  if(!ecrireSession(nouvelleSession)) return {success:false,message:'Impossible de sauvegarder le message.'};
-  session=nouvelleSession;
-  return {success:true,message,messages};
-}
-
 function getPublicNotes() {
   return normaliserNotesPubliques(session.publicNotes);
 }
@@ -956,8 +915,6 @@ module.exports = {
   retirerStatutMob,
   getPlayerPersonalNotes,
   setPlayerPersonalNotes,
-  getPrivatePlayerMessages,
-  ajouterMessagePriveJoueur,
   getPublicNotes,
   savePublicNote,
   deletePublicNote,

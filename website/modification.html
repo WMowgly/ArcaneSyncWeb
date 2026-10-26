@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Données de jeu — MJ — ArcaneSync</title>
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Interface Modification (réservée au MJ) : une liste filtrable à
+       gauche, l'éditeur de l'entrée choisie à droite. */
+    body {
+      padding: 0 16px 26px;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+    }
+    h1, h2, h3 { font-family: 'Uncial Antiqua', cursive; font-weight: 400; }
+    .modif-page { max-width: 1400px; margin: 0 auto; }
+    .modif-entete { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 4px 6px; }
+    .modif-entete h1 { margin: 0; font-size: 1.4rem; text-align: left; flex: 1; }
+    .modif-entete a {
+      text-decoration: none; padding: 7px 14px; border: 2px solid #8b5e3c;
+      border-radius: 8px; background: #fff4d6; color: #5c3b21; font-weight: 600;
+    }
+    .onglets { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+    .onglets button {
+      font: inherit; font-weight: 600; padding: 8px 14px; cursor: pointer;
+      border: 2px solid #8b5e3c; border-radius: 8px; background: #fefae0; color: #5c3b21;
+    }
+    .onglets button.actif { background: #8b5e3c; color: #fefae0; }
+    .onglets .compte { font-weight: 400; opacity: .8; }
+
+    .modif-grille { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.6fr); gap: 14px; align-items: start; }
+    @media (max-width: 900px) { .modif-grille { grid-template-columns: 1fr; } }
+    .panneau {
+      background: #fefae0; border: 2px solid #8b5e3c; border-radius: 10px; padding: 12px;
+    }
+    .filtres { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .filtres input, .filtres select { flex: 1 1 140px; }
+    .panneau input, .panneau select, .panneau textarea {
+      font: inherit; padding: 6px 8px; border: 1px solid #8b5e3c; border-radius: 6px;
+      background: #fffef8; color: #3b2f1e; box-sizing: border-box; width: 100%;
+    }
+    .panneau input[type="checkbox"] { width: auto; }
+    .liste { max-height: 68vh; overflow-y: auto; display: grid; gap: 4px; }
+    .liste button {
+      font: inherit; text-align: left; cursor: pointer; padding: 7px 9px;
+      border: 1px solid #c9b28c; border-radius: 6px; background: #fffef8; color: #3b2f1e;
+    }
+    .liste button:hover { border-color: #8b5e3c; }
+    .liste button.actif { background: #f0e2c4; border-color: #8b5e3c; }
+    .liste strong { display: block; }
+    .liste small { opacity: .75; }
+    .liste-vide { opacity: .7; margin: 6px 2px; }
+
+    .formulaire { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+    .formulaire label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; margin: 0; }
+    .formulaire .large { grid-column: 1 / -1; }
+    .formulaire textarea { min-height: 120px; resize: vertical; }
+    .formulaire .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .formulaire .case { flex-direction: row; align-items: center; gap: 8px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .actions button {
+      font: inherit; font-weight: 600; padding: 8px 14px; cursor: pointer;
+      border: 2px solid #8b5e3c; border-radius: 8px; background: #fefae0; color: #5c3b21;
+    }
+    .actions .principal { background: #8b5e3c; color: #fefae0; }
+    .actions .danger { border-color: #9b2c2c; color: #9b2c2c; }
+    .actions button:disabled { opacity: .45; cursor: not-allowed; }
+    #statut { min-height: 1.3em; margin: 10px 0 0; }
+    .editeur-vide { opacity: .7; }
+    .aide { font-size: 12.5px; opacity: .8; margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <div class="modif-page">
+    <header class="modif-entete">
+      <h1>📚 Données de jeu</h1>
+      <a href="mj.html">← Interface MJ</a>
+    </header>
+
+    <nav class="onglets" id="onglets">
+      <button type="button" data-onglet="sorts" class="actif">Sorts <span class="compte"></span></button>
+      <button type="button" data-onglet="mineurs">Sorts mineurs <span class="compte"></span></button>
+      <button type="button" data-onglet="attaques">Attaques spéciales <span class="compte"></span></button>
+      <button type="button" data-onglet="bestiaire">Bestiaire <span class="compte"></span></button>
+    </nav>
+
+    <div class="modif-grille">
+      <section class="panneau">
+        <div class="filtres">
+          <input id="recherche" type="search" placeholder="Rechercher (nom, description)…">
+          <select id="filtre"></select>
+        </div>
+        <div class="actions" style="margin:0 0 8px">
+          <button type="button" id="btn-nouveau" class="principal">➕ Nouveau</button>
+        </div>
+        <div id="liste" class="liste"></div>
+      </section>
+
+      <section class="panneau">
+        <h2 id="editeur-titre" style="margin:0 0 10px;font-size:1.1rem">Sélectionnez une entrée</h2>
+        <p class="aide" id="editeur-aide"></p>
+        <form id="editeur" class="formulaire" autocomplete="off"></form>
+        <div class="actions" id="editeur-actions" hidden>
+          <button type="button" id="btn-enregistrer" class="principal">💾 Enregistrer</button>
+          <button type="button" id="btn-dupliquer">⧉ Dupliquer</button>
+          <button type="button" id="btn-supprimer" class="danger">🗑️ Supprimer</button>
+          <button type="button" id="btn-annuler">✖ Annuler</button>
+        </div>
+        <p id="statut"></p>
+      </section>
+    </div>
+  </div>
+
+  <script src="navbar.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // -----------------------------------------------------------------------
+    // État
+    // -----------------------------------------------------------------------
+    let ref = { ecoles: [], sorts: [], attaques_speciales: { liste: [] } };
+    let modeles = [];
+    let categories = [];
+    let onglet = 'sorts';
+    let selection = null;       // id de l'entrée ouverte, ou 'nouveau'
+
+    const ELEMENTS = ['', 'GLACE', 'FEU', 'ELEC', 'EAU'];
+    // Symbole des attaques spéciales avec affinité magique.
+    const MAGIE = '✨';
+    const STATS = [['force', 'Force'], ['dexterite', 'Dextérité'], ['magie', 'Magie'],
+      ['constitution', 'Constitution'], ['charisme', 'Charisme'], ['perception', 'Perception'],
+      ['chance', 'Chance'], ['intelligence', 'Intelligence']];
+
+    const $ = id => document.getElementById(id);
+    const escapeHtml = valeur => String(valeur ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    const nomEcole = id => ref.ecoles.find(e => e.id === id)?.nom || id;
+    const normal = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    function setStatut(message, erreur) {
+      $('statut').textContent = message || '';
+      $('statut').style.color = erreur ? '#9b2c2c' : '#2e7d32';
+    }
+
+    /** Toutes les écritures portent le rôle MJ : le serveur refuse les autres. */
+    async function api(methode, url, corps) {
+      const reponse = await fetch(url, {
+        method: methode,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(corps || {}), role: 'mj' })
+      });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok) throw new Error(data.message || 'Erreur serveur.');
+      return data;
+    }
+
+    // -----------------------------------------------------------------------
+    // Données de chaque onglet
+    // -----------------------------------------------------------------------
+    const ONGLETS = {
+      sorts: {
+        entrees: () => ref.sorts.filter(s => s.niveau !== 0),
+        meta: s => [nomEcole(s.ecole), s.ecole === 'imposition' ? `coût ${s.cout_charges}` : `niv. ${s.niveau}`, s.element, s.degats].filter(Boolean).join(' · '),
+        filtre: () => [['', 'Toutes les écoles'], ...ref.ecoles.map(e => [e.id, e.nom])],
+        filtrer: (s, v) => !v || s.ecole === v,
+        nouveau: () => ({ nom: '', ecole: ref.ecoles.find(e => e.id !== 'imposition')?.id || '', niveau: 1, duree: '', type_action: 'Principale', element: '', description: '' })
+      },
+      mineurs: {
+        entrees: () => ref.sorts.filter(s => s.niveau === 0),
+        meta: s => [nomEcole(s.ecole), s.element, s.degats].filter(Boolean).join(' · '),
+        filtre: () => [['', 'Toutes les écoles'], ...ref.ecoles.filter(e => e.id !== 'imposition').map(e => [e.id, e.nom])],
+        filtrer: (s, v) => !v || s.ecole === v,
+        nouveau: () => ({ nom: '', ecole: ref.ecoles.find(e => e.id !== 'imposition')?.id || '', niveau: 0, duree: '', type_action: 'Principale', element: '', description: '' })
+      },
+      attaques: {
+        entrees: () => ref.attaques_speciales.liste,
+        meta: a => [a.armes, a.niveau != null ? `niv. ${a.niveau}` : 'niv. —', a.degats].filter(Boolean).join(' · '),
+        filtre: () => [['', 'Toutes'], ['classique', 'Classiques'], ['magique', `${MAGIE} Avec affinité magique`]],
+        filtrer: (a, v) => !v || (v === 'magique') === (a.affinite_magique === true),
+        nouveau: () => ({ nom: '', armes: '', niveau: 1, affinite_magique: false, description: '' })
+      },
+      bestiaire: {
+        entrees: () => modeles,
+        meta: m => [categories.find(c => c.id === m.categorie)?.nom || m.categorie, `PV ${m.hp?.max ?? 0}`, `Mana ${m.mana?.max ?? 0}`].join(' · '),
+        filtre: () => [['', 'Toutes les catégories'], ...categories.map(c => [c.id, `${c.icone} ${c.nom}`])],
+        filtrer: (m, v) => !v || m.categorie === v,
+        nouveau: () => ({ nom: '', categorie: 'autre', icone: '', hp: { max: 10 }, mana: { max: 0 }, stats: {}, armes: [], spells: [], competences: [], description: '', notes: '' })
+      }
+    };
+
+    function entreeCourante() {
+      if (!selection || selection === 'nouveau') return null;
+      return ONGLETS[onglet].entrees().find(x => x.id === selection) || null;
+    }
+
+    // -----------------------------------------------------------------------
+    // Liste
+    // -----------------------------------------------------------------------
+    function majCompteurs() {
+      document.querySelectorAll('#onglets button').forEach(b => {
+        b.querySelector('.compte').textContent = `(${ONGLETS[b.dataset.onglet].entrees().length})`;
+      });
+    }
+
+    function remplirFiltre() {
+      const select = $('filtre');
+      const valeur = select.value;
+      select.innerHTML = ONGLETS[onglet].filtre()
+        .map(([v, l]) => `<option value="${escapeHtml(v)}">${escapeHtml(l)}</option>`).join('');
+      if ([...select.options].some(o => o.value === valeur)) select.value = valeur;
+    }
+
+    // Icône du modèle de créature, ou symbole des attaques magiques.
+    const iconeEntree = x => x.icone || (x.affinite_magique ? MAGIE : '');
+
+    function renderListe() {
+      const def = ONGLETS[onglet];
+      const texte = normal($('recherche').value.trim());
+      const filtre = $('filtre').value;
+      const liste = def.entrees()
+        .filter(x => def.filtrer(x, filtre))
+        .filter(x => !texte || normal(`${x.nom} ${x.description || ''} ${x.armes || ''}`).includes(texte));
+
+      $('liste').innerHTML = liste.length
+        ? liste.map(x => `<button type="button" data-id="${escapeHtml(x.id)}" class="${x.id === selection ? 'actif' : ''}">
+            <strong>${escapeHtml(iconeEntree(x) ? `${iconeEntree(x)} ${x.nom}` : x.nom)}</strong><small>${escapeHtml(def.meta(x))}</small></button>`).join('')
+        : '<p class="liste-vide">Aucune entrée.</p>';
+
+      $('liste').querySelectorAll('button[data-id]').forEach(b =>
+        b.addEventListener('click', () => ouvrir(b.dataset.id)));
+    }
+
+    // -----------------------------------------------------------------------
+    // Éditeur
+    // -----------------------------------------------------------------------
+    const champ = (nom, libelle, html, large) =>
+      `<label class="${large ? 'large' : ''}">${libelle}${html}</label>`;
+    const saisie = (nom, valeur, attrs = '') =>
+      `<input name="${nom}" value="${escapeHtml(valeur ?? '')}" ${attrs}>`;
+    const options = (paires, valeur) => paires
+      .map(([v, l]) => `<option value="${escapeHtml(v)}" ${String(v) === String(valeur ?? '') ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('');
+    const lignes = valeur => (Array.isArray(valeur) ? valeur : [])
+      .map(x => (typeof x === 'string' ? x : JSON.stringify(x))).join('\n');
+
+    function formulaireSort(s, mineur) {
+      const ecoles = ref.ecoles.filter(e => !mineur || e.id !== 'imposition').map(e => [e.id, e.nom]);
+      const imposition = s.ecole === 'imposition';
+      return [
+        champ('nom', 'Nom', saisie('nom', s.nom, 'required maxlength="120"'), true),
+        champ('ecole', 'École', `<select name="ecole">${options(ecoles, s.ecole)}</select>`),
+        mineur
+          ? champ('niveau', 'Niveau', '<input value="0 (sort mineur)" disabled>')
+          : `<label data-si="niveau" ${imposition ? 'hidden' : ''}>Niveau${saisie('niveau', s.niveau, 'type="number" min="1" max="20"')}</label>
+             <label data-si="cout" ${imposition ? '' : 'hidden'}>Coût en charges d'imposition${saisie('cout_charges', s.cout_charges, 'type="number" min="0" max="20"')}</label>`,
+        champ('duree', 'Durée', saisie('duree', s.duree, 'list="liste-durees" placeholder="—"')),
+        champ('type_action', "Type d'action", saisie('type_action', s.type_action, 'list="liste-actions" maxlength="120"')),
+        champ('element', 'Élément', `<select name="element">${options(ELEMENTS.map(e => [e, e || '—']), s.element || '')}</select>`),
+        champ('degats', 'Dégâts (référence)', saisie('degats', s.degats, 'maxlength="200" placeholder="ex. 1d6+2"'), true),
+        champ('description', 'Description', `<textarea name="description">${escapeHtml(s.description)}</textarea>`, true),
+        `<datalist id="liste-durees"><option value="Instantanée"><option value="Concentration"></datalist>
+         <datalist id="liste-actions"><option value="Principale"><option value="Secondaire"><option value="Principale + Secondaire"></datalist>`
+      ].join('');
+    }
+
+    function formulaireAttaque(a) {
+      return [
+        champ('nom', 'Nom', saisie('nom', a.nom, 'required maxlength="120"'), true),
+        champ('armes', 'Armes', saisie('armes', a.armes, 'placeholder="ex. EPÉE, HACHE"')),
+        champ('niveau', 'Niveau', saisie('niveau', a.niveau, 'type="number" min="0" max="20" placeholder="—"')),
+        champ('degats', 'Dégâts (référence)', saisie('degats', a.degats, 'maxlength="200" placeholder="ex. 1d6+2"')),
+        `<label class="case"><input type="checkbox" name="affinite_magique" ${a.affinite_magique ? 'checked' : ''}> ${MAGIE} Attaque avec affinité magique</label>`,
+        champ('description', 'Description', `<textarea name="description">${escapeHtml(a.description)}</textarea>`, true)
+      ].join('');
+    }
+
+    function formulaireModele(m) {
+      const cats = categories.map(c => [c.id, `${c.icone} ${c.nom}`]);
+      const stats = STATS.map(([cle, libelle]) =>
+        champ(`stat_${cle}`, libelle, saisie(`stat_${cle}`, m.stats?.[cle] ?? 0, 'type="number"'))).join('');
+      return [
+        champ('nom', 'Nom', saisie('nom', m.nom, 'required maxlength="120"'), true),
+        champ('categorie', 'Catégorie', `<select name="categorie">${options(cats, m.categorie)}</select>`),
+        champ('icone', 'Icône', saisie('icone', m.icone, 'maxlength="4" placeholder="auto"')),
+        champ('hp', 'PV max', saisie('hp', m.hp?.max ?? 0, 'type="number" min="0"')),
+        champ('mana', 'Mana max', saisie('mana', m.mana?.max ?? 0, 'type="number" min="0"')),
+        `<div class="large"><b>Statistiques</b><div class="stats">${stats}</div></div>`,
+        champ('armes', 'Armes (une par ligne)', `<textarea name="armes" style="min-height:70px">${escapeHtml(lignes(m.armes))}</textarea>`),
+        champ('spells', 'Sorts (un par ligne)', `<textarea name="spells" style="min-height:70px">${escapeHtml(lignes(m.spells))}</textarea>`),
+        champ('competences', 'Compétences (une par ligne)', `<textarea name="competences" style="min-height:70px">${escapeHtml(lignes(m.competences))}</textarea>`),
+        champ('description', 'Description', `<textarea name="description" style="min-height:70px">${escapeHtml(m.description)}</textarea>`),
+        champ('notes', 'Notes MJ', `<textarea name="notes" style="min-height:70px">${escapeHtml(m.notes)}</textarea>`, true)
+      ].join('');
+    }
+
+    const AIDES = {
+      sorts: 'Référence des sorts (sorts.json). Les dégâts de référence pré-remplissent la fiche ; chaque personnage peut ensuite les ajuster.',
+      mineurs: 'Les sorts mineurs sont les sorts de niveau 0. Les dégâts de référence pré-remplissent la fiche.',
+      attaques: 'Référence des attaques spéciales (sorts.json). Le niveau peut rester vide. ✨ = affinité magique.',
+      bestiaire: 'Modèles de créatures réutilisables, partagés avec la carte MJ. Les créatures déjà en jeu ne sont pas modifiées.'
+    };
+
+    function ouvrir(id) {
+      selection = id;
+      const entree = id === 'nouveau' ? ONGLETS[onglet].nouveau() : entreeCourante();
+      if (!entree) { fermer(); return; }
+
+      $('editeur-titre').textContent = id === 'nouveau' ? 'Nouvelle entrée'
+        : (iconeEntree(entree) ? `${iconeEntree(entree)} ${entree.nom}` : entree.nom);
+      $('editeur-aide').textContent = AIDES[onglet];
+      $('editeur').innerHTML = onglet === 'attaques' ? formulaireAttaque(entree)
+        : onglet === 'bestiaire' ? formulaireModele(entree)
+        : formulaireSort(entree, onglet === 'mineurs');
+      $('editeur-actions').hidden = false;
+      $('btn-dupliquer').disabled = id === 'nouveau';
+      $('btn-supprimer').disabled = id === 'nouveau';
+      setStatut('');
+
+      // Imposition des mains : un coût en charges remplace le niveau.
+      const ecole = $('editeur').querySelector('select[name="ecole"]');
+      if (ecole && onglet === 'sorts') {
+        ecole.addEventListener('change', () => {
+          const imposition = ecole.value === 'imposition';
+          $('editeur').querySelector('[data-si="niveau"]').hidden = imposition;
+          $('editeur').querySelector('[data-si="cout"]').hidden = !imposition;
+        });
+      }
+      renderListe();
+      $('editeur').querySelector('input[name="nom"]')?.focus();
+    }
+
+    function fermer() {
+      selection = null;
+      $('editeur-titre').textContent = 'Sélectionnez une entrée';
+      $('editeur-aide').textContent = AIDES[onglet];
+      $('editeur').innerHTML = '';
+      $('editeur-actions').hidden = true;
+      renderListe();
+    }
+
+    function lireFormulaire() {
+      const f = $('editeur');
+      const val = nom => f.querySelector(`[name="${nom}"]`)?.value ?? '';
+      const nombre = nom => { const v = val(nom).trim(); return v === '' ? null : Number(v); };
+      const versLignes = nom => val(nom).split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+
+      if (onglet === 'attaques') {
+        return { nom: val('nom'), armes: val('armes'), niveau: nombre('niveau'), degats: val('degats'),
+          affinite_magique: f.querySelector('[name="affinite_magique"]').checked, description: val('description') };
+      }
+      if (onglet === 'bestiaire') {
+        const hp = Math.max(0, nombre('hp') || 0), mana = Math.max(0, nombre('mana') || 0);
+        return {
+          nom: val('nom').trim(), categorie: val('categorie'), icone: val('icone').trim() || undefined,
+          // Un modèle se définit à pleine ressource.
+          hp: { max: hp, current: hp }, mana: { max: mana, current: mana },
+          stats: Object.fromEntries(STATS.map(([cle]) => [cle, nombre(`stat_${cle}`) || 0])),
+          armes: versLignes('armes'), spells: versLignes('spells'), competences: versLignes('competences'),
+          description: val('description'), notes: val('notes')
+        };
+      }
+      const sort = { nom: val('nom'), ecole: val('ecole'), duree: val('duree'), type_action: val('type_action'),
+        element: val('element'), degats: val('degats'), description: val('description') };
+      if (onglet === 'mineurs') sort.niveau = 0;
+      else if (sort.ecole === 'imposition') sort.cout_charges = nombre('cout_charges');
+      else sort.niveau = nombre('niveau');
+      return sort;
+    }
+
+    const URLS = {
+      sorts: '/api/reference/sorts', mineurs: '/api/reference/sorts',
+      attaques: '/api/reference/attaques', bestiaire: '/api/mob-templates'
+    };
+    const cleResultat = () => (onglet === 'attaques' ? 'attaque' : onglet === 'bestiaire' ? 'template' : 'sort');
+
+    async function enregistrer() {
+      const donnees = lireFormulaire();
+      if (!String(donnees.nom || '').trim()) { setStatut('Le nom est obligatoire.', true); return; }
+
+      const avant = entreeCourante();
+      if (avant && onglet !== 'bestiaire' && avant.nom !== donnees.nom.trim()
+        && !confirm(`Renommer « ${avant.nom} » ?\n\nLes personnages qui l'ont déjà verront l'ancien nom marqué « hors base » sur leur fiche (sans perte).`)) return;
+
+      try {
+        const nouveau = selection === 'nouveau';
+        const data = await api(nouveau ? 'POST' : 'PUT',
+          nouveau ? URLS[onglet] : `${URLS[onglet]}/${encodeURIComponent(selection)}`, donnees);
+        await recharger();
+        const entree = data[cleResultat()];
+        if (entree) {
+          // Un sort passé au niveau 0 (ou l'inverse) change d'onglet.
+          if (onglet === 'sorts' && entree.niveau === 0) changerOnglet('mineurs');
+          ouvrir(entree.id);
+        }
+        setStatut(nouveau ? 'Entrée créée.' : 'Modifications enregistrées.');
+      } catch (erreur) { setStatut(erreur.message, true); }
+    }
+
+    async function dupliquer() {
+      try {
+        const data = await api('POST', `${URLS[onglet]}/${encodeURIComponent(selection)}/duplicate`);
+        await recharger();
+        ouvrir(data[cleResultat()].id);
+        setStatut('Copie créée : modifiez-la puis enregistrez.');
+      } catch (erreur) { setStatut(erreur.message, true); }
+    }
+
+    async function supprimer() {
+      const entree = entreeCourante();
+      if (!entree || !confirm(`Supprimer définitivement « ${entree.nom} » ?`)) return;
+      try {
+        await api('DELETE', `${URLS[onglet]}/${encodeURIComponent(selection)}`);
+        await recharger();
+        fermer();
+        setStatut(`« ${entree.nom} » supprimé.`);
+      } catch (erreur) { setStatut(erreur.message, true); }
+    }
+
+    // -----------------------------------------------------------------------
+    // Chargement et navigation
+    // -----------------------------------------------------------------------
+    async function recharger() {
+      const [reference, tpl, cats] = await Promise.all([
+        fetch('/api/reference').then(r => r.json()),
+        fetch('/api/mob-templates').then(r => r.json()),
+        categories.length ? categories : fetch('/api/mob-categories').then(r => r.json())
+      ]);
+      ref = reference;
+      modeles = Array.isArray(tpl) ? tpl : [];
+      categories = cats;
+      majCompteurs();
+      remplirFiltre();
+      renderListe();
+    }
+
+    function changerOnglet(nom) {
+      onglet = nom;
+      document.querySelectorAll('#onglets button').forEach(b => b.classList.toggle('actif', b.dataset.onglet === nom));
+      $('recherche').value = '';
+      remplirFiltre();
+      $('filtre').value = '';
+      fermer();
+    }
+
+    document.querySelectorAll('#onglets button').forEach(b =>
+      b.addEventListener('click', () => changerOnglet(b.dataset.onglet)));
+    $('recherche').addEventListener('input', renderListe);
+    $('filtre').addEventListener('change', renderListe);
+    $('btn-nouveau').addEventListener('click', () => ouvrir('nouveau'));
+    $('btn-enregistrer').addEventListener('click', enregistrer);
+    $('btn-dupliquer').addEventListener('click', dupliquer);
+    $('btn-supprimer').addEventListener('click', supprimer);
+    $('btn-annuler').addEventListener('click', fermer);
+    $('editeur').addEventListener('submit', event => { event.preventDefault(); enregistrer(); });
+
+    // Modifications faites depuis un autre poste : les listes suivent.
+    const socket = io({ query: { role: 'mj' } });
+    socket.on('referenceUpdated', () => recharger().catch(() => {}));
+    socket.on('mobTemplateUpdated', () => recharger().catch(() => {}));
+
+    recharger()
+      .then(() => { $('editeur-aide').textContent = AIDES[onglet]; })
+      .catch(erreur => setStatut(`Chargement impossible : ${erreur.message}`, true));
+  })();
+  </script>
+</body>
+</html>
