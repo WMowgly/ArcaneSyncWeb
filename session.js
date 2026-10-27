@@ -58,6 +58,20 @@ function normaliserNotesPubliques(notes){
     .filter(item => item.content.length > 0 || item.title.length > 0);
 }
 
+/**
+ * Ressource {current, max} : la valeur actuelle ne descend pas sous 0 et ne
+ * dépasse jamais le maximum (PV, mana, durabilité, protection). Les champs
+ * absents sont laissés tels quels.
+ */
+function bornerRessource(ressource){
+  const borne={...ressource};
+  const max=Number(borne.max);
+  if(borne.current===undefined||!Number.isFinite(max))return borne;
+  const actuel=Number(borne.current);
+  borne.current=Number.isFinite(actuel)?Math.max(0,Math.min(actuel,Math.max(0,max))):0;
+  return borne;
+}
+
 function synchroniserAgonie(etat){
   const hp=Number(etat?.hp?.current??0);
   let statuts=normaliserStatutsJoueur(etat?.statuts);
@@ -647,34 +661,33 @@ function sauvegarderEtatSession(id, nouvellesDonnees) {
     return false;
   }
 
+  const hp = bornerRessource({ ...(joueurSession.hp || {}), ...(nouvellesDonnees.hp || {}) });
+
   const nouvelEtat = {
     ...joueurSession,
     ...nouvellesDonnees,
     id,
-    hp: {
-      ...(joueurSession.hp || {}),
-      ...(nouvellesDonnees.hp || {})
-    },
-    mana: {
+    hp,
+    mana: bornerRessource({
       ...(joueurSession.mana || {}),
       ...(nouvellesDonnees.mana || {})
-    },
+    }),
     statuts: synchroniserAgonie({
       ...joueurSession,
       ...nouvellesDonnees,
-      hp: {...(joueurSession.hp || {}), ...(nouvellesDonnees.hp || {})}
+      hp
     }),
     armure: {
       ...(joueurSession.armure || {}),
       ...(nouvellesDonnees.armure || {}),
-      durabilite: {
+      durabilite: bornerRessource({
         ...((joueurSession.armure && joueurSession.armure.durabilite) || {}),
         ...((nouvellesDonnees.armure && nouvellesDonnees.armure.durabilite) || {})
-      },
-      protection: {
+      }),
+      protection: bornerRessource({
         ...((joueurSession.armure && joueurSession.armure.protection) || {}),
         ...((nouvellesDonnees.armure && nouvellesDonnees.armure.protection) || {})
-      }
+      })
     },
     lastSaved: new Date().toISOString()
   };

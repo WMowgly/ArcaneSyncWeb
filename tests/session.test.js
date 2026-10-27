@@ -60,7 +60,7 @@ try {
   }
 
   // Simuler une modification de l'Interface de Jeu.
-  const nouveauHp = (sessionAvant.hp?.current ?? 0) + 7;
+  const nouveauHp = Math.max(0, (sessionAvant.hp?.current ?? 0) - 7);
 
   if (!sauvegarderEtatSession(joueur.id, {
     hp: { current: nouveauHp }
@@ -72,6 +72,19 @@ try {
   if (sessionApres.hp.current !== nouveauHp) {
     throw new Error('La modification de session n\'est pas persistée.');
   }
+
+  // Une valeur actuelle ne dépasse jamais son maximum (ni ne passe sous 0).
+  sauvegarderEtatSession(joueur.id, {
+    hp: { current: (sessionApres.hp.max ?? 0) + 50 },
+    mana: { current: -4 },
+    armure: { durabilite: { current: 9999 } }
+  });
+  const borne = getSessionPlayerById(joueur.id);
+  if (borne.hp.current !== borne.hp.max || borne.mana.current !== 0
+    || borne.armure.durabilite.current !== borne.armure.durabilite.max) {
+    throw new Error(`Valeurs non bornées : ${JSON.stringify({ hp: borne.hp, mana: borne.mana, dura: borne.armure.durabilite })}`);
+  }
+  sauvegarderEtatSession(joueur.id, { hp: { current: nouveauHp } });
 
   // Le fichier personnage doit rester strictement identique.
   const dataApresSession = fs.readFileSync(dataFile, 'utf8');
@@ -245,11 +258,10 @@ if (!mjSourceV17.includes('data-a="damage-hp"')) {
 if (!mjSourceV17.includes('data-a="drain-mana"')) {
   throw new Error('Bouton de retrait du Mana absent des cartes joueurs.');
 }
-if (!mjSourceV17.includes('data-a="status-select"')) {
-  throw new Error('Sélecteur de statut absent des cartes joueurs.');
-}
-if (!mjSourceV17.includes('data-remove-player-status')) {
-  throw new Error('Retrait des statuts absent des cartes joueurs.');
+// Les statuts des personnages ont été retirés de l'interface MJ (ceux des
+// créatures restent gérés sur la carte).
+if (mjSourceV17.includes('data-a="status-select"') || mjSourceV17.includes('data-remove-player-status')) {
+  throw new Error('Les statuts des personnages ne doivent plus apparaître côté MJ.');
 }
 if (mjSourceV17.includes('id="status-management"')) {
   throw new Error('Ancienne fenêtre globale des statuts encore présente.');

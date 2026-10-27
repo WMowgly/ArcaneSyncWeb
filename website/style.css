@@ -444,7 +444,10 @@ button {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
   gap: 14px;
 }
-.mj-liste h4 { margin: 0 0 6px; }
+.mj-liste h4 { margin: 0 0 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mj-edit-section .mj-liste h4 .mj-liste-filtre {
+  width: auto; max-width: 60%; padding: 3px 6px; font-size: 0.8rem; font-family: inherit;
+}
 .mj-liste-ligne {
   display: grid;
   gap: 6px;

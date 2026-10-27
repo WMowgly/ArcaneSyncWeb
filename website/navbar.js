@@ -36,18 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
       ['tableau.html?role=mj', 'Tableau blanc'],
       ['modification.html', 'Données de jeu']
     ],
-    joueur: [
-      ['index.html', 'Accueil'],
-      ['selecte_player.html', 'Personnages'],
-      ['create_player.html', 'Créer un personnage'],
-      // Raccourcis du personnage en cours, quand la page le connaît.
-      ...(playerId ? [
-        [`interface_jeu.html?PlayerId=${id}`, 'Jeu'],
-        [`fiche_perso.html?PlayerId=${id}`, 'Fiche'],
-        [`map_joueur.html?PlayerId=${id}`, 'Ma carte'],
-        [`tableau.html?role=player&PlayerId=${id}`, 'Tableau blanc']
-      ] : [])
-    ],
+    // Joueur : choix du personnage tant qu'aucun n'est ouvert ; ensuite,
+    // uniquement les menus de CE personnage.
+    joueur: playerId
+      ? [
+          ['index.html', 'Accueil'],
+          [`interface_jeu.html?PlayerId=${id}`, 'Jeu'],
+          [`fiche_perso.html?PlayerId=${id}`, 'Fiche'],
+          [`tableau.html?role=player&PlayerId=${id}`, 'Tableau blanc']
+        ]
+      : [
+          ['index.html', 'Accueil'],
+          ['selecte_player.html', 'Personnages'],
+          ['create_player.html', 'Créer un personnage']
+        ],
     ecran: [
       ['index.html', 'Accueil'],
       ['ecran.html', 'Écran']

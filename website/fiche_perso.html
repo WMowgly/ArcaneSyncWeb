@@ -371,6 +371,9 @@
     color: #6b5135;
   }
   .sort-entetes.sans-niveau { grid-template-columns: 2fr 1fr auto; }
+  .filtre-type-ligne { display: flex; justify-content: flex-end; margin: -6px 0 6px; }
+  .filtre-type-ligne label { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 0; }
+  .filtre-type-ligne select { width: auto; font-size: 13px; padding: 3px 26px 3px 8px; }
   .sort-hors-base { color: #9b2c2c; }
 
   .fiche-nav { display: flex; justify-content: center; margin: -20px 0 24px; }
@@ -559,6 +562,7 @@
     <div class="double-section-container">
         <div class="section">
             <h2>Sorts</h2>
+            <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="sorts-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
             <div class="sort-entetes"><span>Sort</span><span>Dégâts</span><span>Niveau</span><span></span></div>
             <div id="sorts-container">
                 <!-- Les sorts seront ajoutés ici dynamiquement -->
@@ -568,6 +572,7 @@
             
         <div class="section">
             <h2>Attaques Spéciales</h2>
+            <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="attack-special-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
             <div class="sort-entetes"><span>Attaque</span><span>Dégâts</span><span>Niveau</span><span></span></div>
             <div id="attack-special-container">
                 <!-- Les attaques seront ajoutées ici dynamiquement -->
@@ -578,6 +583,7 @@
 
     <div class="section">
         <h2>Sorts mineurs</h2>
+        <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="sorts-mineurs-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
         <div class="sort-entetes sans-niveau"><span>Sort mineur</span><span>Dégâts</span><span></span></div>
         <div id="sorts-mineurs-container">
             <!-- Les sorts mineurs seront ajoutés ici dynamiquement -->
@@ -1778,8 +1784,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // quels. Une modification non sauvegardée est signalée avant de partir.
   (function () {
     let modifiee = false;
-    document.addEventListener('input', () => { modifiee = true; });
-    document.addEventListener('change', () => { modifiee = true; });
+    // Le filtre « Type » n'est qu'un affichage : il ne modifie pas la fiche.
+    const suivre = event => { if (!event.target.closest?.('.filtre-type')) modifiee = true; };
+    document.addEventListener('input', suivre);
+    document.addEventListener('change', suivre);
 
     function retournerAuJeu() {
       if (modifiee && !confirm('Des modifications ne sont pas sauvegardées. Revenir quand même à l\'interface de jeu ?')) return;
@@ -1790,6 +1798,74 @@ window.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('retour-jeu-btn').addEventListener('click', retournerAuJeu);
     document.getElementById('retour-jeu-btn-bas').addEventListener('click', retournerAuJeu);
+  })();
+</script>
+<script>
+  // Valeur actuelle / maximum : la saisie reste entre 0 et le maximum, et
+  // la borne est réappliquée juste avant l'enregistrement (au cas où la
+  // fiche aurait été remplie par le serveur ou par l'URL).
+  (function () {
+    const paires = [
+      ['player_hp_current', 'player_hp'],
+      ['player_mana_current', 'player_mana'],
+      ['player_dura_current', 'player_dura_max'],
+      ['def_protection', 'def_protection_max']
+    ];
+    function borner() {
+      paires.forEach(([idActuel, idMax]) => {
+        const actuel = document.getElementById(idActuel);
+        const max = document.getElementById(idMax);
+        if (!actuel || !max || max.value === '') return;
+        const maximum = Math.max(0, Number(max.value) || 0);
+        actuel.min = 0;
+        actuel.max = maximum;
+        if (actuel.value !== '' && Number(actuel.value) > maximum) actuel.value = maximum;
+        if (actuel.value !== '' && Number(actuel.value) < 0) actuel.value = 0;
+      });
+    }
+    paires.flat().forEach(id => document.getElementById(id)?.addEventListener('input', borner));
+    // Phase de capture : s'exécute avant le gestionnaire d'enregistrement.
+    document.getElementById('save-data-btn').addEventListener('click', borner, true);
+  })();
+</script>
+<script>
+  // Filtre « Type » des sorts et attaques : n'affiche dans les menus que les
+  // entrées du type choisi (école, ou attaques classiques / magiques). Le
+  // choix déjà fait sur une ligne reste toujours visible.
+  (function () {
+    const filtres = document.querySelectorAll('.filtre-type');
+
+    function appliquer(filtre) {
+      const type = filtre.value;
+      const conteneur = document.getElementById(filtre.dataset.conteneur);
+      conteneur.querySelectorAll('select').forEach(select => {
+        const choisi = select.selectedOptions[0];
+        select.querySelectorAll('optgroup').forEach(groupe => {
+          groupe.hidden = Boolean(type) && groupe.label !== type && !groupe.contains(choisi);
+        });
+      });
+    }
+
+    filtres.forEach(filtre => {
+      filtre.addEventListener('change', () => appliquer(filtre));
+      // Les lignes ajoutées ensuite suivent le filtre en cours.
+      new MutationObserver(() => appliquer(filtre))
+        .observe(document.getElementById(filtre.dataset.conteneur), { childList: true });
+    });
+
+    fetch('/api/game-database').then(r => r.json()).then(reference => {
+      const types = {
+        'sorts-container': (reference.sorts_majeurs || []).map(s => s.ecole_nom),
+        'sorts-mineurs-container': (reference.sorts_mineurs || []).map(s => s.ecole_nom),
+        'attack-special-container': (reference.attack_special || [])
+          .map(a => (a.affinite_magique ? '✨ Avec affinité magique' : 'Attaques spéciales'))
+      };
+      filtres.forEach(filtre => {
+        [...new Set((types[filtre.dataset.conteneur] || []).filter(Boolean))].forEach(type => {
+          filtre.insertAdjacentHTML('beforeend', `<option value="${type.replace(/"/g, '&quot;')}">${type}</option>`);
+        });
+      });
+    }).catch(() => {});
   })();
 </script>
 

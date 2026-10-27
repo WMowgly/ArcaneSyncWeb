@@ -70,6 +70,12 @@ function collecterListe(form, liste) {
     .filter(entree => entree.nom);
 }
 
+/** Type d'une entrée de référence : son école, ou classique / magique pour une attaque. */
+function typeEntree(entree) {
+  if (entree.ecole_nom) return entree.ecole_nom;
+  return entree.affinite_magique ? '✨ Affinité magique' : 'Attaques classiques';
+}
+
 /**
  * Ajout / retrait de lignes, et suggestions issues de la référence : choisir
  * un sort connu remplit ses dégâts et son niveau s'ils sont encore vides.
@@ -92,10 +98,27 @@ async function preparerListes(form) {
   LISTES_PERSO.filter(l => l.ref).forEach(liste => {
     const entrees = Array.isArray(reference[liste.ref]) ? reference[liste.ref] : [];
     const datalist = form.querySelector(`#mj-ref-${liste.champ}`);
-    if (datalist) {
-      datalist.innerHTML = entrees.map(e =>
-        `<option value="${escapeHtml(e.nom)}">${e.affinite_magique ? '✨ ' : ''}${escapeHtml(e.ecole_nom || e.armes || '')}</option>`).join('');
+    const bloc = form.querySelector(`[data-liste="${liste.champ}"]`);
+
+    // Suggestions : le NOM du sort en premier (le navigateur affiche le
+    // libellé), suivi de son type ; restreintes par le filtre « Type ».
+    const remplir = type => {
+      if (!datalist) return;
+      datalist.innerHTML = entrees
+        .filter(e => !type || typeEntree(e) === type)
+        .map(e => `<option value="${escapeHtml(e.nom)}" label="${escapeHtml(`${e.affinite_magique ? '✨ ' : ''}${e.nom} — ${typeEntree(e)}`)}"></option>`)
+        .join('');
+    };
+    const types = [...new Set(entrees.map(typeEntree))];
+    if (bloc && types.length > 1) {
+      bloc.querySelector('h4').insertAdjacentHTML('beforeend', `
+        <select class="mj-liste-filtre" aria-label="Filtrer par type">
+          <option value="">Tous les types</option>
+          ${types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+        </select>`);
+      bloc.querySelector('.mj-liste-filtre').addEventListener('change', event => remplir(event.target.value));
     }
+    remplir('');
     form.querySelector(`[data-liste="${liste.champ}"]`)?.addEventListener('change', event => {
       const champ = event.target;
       if (champ.dataset.col !== 'nom') return;
@@ -108,6 +131,24 @@ async function preparerListes(form) {
       if (niveau && !niveau.value && connu.niveau !== '' && connu.niveau != null) niveau.value = connu.niveau;
     });
   });
+}
+
+/** Valeurs actuelles bornées à leur maximum pendant la saisie. */
+function bornerRessourcesFormulaire(form) {
+  const paires = [['hp_current', 'hp_max'], ['mana_current', 'mana_max'],
+    ['dura_current', 'dura_max'], ['protection_current', 'protection_max']];
+  const borner = () => paires.forEach(([actuel, max]) => {
+    const champActuel = form.elements[actuel];
+    const champMax = form.elements[max];
+    if (!champActuel || !champMax || champMax.value === '') return;
+    const maximum = Math.max(0, Number(champMax.value) || 0);
+    champActuel.max = maximum;
+    if (champActuel.value !== '' && Number(champActuel.value) > maximum) champActuel.value = maximum;
+  });
+  form.addEventListener('input', event => {
+    if (paires.flat().includes(event.target.name)) borner();
+  });
+  borner();
 }
 
 function numberValue(form, name, fallback = 0) {
@@ -371,7 +412,6 @@ export function showMJPopup(joueur) {
         <p><strong>HP :</strong> ${joueur.hp?.current ?? 0} / ${joueur.hp?.max ?? 0}</p>
         <p><strong>Mana :</strong> ${joueur.mana?.current ?? 0} / ${joueur.mana?.max ?? 0}</p>
         <p><strong>Protection :</strong> ${joueur.armure?.protection?.current ?? 0} / ${joueur.armure?.protection?.max ?? 0}</p>
-        <p><strong>Statuts :</strong> ${(joueur.statuts || []).map(s => escapeHtml(s.nom)).join(', ') || 'Aucun'}</p>
       </div>
       <div class="mj-popup-actions">
         <button class="edit-player-btn">Modifier le joueur</button>
@@ -433,6 +473,7 @@ export function showMJPopup(joueur) {
     const form = overlay.querySelector('#mj-player-edit-form');
     setupMJInventoryEditor(form, joueur.inventaire || []);
     preparerListes(form);
+    bornerRessourcesFormulaire(form);
     form.querySelector('.mj-cancel-btn').addEventListener('click', () => showMJPopup(joueur));
 
     form.addEventListener('submit', async event => {

@@ -45,7 +45,9 @@
     .legende-lecture { border: 2px dashed #c9b28c; }
     .field label small { font-weight: normal; font-size: 12px; opacity: .8; }
 
-    .player-stats-section { margin-top: 24px; }
+    .player-stats-section { margin: 24px 0 34px; }
+    /* Les encarts de notes, séparés entre eux et des statistiques. */
+    .notes-panel { margin-top: 30px; }
     .player-stats-section h3 { margin: 0 0 10px; }
     .stats-grid {
       display: grid;
@@ -65,19 +67,6 @@
 
   <h1>Interface de Jeu</h1>
 
-  <!-- V1.13 : accès direct à la carte du joueur, contexte conservé. -->
-  <p style="text-align:center;margin:0 0 14px">
-    <a id="lien-ma-carte" href="map_joueur.html">🗺️ Ouvrir ma carte</a>
-  </p>
-  <script>
-    (function () {
-      const id = new URLSearchParams(window.location.search).get('PlayerId');
-      if (id) {
-        document.getElementById('lien-ma-carte').href =
-          `map_joueur.html?PlayerId=${encodeURIComponent(id)}`;
-      }
-    })();
-  </script>
 
   <div class="section">
     <h2>Interface de Jeu</h2>
@@ -487,6 +476,7 @@
         `${window.location.pathname}?${params.toString()}`
       );
 
+      bornerRessources();
       updateArmorState();
       console.log('État serveur synchronisé pour :', joueur.nom);
     }
@@ -521,30 +511,37 @@
         document.querySelector(`input[name="survie${i}"][value="echec"]`).checked = echec;
       }
 
+      bornerRessources();
       updateArmorState();
     }
 
+    // Valeur actuelle / maximum : la saisie est bloquée entre 0 et le
+    // maximum (le serveur applique aussi cette borne).
+    const PAIRES_RESSOURCES = [
+      ['player_hp_current', 'player_hp'],
+      ['player_mana_current', 'player_mana'],
+      ['player_dura_current', 'player_dura_max'],
+      ['player_protection_current', 'player_protection_max']
+    ];
+
+    function bornerRessources() {
+      PAIRES_RESSOURCES.forEach(([idActuel, idMax]) => {
+        const actuel = document.getElementById(idActuel);
+        const max = document.getElementById(idMax);
+        if (!actuel || !max || max.value === '') return;
+        const maximum = Math.max(0, Number(max.value) || 0);
+        actuel.min = 0;
+        actuel.max = maximum;
+        if (actuel.value !== '' && Number(actuel.value) > maximum) actuel.value = maximum;
+        if (actuel.value !== '' && Number(actuel.value) < 0) actuel.value = 0;
+      });
+    }
+
     function setupValidators() {
-      const fields = ['hp', 'mana', 'protection', 'dura'];
-      
-      fields.forEach(field => {
-        const current = document.getElementById(`player_${field}_current`);
-        const max = document.getElementById(`player_${field}`);
-        
-        if (!current || !max) return;
-        
-        current.addEventListener('input', () => {
-          const currentVal = parseInt(current.value) || 0;
-          const maxVal = parseInt(max.value) || 0;
-          
-          if (currentVal > maxVal) {
-            current.classList.add('error');
-          } else {
-            current.classList.remove('error');
-          }
-          
-          updateArmorState();
-        });
+      PAIRES_RESSOURCES.forEach(([idActuel]) => {
+        const actuel = document.getElementById(idActuel);
+        if (!actuel) return;
+        actuel.addEventListener('input', () => { bornerRessources(); updateArmorState(); });
       });
     }
 

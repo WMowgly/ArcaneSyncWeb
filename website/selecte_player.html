@@ -117,16 +117,8 @@
                 </div>
               </div>
               <p>Intox: ${joueur.intox} / ${joueur?.stats?.constitution}</p>
-              <button class="map-btn">🗺️ Sa carte</button>
               <button class="delete-btn">Supprimer</button>
             `;
-
-            // V1.13 : ouvrir directement la vue de carte du personnage.
-            card.querySelector('.map-btn').addEventListener('click', (e) => {
-              e.stopPropagation();
-              window.location.href =
-                `map_joueur.html?PlayerId=${encodeURIComponent(joueur.id)}`;
-            });
 
             const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.addEventListener('click', (e) => {

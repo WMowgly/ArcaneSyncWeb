@@ -347,37 +347,46 @@
       min-width: 0;
       cursor: pointer;
     }
-    .gm-player-resource-controls {
+    /* Jauge + commande sur une ligne : − [quantité] + Max */
+    .gm-ressource { margin: 6px 0 8px; }
+    .gm-ressource > label { display: block; font-weight: 600; margin-bottom: 4px; }
+    /* Repère de couleur commun à la jauge et à sa ligne de commandes. */
+    .gm-pastille {
+      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+      margin-right: 6px; vertical-align: middle;
+    }
+    .gm-pastille-pv, .gm-etiquette-pv { background: linear-gradient(to right, #8b3e3c, #bc5854); }
+    .gm-pastille-mana, .gm-etiquette-mana { background: linear-gradient(to right, #3c5e8b, #5485bc); }
+    .gm-commandes { margin: 10px 0 12px; display: grid; gap: 6px; }
+    .gm-ressource-actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin: 12px 0;
-    }
-    .gm-player-resource {
-      border: 1px solid #8b5e3c;
-      border-radius: 7px;
-      padding: 9px;
-      background: #fff4d6;
-    }
-    .gm-player-resource h5 { margin: 0 0 7px; }
-    .gm-player-resource-actions {
-      display: flex;
-      flex-wrap: wrap;
+      grid-template-columns: 52px 40px minmax(0, 1fr) 40px auto;
       gap: 6px;
-      align-items: center;
     }
-    .gm-player-resource-actions input {
-      width: 65px;
-      max-width: 100%;
+    .gm-etiquette {
+      display: flex; align-items: center; justify-content: center;
+      height: 34px; border-radius: 6px; color: #fefae0; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 1px #00000080;
+    }
+    .gm-ressource-actions button,
+    .gm-ressource-actions input {
+      height: 34px;
+      margin: 0;
+      padding: 0 8px;
       box-sizing: border-box;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 6px;
     }
+    .gm-ressource-actions input { width: 100%; text-align: center; font-weight: 600; }
+    .gm-ressource-actions .gm-moins { background: #f3dcd8; border: 1px solid #8b3e3c; color: #7a2222; }
+    .gm-ressource-actions .gm-plus { background: #dcebd9; border: 1px solid #3f7d4a; color: #2e5e36; }
+    .gm-ressource-actions .gm-max { background: #fefae0; border: 1px solid #8b5e3c; color: #5c3b21; font-size: 14px; }
+    .gm-ressource-actions button:hover { filter: brightness(0.95); }
     .gm-player-card-message {
       margin: 7px 0 0;
       min-height: 1.2em;
       font-size: 0.9em;
-    }
-    @media (max-width: 600px) {
-      .gm-player-resource-controls { grid-template-columns: 1fr; }
     }
 
 
@@ -733,35 +742,36 @@
 
           card.innerHTML = `
             <h3>${escapeHtml(joueur.nom)}</h3>
-            <div class="stat-bar-container">
-              <label>Points de Vie</label>
+            <!-- Jauges groupées (Vie puis Mana), puis leurs commandes dans le
+                 même ordre ; chaque ligne porte l'étiquette colorée de sa jauge. -->
+            <div class="gm-ressource">
+              <label><span class="gm-pastille gm-pastille-pv"></span>Points de Vie</label>
               <div class="stat-bar">
                 <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
                 <div class="stat-bar-text">${hpCurrent} / ${hpMax}</div>
               </div>
             </div>
-            <div class="stat-bar-container">
-              <label>Points de Mana</label>
+            <div class="gm-ressource">
+              <label><span class="gm-pastille gm-pastille-mana"></span>Points de Mana</label>
               <div class="stat-bar">
                 <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
                 <div class="stat-bar-text">${manaCurrent} / ${manaMax}</div>
               </div>
             </div>
-
-            <div class="gm-player-resource-controls">
-              <div class="gm-player-resource">
-                <h5>Retirer des HP</h5>
-                <div class="gm-player-resource-actions">
-                  <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de HP à retirer">
-                  <button data-a="damage-hp" type="button">− HP</button><button data-a="heal-hp" type="button">+ HP</button>
-                </div>
+            <div class="gm-commandes">
+              <div class="gm-ressource-actions">
+                <span class="gm-etiquette gm-etiquette-pv" title="Points de Vie">PV</span>
+                <button data-a="damage-hp" type="button" class="gm-moins" title="Retirer des PV" aria-label="Retirer des PV">−</button>
+                <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de PV">
+                <button data-a="heal-hp" type="button" class="gm-plus" title="Ajouter des PV" aria-label="Ajouter des PV">+</button>
+                <button data-a="full-hp" type="button" class="gm-max" title="Remettre les PV au maximum">Max</button>
               </div>
-              <div class="gm-player-resource">
-                <h5>Retirer du Mana</h5>
-                <div class="gm-player-resource-actions">
-                  <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de Mana à retirer">
-                  <button data-a="drain-mana" type="button">− Mana</button><button data-a="restore-mana" type="button">+ Mana</button>
-                </div>
+              <div class="gm-ressource-actions">
+                <span class="gm-etiquette gm-etiquette-mana" title="Points de Mana">Mana</span>
+                <button data-a="drain-mana" type="button" class="gm-moins" title="Retirer du mana" aria-label="Retirer du mana">−</button>
+                <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de mana">
+                <button data-a="restore-mana" type="button" class="gm-plus" title="Ajouter du mana" aria-label="Ajouter du mana">+</button>
+                <button data-a="full-mana" type="button" class="gm-max" title="Remettre le mana au maximum">Max</button>
               </div>
             </div>
 
@@ -819,6 +829,16 @@
             const amount = Math.max(1, Number(card.querySelector('[data-a="mana-amount"]').value) || 1);
             const newMana = Math.min(manaMax, manaCurrent + amount);
             await updateGMPlayerResources(joueur, {mana: {current: newMana}}, messageElement);
+          });
+
+          // « Max » : la ressource revient d'un clic à son maximum.
+          card.querySelector('[data-a="full-hp"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            await updateGMPlayerResources(joueur, {hp: {current: hpMax}}, messageElement);
+          });
+          card.querySelector('[data-a="full-mana"]').addEventListener('click', async event => {
+            event.stopPropagation();
+            await updateGMPlayerResources(joueur, {mana: {current: manaMax}}, messageElement);
           });
 
           // Aucun contrôle de la carte ne doit ouvrir l'éditeur complet.

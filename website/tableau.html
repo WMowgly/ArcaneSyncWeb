@@ -374,8 +374,9 @@
         const entity=entityForToken(token);
         const isMob=token.type==='mob';
         const hp=entity?.hp ? `${entity.hp.current ?? 0} / ${entity.hp.max ?? 0}` : '—';
-        const status=isMob ? (entity?.statut || 'vivant') :
-          ((entity?.statuts||[]).map(s=>s.nom).join(', ')||'Aucun statut');
+        // Statut (vivant / mort) affiché pour les créatures seulement : les
+        // statuts des personnages ont été retirés.
+        const status=isMob ? (entity?.statut || 'vivant') : '';
         const visibility = isMob && token.visibleToPlayers === false
           ? '<small><strong>🚫 Caché aux joueurs</strong></small>'
           : '';
@@ -389,7 +390,7 @@
         return `<div class="scene-token-item">
           <strong>${isMob?'👹':'👤'} ${escapeHtml(entity?.nom || (isMob?'Mob':'Joueur'))}</strong>
           <small>HP : ${escapeHtml(hp)}</small>
-          <small>Statut : ${escapeHtml(status)}</small>
+          ${status ? `<small>Statut : ${escapeHtml(status)}</small>` : ''}
           ${visibility}
           ${visibilityButton}
         </div>`;

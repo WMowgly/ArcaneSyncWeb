@@ -1168,16 +1168,15 @@
       const entite = token.entity || {};
       const estMob = token.kind === 'mob';
 
-      const statuts = estMob
-        ? `Statut : ${escapeHtml(entite.statut || 'vivant')}`
-        : `Statuts : ${escapeHtml((entite.statuts || []).map(s => s.nom).join(', ') || 'aucun')}`;
+      // Les statuts ne concernent plus que les créatures : ils ont été
+      // retirés des personnages, côté joueur comme côté MJ.
+      const statuts = estMob ? `Statut : ${escapeHtml(entite.statut || 'vivant')}` : '';
 
-      // V1.13.8 : pastilles cliquables, pour les DEUX types d'entité.
-      // L'agonie reste automatique et propre aux personnages : on ne la
-      // propose pas à la main.
+      // Pastilles cliquables des créatures (l'agonie, propre aux
+      // personnages, n'est pas proposée).
       const appliques = new Set((entite.statuts || []).map(x => x.id));
-      const pastilles = catalogueStatuts
-        .filter(cat => !(estMob && cat.id === 'agonie'))
+      const pastilles = !estMob ? '' : catalogueStatuts
+        .filter(cat => cat.id !== 'agonie')
         .map(cat => `<button type="button" class="statut-pastille${appliques.has(cat.id) ? ' actif' : ''}"
                data-statut="${escapeHtml(cat.id)}" data-applique="${appliques.has(cat.id)}"
                ${cat.id === 'agonie' ? 'disabled title="Automatique à 0 PV"' : ''}>${escapeHtml(cat.nom)}</button>`)
@@ -1191,11 +1190,11 @@
             <h2>${estMob ? '👹' : '👤'} ${escapeHtml(entite.nom || token.entityId)}</h2>
             <p class="modal-sous">${estMob ? 'Créature de la partie active' : 'Personnage joueur'}</p>
 
-            <label style="margin-top:0">Statuts</label>
-            <div class="statut-liste">${pastilles}</div>
+            ${estMob ? `<label style="margin-top:0">Statuts</label>
+            <div class="statut-liste">${pastilles}</div>` : ''}
 
             <div class="modal-stats">
-              <span>${statuts}</span>
+              ${statuts ? `<span>${statuts}</span>` : ''}
               <span>Case actuelle : ${token.x} , ${token.y}</span>
             </div>
 
