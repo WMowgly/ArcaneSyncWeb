@@ -495,6 +495,7 @@
     let drag = null;                // déplacement de token en cours
     let peinture = null;            // {cells:Map, mode}
     let trace = null;               // tracé d'annotation en cours
+    let gommage = null;             // gomme en glissé (voir gommer)
 
     // --- Réglages d'annotation -------------------------------------------
 
@@ -686,7 +687,7 @@
       mesure:       { titre: 'Mesurer',    panneau: null,
                       aide: 'Glissez d’un point à l’autre. Rien n’est envoyé au serveur.' },
       erase:        { titre: 'Gomme',      panneau: null,
-                      aide: "Efface l'annotation sous le curseur, sinon le décor. Ctrl + Z annule." },
+                      aide: "Cliquez ou glissez : efface les annotations, sinon le décor. Une créature se retire d'un clic. Ctrl + Z annule." },
       dessin:       { titre: 'Dessiner',   panneau: 'annot',
                       aide: 'Glissez pour tracer. Visible en direct par la table. Ctrl + Z annule.' },
       texte:        { titre: 'Écrire',     panneau: 'annot',
@@ -764,18 +765,16 @@
 
       if (outil === 'erase') {
         // La gomme est contextuelle : annotation d'abord, décor ensuite.
-        const annotation = renderer.annotationAt(renderer.pointFromEvent(event));
-        if (annotation) {
-          await effacerAnnotation(annotation.id);
-          return;
-        }
+        // Une créature n'est retirée que sous le clic, jamais en glissant.
+        const point = renderer.pointFromEvent(event);
         const token = renderer.tokenAt(cell);
-        if (token && token.kind === 'mob') {
+        if (!renderer.annotationAt(point) && token && token.kind === 'mob') {
           await retirerToken(token.id);
           return;
         }
-        const element = renderer.elementAt(cell);
-        if (element) await supprimerElement(element.id);
+        gommage = { mode: null, annotations: new Set(), cases: new Set(), point: null, requetes: [], annulations: [] };
+        canvas.setPointerCapture?.(event.pointerId);
+        gommer(point);
         return;
       }
 
@@ -830,6 +829,7 @@
       }
 
       if (peinture && renderer.inBounds(cell)) appliquerPeinture(cell);
+      if (gommage) gommer(renderer.pointFromEvent(event));
     });
 
     // V1.13.12 — Double-clic sur une porte : ouvrir ou fermer.
@@ -868,6 +868,62 @@
         const fini = renderer.terminerTrace();
         enregistrerTrace(fini, reglages).catch(error => setStatus(error.message, true));
       }
+      if (gommage) {
+        const fini = gommage;
+        gommage = null;
+        terminerGommage(fini);
+      }
+    }
+
+    /**
+     * Gomme en glissé : efface tout ce que le curseur touche, au fil du
+     * geste. Le premier objet touché fixe le mode du geste (annotations OU
+     * décor), pour ne pas emporter le décor sous un tracé. Un geste rapide
+     * est rééchantillonné tous les 0,4 case pour ne rien sauter.
+     */
+    function gommer(point) {
+      const depart = gommage.point || point;
+      const pas = Math.max(1, Math.ceil(Math.hypot(point.x - depart.x, point.y - depart.y) / 0.4));
+      for (let i = 1; i <= pas; i += 1) {
+        const p = {
+          x: depart.x + (point.x - depart.x) * i / pas,
+          y: depart.y + (point.y - depart.y) * i / pas
+        };
+        if (gommage.mode !== 'decor') {
+          const annotation = renderer.annotationAt(p, undefined, gommage.annotations);
+          if (annotation) {
+            gommage.mode = 'annotation';
+            gommage.annotations.add(annotation.id);
+            gommage.requetes.push(effacerAnnotation(annotation.id, gommage));
+            continue;
+          }
+        }
+        if (gommage.mode === 'annotation') continue;
+        // Décor : un élément par case et par geste, même si un autre est dessous.
+        const cell = { x: Math.floor(p.x), y: Math.floor(p.y) };
+        const cle = `${cell.x},${cell.y}`;
+        if (gommage.cases.has(cle)) continue;
+        gommage.cases.add(cle);
+        const element = renderer.elementAt(cell);
+        if (element && !gommage.requetes.some(r => r.elementId === element.id)) {
+          gommage.mode = 'decor';
+          const requete = supprimerElement(element.id, gommage);
+          requete.elementId = element.id;
+          gommage.requetes.push(requete);
+        }
+      }
+      gommage.point = point;
+    }
+
+    /** Un geste de gomme = une seule entrée d'annulation (Ctrl + Z). */
+    async function terminerGommage(fini) {
+      await Promise.all(fini.requetes);
+      const annulations = fini.annulations;
+      if (!annulations.length) return;
+      memoriser(`gomme (${annulations.length})`, async mapId => {
+        for (const annuler of annulations.slice().reverse()) await annuler(mapId);
+      });
+      setStatus(`${annulations.length} ${fini.mode === 'annotation' ? 'annotation(s) effacée(s)' : 'élément(s) supprimé(s)'}.`);
     }
 
     /** Un seul enregistrement par tracé, au relâchement du pointeur. */
@@ -904,21 +960,24 @@
       } catch (error) { setStatus(error.message, true); }
     }
 
-    async function effacerAnnotation(annotationId) {
+    /** `groupe` (gomme en glissé) : l'annulation rejoint celle du geste. */
+    async function effacerAnnotation(annotationId, groupe) {
       const copie = map().annotations?.[annotationId];
       try {
         await api('DELETE',
           `/api/maps/${encodeURIComponent(map().id)}/annotations/${encodeURIComponent(annotationId)}`);
         if (copie) {
-          memoriser('effacement', async mapId => {
+          const annuler = async mapId => {
             const data = await api('POST', `/api/maps/${encodeURIComponent(mapId)}/annotations`, {
               type: copie.type, points: copie.points, text: copie.text,
               color: copie.color, size: copie.size, visibleToPlayers: copie.visibleToPlayers
             });
             idsRecrees.set(annotationId, data.annotationId);
-          });
+          };
+          if (groupe) groupe.annulations.push(annuler);
+          else memoriser('effacement', annuler);
         }
-        setStatus('Annotation effacée.');
+        if (!groupe) setStatus('Annotation effacée.');
       } catch (error) { setStatus(error.message, true); }
     }
 
@@ -990,19 +1049,22 @@
       } catch (error) { setStatus(error.message, true); }
     }
 
-    async function supprimerElement(elementId) {
+    /** `groupe` (gomme en glissé) : l'annulation rejoint celle du geste. */
+    async function supprimerElement(elementId, groupe) {
       const copie = map().elements?.[elementId];
       try {
         await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/elements/${encodeURIComponent(elementId)}`);
         if (selection?.id === elementId) selectionner(null);
         if (copie) {
-          memoriser(`suppression de « ${copie.nom || 'élément'} »`, async mapId => {
+          const annuler = async mapId => {
             const { id, ...donnees } = copie;
             const data = await api('POST', `/api/maps/${encodeURIComponent(mapId)}/elements`, donnees);
             idsRecrees.set(elementId, data.elementId);
-          });
+          };
+          if (groupe) groupe.annulations.push(annuler);
+          else memoriser(`suppression de « ${copie.nom || 'élément'} »`, annuler);
         }
-        setStatus('Élément supprimé.');
+        if (!groupe) setStatus('Élément supprimé.');
       } catch (error) { setStatus(error.message, true); }
     }
 

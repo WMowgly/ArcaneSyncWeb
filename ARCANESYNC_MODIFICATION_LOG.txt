@@ -5285,10 +5285,19 @@ FICHE ALLÉGÉE
 CARTE MJ
     - map.html : groupes PJ et MOB de « Sur la carte » repliables ; l'état
       est conservé au rafraîchissement et mémorisé dans le navigateur.
+    - map.html : la gomme efface en restant appuyé (geste rééchantillonné
+      tous les 0,4 case). Le premier objet touché fixe le mode du geste
+      (annotations ou décor) ; une créature ne se retire que d'un clic ;
+      un geste entier s'annule d'un seul Ctrl + Z.
+    - map-core.js : annotationAt accepte une liste d'annotations à ignorer.
+
+INTERFACE MJ
+    - mj.html : la gestion des mobs suit directement la liste des joueurs,
+      l'initiative vient ensuite.
 
 VALIDATION
 - npm test : 15 fichiers / 29 suites                          : PASS
-- npm run test:e2e : 7 scénarios / 78 contrôles                : PASS
+- npm run test:e2e : 8 scénarios / 84 contrôles                : PASS
 ======================================================================
 FIN VERSION V1.17
 ======================================================================

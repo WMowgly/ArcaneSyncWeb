@@ -662,14 +662,18 @@ window.ArcaneMap = (function () {
       });
     }
 
-    /** Test de proximité utilisé par la gomme d'annotations. */
-    function annotationAt(point, tolerance) {
+    /**
+     * Test de proximité utilisé par la gomme d'annotations. `ignorer`
+     * (Set d'identifiants) écarte les annotations déjà en cours d'effacement.
+     */
+    function annotationAt(point, tolerance, ignorer) {
       if (!state.map) return null;
       const seuil = tolerance ?? 0.45;
       const annotations = Object.values(state.map.annotations || {});
 
       for (let i = annotations.length - 1; i >= 0; i -= 1) {
         const annotation = annotations[i];
+        if (ignorer?.has(annotation.id)) continue;
 
         if (annotation.type === 'texte') {
           const ancre = annotation.points[0];
