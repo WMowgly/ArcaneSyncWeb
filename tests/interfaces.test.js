@@ -33,13 +33,22 @@ const source = (...segments) => fs.readFileSync(path.join(__dirname, '..', ...se
   const borne = tableau.ajouterTrait({ points: [[0, 0], [1, 1]], color: '#000000', size: 999 });
   verifier(borne.size === 50, 'L\'épaisseur doit être bornée à 50.');
 
+  // Gomme : un trait marqué, qui n'efface que le calque des dessins ; les
+  // anciens coups de gomme (couleur du fond) sont reconnus.
+  const gomme = tableau.ajouterTrait({ points: [[0, 0], [9, 9]], gomme: true, size: 20 });
+  verifier(gomme?.gomme === true, 'Un coup de gomme doit être accepté, même sans couleur.');
+  const ancienne = tableau.ajouterTrait({ points: [[0, 0], [9, 9]], color: '#FFFDF7', size: 20 });
+  verifier(ancienne?.gomme === true, 'Un ancien trait couleur fond doit redevenir un coup de gomme.');
+  verifier(!tableau.ajouterTexte({ x: 1, y: 1, text: 'x', gomme: true }), 'Un texte n\'est jamais une gomme.');
+
   // Persistance : relu par un module neuf (comme au redémarrage du serveur).
   storage.flushAll();
   const fichier = bacDonnees.chemin('tableau_dessins.json');
   verifier(fs.existsSync(fichier), 'tableau_dessins.json non écrit.');
   delete require.cache[require.resolve('../tableau')];
   const relu = require('../tableau');
-  verifier(relu.getTraces().length === 3, 'Les dessins doivent survivre à un redémarrage.');
+  verifier(relu.getTraces().length === 5 && relu.getTraces().filter(t => t.gomme).length === 2,
+    'Les dessins et coups de gomme doivent survivre à un redémarrage.');
 
   relu.vider();
   storage.flushAll();

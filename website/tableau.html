@@ -115,6 +115,10 @@
       font-size: 0.9rem;
     }
     .scene-legend div { margin: 5px 0; }
+    /* La liste des participants est réservée au MJ : joueurs et spectateurs
+       ne voient que le tableau, sur toute la largeur. */
+    body:not(.role-mj) .scene-sidebar { display: none; }
+    body:not(.role-mj) .scene-layout { grid-template-columns: minmax(0, 1fr); }
     @media (max-width: 900px) {
       .scene-layout { grid-template-columns: 1fr; }
       .scene-sidebar { order: 2; }
@@ -202,10 +206,15 @@
       else if (playerId) role = 'player';
       else role = 'viewer';
     }
+    document.body.classList.add(`role-${role}`);
 
     const socket = io({ query: { role, playerId: playerId || '' } });
     const canvas = document.getElementById('scene-canvas');
     const ctx = canvas.getContext('2d');
+    // Calque des dessins, posé entre le fond et les pions : la gomme
+    // n'efface que lui (jamais le fond, la grille ni les participants).
+    const calque = document.createElement('canvas');
+    const cctx = calque.getContext('2d');
     const statusEl = document.getElementById('scene-status');
     const tokenList = document.getElementById('scene-token-list');
     const roleEl = document.getElementById('scene-role');
@@ -261,6 +270,9 @@
         canvas.width / scene.width, 0, 0,
         canvas.height / scene.height, 0, 0
       );
+      calque.width = canvas.width;
+      calque.height = canvas.height;
+      cctx.setTransform(ctx.getTransform());
       renderScene();
     }
 
@@ -351,7 +363,17 @@
       }
     }
 
+    // Rendu complet : le calque des dessins est reconstruit, puis composé.
     function renderScene() {
+      cctx.clearRect(0,0,scene.width,scene.height);
+      traces.forEach(dessinerTrace);
+      if(traitEnCours) dessinerTrace(traitEnCours);
+      composer();
+    }
+
+    // Composition : fond et grille, calque des dessins, puis les pions
+    // (un trait ne masque jamais un participant).
+    function composer() {
       ctx.clearRect(0,0,scene.width,scene.height);
       ctx.fillStyle=FOND;
       ctx.fillRect(0,0,scene.width,scene.height);
@@ -366,30 +388,37 @@
         ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(scene.width,y);ctx.stroke();
       }
 
-      // Dessins sous les pions : un trait ne masque jamais un participant.
-      traces.forEach(dessinerTrace);
-      if(traitEnCours) dessinerTrace(traitEnCours);
+      // Le calque est à la taille en pixels du canevas : on le pose sans
+      // la mise à l'échelle de la scène.
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.drawImage(calque,0,0);
+      ctx.restore();
 
       Object.values(scene.tokens || {}).forEach(renderToken);
     }
 
+    /** Dessine un trait ou un texte sur le calque ; la gomme y perce un trou. */
     function dessinerTrace(trace) {
       if(trace.type==='texte'){
-        ctx.fillStyle=trace.color;
-        ctx.font=`${trace.size*5}px Uncial Antiqua`;
-        ctx.fillText(trace.text,trace.x,trace.y);
+        cctx.fillStyle=trace.color;
+        cctx.font=`${trace.size*5}px Uncial Antiqua`;
+        cctx.fillText(trace.text,trace.x,trace.y);
         return;
       }
       const points=trace.points||[];
       if(points.length<2) return;
-      ctx.beginPath();
-      ctx.moveTo(points[0][0],points[0][1]);
-      points.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));
-      ctx.strokeStyle=trace.color;
-      ctx.lineWidth=trace.size;
-      ctx.lineCap='round';
-      ctx.lineJoin='round';
-      ctx.stroke();
+      cctx.save();
+      cctx.globalCompositeOperation=trace.gomme?'destination-out':'source-over';
+      cctx.beginPath();
+      cctx.moveTo(points[0][0],points[0][1]);
+      points.slice(1).forEach(([x,y])=>cctx.lineTo(x,y));
+      cctx.strokeStyle=trace.gomme?'#000':trace.color;
+      cctx.lineWidth=trace.size;
+      cctx.lineCap='round';
+      cctx.lineJoin='round';
+      cctx.stroke();
+      cctx.restore();
     }
 
     function renderTokenList() {
@@ -468,15 +497,11 @@
       socket.emit('sceneMoveToken',{tokenId:token.id,x,y});
     }
 
-    function drawLine(x0,y0,x1,y1,color,size,emit=true) {
-      ctx.beginPath();
-      ctx.moveTo(x0,y0);
-      ctx.lineTo(x1,y1);
-      ctx.strokeStyle=color;
-      ctx.lineWidth=size;
-      ctx.lineCap='round';
-      ctx.stroke();
-      if(emit) socket.emit('draw',{x0,y0,x1,y1,color,size});
+    /** Segment en direct (le sien ou celui d'un autre), sur le calque. */
+    function drawLine(x0,y0,x1,y1,color,size,emit=true,gomme=false) {
+      dessinerTrace({type:'trait',gomme,color,size,points:[[x0,y0],[x1,y1]]});
+      composer();
+      if(emit) socket.emit('draw',{x0,y0,x1,y1,color,size,gomme});
     }
 
     function addText(point) {
@@ -485,6 +510,7 @@
       const texte={type:'texte',x:point.x,y:point.y,text,color:selectedColor,size:drawSize};
       traces.push(texte);
       dessinerTrace(texte);
+      composer();
       socket.emit('text',texte);
     }
 
@@ -537,10 +563,11 @@
       lastPoint=point;
       traitEnCours={
         type:'trait',
-        color:activeTool==='erase'?FOND:selectedColor,
+        color:selectedColor,
         size:drawSize,
         points:[[point.x,point.y]]
       };
+      if(activeTool==='erase') traitEnCours.gomme=true;
       canvas.setPointerCapture?.(event.pointerId);
     });
 
@@ -554,8 +581,7 @@
       }
 
       if(!drawing || !lastPoint) return;
-      const color=activeTool==='erase'?FOND:selectedColor;
-      drawLine(lastPoint.x,lastPoint.y,point.x,point.y,color,drawSize,true);
+      drawLine(lastPoint.x,lastPoint.y,point.x,point.y,selectedColor,drawSize,true,activeTool==='erase');
       traitEnCours?.points.push([point.x,point.y]);
       lastPoint=point;
     });
@@ -636,13 +662,14 @@
     });
 
     socket.on('draw',data=>{
-      drawLine(data.x0,data.y0,data.x1,data.y1,data.color,data.size,false);
+      drawLine(data.x0,data.y0,data.x1,data.y1,data.color,data.size,false,data.gomme===true);
     });
 
     socket.on('text',data=>{
       const texte={...data,type:'texte'};
       traces.push(texte);
       dessinerTrace(texte);
+      composer();
     });
 
     socket.on('clearDrawings',()=>{

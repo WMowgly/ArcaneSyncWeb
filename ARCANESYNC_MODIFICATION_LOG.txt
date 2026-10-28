@@ -5363,6 +5363,14 @@ FILTRE « TYPE » DES SORTS SUR TÉLÉPHONE
       masquées : la liste native d'Android affichait les groupes masqués.
       Utilisé par la Fiche et la Création.
 
+TABLEAU BLANC CÔTÉ JOUEUR
+    - tableau.html : la liste des participants est réservée au MJ ; le
+      joueur (et le spectateur) ne voit que le tableau, sur toute la largeur.
+    - Gomme : les dessins sont rendus sur un calque à part, posé entre le
+      fond (grille) et les pions ; la gomme n'efface que ce calque
+      (destination-out). tableau.js enregistre les coups de gomme (gomme:
+      true) ; les anciens traits couleur fond sont reconnus comme gomme.
+
 PAGES JOUEUR SUR TÉLÉPHONE
     - website/joueur-mobile.css (sous 600 px, pages joueur seulement :
       choix du personnage, Interface de Jeu, Fiche, Création) : marges
@@ -5380,7 +5388,7 @@ PAGES JOUEUR SUR TÉLÉPHONE
 
 VALIDATION
 - npm test : 17 fichiers / 33 suites                          : PASS
-- npm run test:e2e : 9 scénarios / 128 contrôles               : PASS
+- npm run test:e2e : 9 scénarios / 135 contrôles               : PASS
 ======================================================================
 FIN VERSION V2.1
 ======================================================================

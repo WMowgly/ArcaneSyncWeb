@@ -12,9 +12,11 @@
 // MODÈLE (même principe que les annotations de map.js)
 // ------
 //   { type: 'trait', points: [[x, y], ...], color, size }
+//   { type: 'trait', gomme: true, points, size }   coup de gomme
 //   { type: 'texte', x, y, text, color, size }
 // Coordonnées dans le repère de la scène (1200 × 675 par défaut).
-// La gomme est un trait de la couleur du fond : l'ordre de rendu suffit.
+// Les dessins sont rendus sur un calque à part : la gomme n'efface que ce
+// calque, jamais le fond, la grille ni les pions.
 // ---------------------------------------------------------------------------
 
 const fs = require('fs');
@@ -44,10 +46,14 @@ function sauvegarder() {
 const nombre = valeur => (Number.isFinite(Number(valeur)) && Math.abs(Number(valeur)) <= BORNE ? Math.round(Number(valeur) * 10) / 10 : null);
 const couleur = valeur => (typeof valeur === 'string' && /^#[0-9a-f]{6}$/i.test(valeur) ? valeur.toLowerCase() : null);
 const taille = valeur => Math.max(1, Math.min(50, Number(valeur) || 1));
+// Avant la V2.1, la gomme traçait de la couleur du fond : ces traits
+// enregistrés redeviennent des coups de gomme.
+const ANCIEN_FOND = '#fffdf7';
 
 function normaliser(element) {
   if (!element || typeof element !== 'object') return null;
-  const color = couleur(element.color);
+  const gomme = element.type !== 'texte' && (element.gomme === true || couleur(element.color) === ANCIEN_FOND);
+  const color = gomme ? '#000000' : couleur(element.color);
   if (!color) return null;
 
   if (element.type === 'texte') {
@@ -63,7 +69,9 @@ function normaliser(element) {
     .map(point => (Array.isArray(point) ? [nombre(point[0]), nombre(point[1])] : [null, null]))
     .filter(([x, y]) => x !== null && y !== null);
   if (points.length < 2) return null;
-  return { type: 'trait', points, color, size: taille(element.size) };
+  return gomme
+    ? { type: 'trait', gomme: true, points, color, size: taille(element.size) }
+    : { type: 'trait', points, color, size: taille(element.size) };
 }
 
 // Lecture initiale : après les fonctions de validation qu'elle utilise.

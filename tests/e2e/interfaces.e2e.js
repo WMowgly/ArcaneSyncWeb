@@ -72,10 +72,53 @@ module.exports = {
     await page.attendre('false', 6);
     await page.ouvrir('tableau.html?role=mj');
     verifier(await page.attendre(`traces.length === 2 && ${pixelRouge}`, 30), 'tableau : dessins retrouvés après rechargement');
+    verifier(await page.evaluer("getComputedStyle(document.querySelector('.scene-sidebar')).display !== 'none'"),
+      'tableau MJ : liste des participants affichée');
+
+    // Gomme : efface les dessins, jamais le fond (grille) ni les pions.
+    // Pixels lus dans le repère de la scène (1200 × 675).
+    const pixel = (sx, sy) => `(() => { const c = document.getElementById('scene-canvas');
+      return [...c.getContext('2d').getImageData(Math.round(${sx} * c.width / scene.width), Math.round(${sy} * c.height / scene.height), 1, 1).data]; })()`;
+    const pion = await page.evaluer("(() => { const t = Object.values(scene.tokens)[0]; return t ? [t.x * scene.width + 16, t.y * scene.height] : null; })()");
+    const pionAvant = pion && await page.evaluer(pixel(pion[0], pion[1]));
+    const grilleReference = await page.evaluer(pixel(400, 525));          // ligne verticale de la grille, sans dessin
+    const versEcran = async (sx, sy) => page.evaluer(`(() => { const r = document.getElementById('scene-canvas').getBoundingClientRect();
+      return [r.x + ${sx} / scene.width * r.width, r.y + ${sy} / scene.height * r.height]; })()`);
+    async function gommer(sx1, sy1, sx2, sy2) {
+      const [x1, y1] = await versEcran(sx1, sy1);
+      const [x2, y2] = await versEcran(sx2, sy2);
+      await page.souris('mousePressed', x1, y1);
+      for (let i = 1; i <= 12; i++) await page.souris('mouseMoved', x1 + (x2 - x1) * i / 12, y1 + (y2 - y1) * i / 12);
+      await page.souris('mouseReleased', x2, y2);
+    }
+    await page.evaluer(`(() => { document.getElementById('tool-erase').click();
+      const taille = document.getElementById('draw-size'); taille.value = '30'; taille.dispatchEvent(new Event('input')); })()`);
+    await gommer(200, 607.5, 640, 607.5);                                   // sur le trait rouge
+    if (pion) await gommer(pion[0] - 60, pion[1], pion[0] + 60, pion[1]);  // à travers un pion
+    verifier(!(await page.evaluer(pixelRouge)), 'gomme : le trait rouge est effacé');
+    const grilleGommee = await page.evaluer(pixel(400, 607.5));
+    verifier(JSON.stringify(grilleGommee) === JSON.stringify(grilleReference),
+      `gomme : la grille du fond reste intacte sous la gomme (${grilleGommee} / ${grilleReference})`);
+    verifier(!pion || JSON.stringify(await page.evaluer(pixel(pion[0], pion[1]))) === JSON.stringify(pionAvant),
+      'gomme : le pion n\'est pas effacé');
+    await page.attendre('false', 6);
+    verifier((lireJson('tableau_dessins.json').traces || []).some(t => t.gomme === true), 'serveur : coup de gomme enregistré');
+    await page.ouvrir('tableau.html?role=mj');
+    verifier(await page.attendre(`traces.some(t => t.gomme) && !${pixelRouge}`, 30), 'gomme : effacement conservé après rechargement');
+    await page.capture('tableau-gomme.png');
+    // Joueur : pas de liste des participants, le tableau occupe la largeur.
+    const joueurTableau = lireJson('data.json')[0];
+    await page.ouvrir(`tableau.html?role=player&PlayerId=${encodeURIComponent(joueurTableau.id)}`);
+    await page.attendre("document.getElementById('scene-canvas').width > 0", 30);
+    verifier(await page.evaluer(`getComputedStyle(document.querySelector('.scene-sidebar')).display === 'none'
+      && document.querySelector('.scene-board-card').getBoundingClientRect().width > document.querySelector('.scene-layout').getBoundingClientRect().width * 0.95`),
+      'tableau joueur : pas de liste des participants, tableau sur toute la largeur');
+    await page.capture('tableau-joueur.png');
     await apiMj('POST', '/api/ecran', { vue: 'tableau' });
     await page.ouvrir('ecran.html');
-    verifier(await page.attendre("document.querySelector('#vue-tableau iframe')?.contentWindow.eval('typeof traces !== \"undefined\" && traces.length') === 2", 40),
-      'Écran ouvert après coup : voit les dessins déjà tracés');
+    const nbDessins = (lireJson('tableau_dessins.json').traces || []).length;   // traits, texte et coups de gomme
+    verifier(await page.attendre(`document.querySelector('#vue-tableau iframe')?.contentWindow.eval('typeof traces !== "undefined" && traces.length') === ${nbDessins}`, 40),
+      `Écran ouvert après coup : voit les dessins déjà tracés (${nbDessins})`);
     await page.capture('interfaces-ecran-tableau.png');
 
     // --- Création de personnage ------------------------------------------------------------------
