@@ -470,36 +470,6 @@
       <div id="joueurs-list"></div>
     </section>
 
-    <!-- Ordre de tour du combat : le MJ le prépare et le fait avancer ;
-         l'Écran affiche le round et le combattant qui joue. -->
-    <section class="card" id="initiative-management">
-      <h2>⚔️ Initiative</h2>
-      <div id="initiative-preparation">
-        <p class="initiative-aide">Cochez les combattants et saisissez leur initiative, puis lancez le combat.
-          Une créature « cachée » n'apparaît pas sur l'Écran.</p>
-        <div class="initiative-table-wrap">
-          <table class="initiative-table">
-            <thead><tr><th>Participe</th><th>Combattant</th><th>Initiative</th><th>Cachée</th></tr></thead>
-            <tbody id="initiative-preparation-liste"></tbody>
-          </table>
-        </div>
-        <div class="initiative-actions">
-          <button type="button" id="initiative-recharger">↻ Actualiser la liste</button>
-          <button type="button" id="initiative-demarrer" class="initiative-principal">⚔️ Lancer le combat</button>
-        </div>
-      </div>
-      <div id="initiative-combat" hidden>
-        <p class="initiative-round">Round <strong id="initiative-round">1</strong></p>
-        <ol id="initiative-ordre" class="initiative-ordre"></ol>
-        <div class="initiative-actions">
-          <button type="button" id="initiative-precedent">◀ Précédent</button>
-          <button type="button" id="initiative-suivant" class="initiative-principal">Suivant ▶</button>
-          <button type="button" id="initiative-terminer" class="initiative-danger">Terminer le combat</button>
-        </div>
-      </div>
-      <p id="initiative-statut" class="initiative-statut"></p>
-    </section>
-
   <section class="card mob-manager" id="mob-management">
     <h2>Gestion des Mobs / NPC</h2>
 
@@ -565,6 +535,36 @@
       <div id="mob-templates-list"></div>
     </details>
   </section>
+
+    <!-- Ordre de tour du combat : le MJ le prépare et le fait avancer ;
+         l'Écran affiche le round et le combattant qui joue. -->
+    <section class="card" id="initiative-management">
+      <h2>⚔️ Initiative</h2>
+      <div id="initiative-preparation">
+        <p class="initiative-aide">Cochez les combattants et saisissez leur initiative, puis lancez le combat.
+          Une créature « cachée » n'apparaît pas sur l'Écran.</p>
+        <div class="initiative-table-wrap">
+          <table class="initiative-table">
+            <thead><tr><th>Participe</th><th>Combattant</th><th>Initiative</th><th>Cachée</th></tr></thead>
+            <tbody id="initiative-preparation-liste"></tbody>
+          </table>
+        </div>
+        <div class="initiative-actions">
+          <button type="button" id="initiative-recharger">↻ Actualiser la liste</button>
+          <button type="button" id="initiative-demarrer" class="initiative-principal">⚔️ Lancer le combat</button>
+        </div>
+      </div>
+      <div id="initiative-combat" hidden>
+        <p class="initiative-round">Round <strong id="initiative-round">1</strong></p>
+        <ol id="initiative-ordre" class="initiative-ordre"></ol>
+        <div class="initiative-actions">
+          <button type="button" id="initiative-precedent">◀ Précédent</button>
+          <button type="button" id="initiative-suivant" class="initiative-principal">Suivant ▶</button>
+          <button type="button" id="initiative-terminer" class="initiative-danger">Terminer le combat</button>
+        </div>
+      </div>
+      <p id="initiative-statut" class="initiative-statut"></p>
+    </section>
 
     <!-- Administration : deux panneaux courts côte à côte. -->
     <div class="mj-top">

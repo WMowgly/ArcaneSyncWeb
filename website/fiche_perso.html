@@ -389,10 +389,9 @@
     cursor: pointer;
   }
   .retour-jeu-btn:hover { background: #f0e2c4; }
-    /* État de la partie (session) : affiché, jamais saisi sur la fiche. */
+    /* État de la partie (session) : enregistré dans la partie en cours. */
     .section input.etat-partie {
       border-style: dashed;
-      cursor: default;
     }
     /* Métamorphoses (druides) */
     .metamorphoses-regles { margin: 0 0 12px; font-size: .9em; white-space: pre-line; }
@@ -451,12 +450,12 @@
     </div>
     <div class="section">
       <h2>Survie et Défense</h2>
-      <p class="note-etat-partie">Les champs en pointillés reflètent la partie en cours : ils se modifient dans l'Interface de Jeu ou par le MJ.</p>
+      <p class="note-etat-partie">Les champs en pointillés sont les valeurs de la partie en cours : les modifier ici met aussi la partie à jour à l'enregistrement.</p>
       <div class="grid grid-2">
           <div class="field">
           <label>Vie</label>
           <div class="dual-input">
-            <input type="number" id="player_hp_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+            <input type="number" id="player_hp_current" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
             <span class="divider-span">/</span>
             <input type="number" id="player_hp">
           </div>
@@ -465,7 +464,7 @@
         <div class="field">
           <label>Mana</label>
           <div class="dual-input">
-            <input type="number" id="player_mana_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+            <input type="number" id="player_mana_current" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
             <span class="divider-span">/</span>
             <input type="number" id="player_mana">
           </div>
@@ -473,11 +472,11 @@
 
           <div style="display: flex; flex-direction: column;">
             <label>Vie bonus</label>
-            <input type="number" id="player_vie_bonus" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+            <input type="number" id="player_vie_bonus" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
           </div>
           <div style="display: flex; flex-direction: column;">
             <label>Intox.</label>
-            <input type="number" id="player_intox" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+            <input type="number" id="player_intox" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
           </div>
 
       </div><!-- fin du grid -->
@@ -496,7 +495,7 @@
                       <div class="field">
                         <label>Durabilité</label>
                         <div class="dual-input">
-                          <input type="number" id="player_dura_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+                          <input type="number" id="player_dura_current" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
                           <span class="divider-span">/</span>
                           <input type="number" id="player_dura_max" placeholder="Max">
                         </div>
@@ -510,7 +509,7 @@
                       <div class="field">
                         <label>Valeur de Protection</label>
                         <div class="dual-input">
-                          <input type="number" id="def_protection" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
+                          <input type="number" id="def_protection" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
                           <span class="divider-span">/</span>
                           <input type="number" id="def_protection_max" placeholder="Max">
                         </div>
@@ -932,17 +931,40 @@ window.addEventListener('DOMContentLoaded', async () => {
   // -------------------------------------------------------------------
   // État de partie : PV, mana, durabilité, protection, bonus de vie et
   // intoxication actuels viennent de la session, source de vérité du jeu.
-  // La fiche les affiche en lecture seule.
+  // Ils restent modifiables sur la fiche : un champ saisi n'est plus
+  // écrasé par les mises à jour en direct, et l'enregistrement l'envoie
+  // à la partie (voir etatPartieModifie).
   // -------------------------------------------------------------------
+  const estModifie = id => document.getElementById(id)?.dataset.modifie === '1';
+  document.querySelectorAll('input.etat-partie').forEach(champ =>
+    champ.addEventListener('input', () => { champ.dataset.modifie = '1'; }));
+
   function appliquerEtatPartie(etat) {
     if (!etat) return;
-    if (etat.hp) fillField('player_hp_current', etat.hp.current ?? 0);
-    if (etat.mana) fillField('player_mana_current', etat.mana.current ?? 0);
-    if (etat.armure?.durabilite) fillField('player_dura_current', etat.armure.durabilite.current ?? 0);
-    if (etat.armure?.protection) fillField('def_protection', etat.armure.protection.current ?? 0);
-    if (etat.bonus_vie !== undefined) fillField('player_vie_bonus', etat.bonus_vie ?? 0);
-    if (etat.intox !== undefined) fillField('player_intox', etat.intox ?? 0);
+    const afficher = (id, valeur) => { if (!estModifie(id)) fillField(id, valeur); };
+    if (etat.hp) afficher('player_hp_current', etat.hp.current ?? 0);
+    if (etat.mana) afficher('player_mana_current', etat.mana.current ?? 0);
+    if (etat.armure?.durabilite) afficher('player_dura_current', etat.armure.durabilite.current ?? 0);
+    if (etat.armure?.protection) afficher('def_protection', etat.armure.protection.current ?? 0);
+    if (etat.bonus_vie !== undefined) afficher('player_vie_bonus', etat.bonus_vie ?? 0);
+    if (etat.intox !== undefined) afficher('player_intox', etat.intox ?? 0);
     updateArmorState();
+  }
+
+  // Valeurs de partie saisies sur la fiche : seules celles modifiées sont
+  // envoyées, pour ne pas écraser un changement fait entre-temps par le MJ.
+  function etatPartieModifie() {
+    const entier = id => parseInt(document.getElementById(id).value) || 0;
+    const etat = {};
+    if (estModifie('player_hp_current')) etat.hp = { current: entier('player_hp_current') };
+    if (estModifie('player_mana_current')) etat.mana = { current: entier('player_mana_current') };
+    const armure = {};
+    if (estModifie('player_dura_current')) armure.durabilite = { current: entier('player_dura_current') };
+    if (estModifie('def_protection')) armure.protection = { current: entier('def_protection') };
+    if (Object.keys(armure).length) etat.armure = armure;
+    if (estModifie('player_vie_bonus')) etat.bonus_vie = entier('player_vie_bonus');
+    if (estModifie('player_intox')) etat.intox = document.getElementById('player_intox').value || '0';
+    return Object.keys(etat).length ? etat : null;
   }
 
   async function chargerEtatPartie() {
@@ -1089,6 +1111,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     const savedPlayerId = result.playerId || playerId;
     if (savedPlayerId) {
       params.set('PlayerId', savedPlayerId);
+    }
+
+    // Puis l'état de partie saisi sur la fiche, borné par le serveur aux
+    // maximums tout juste enregistrés.
+    const etatPartie = etatPartieModifie();
+    if (etatPartie && savedPlayerId) {
+      const reponsePartie = await fetch('/api/session/player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: savedPlayerId, nouvellesDonnees: etatPartie })
+      });
+      if (!reponsePartie.ok) {
+        throw new Error(`fiche enregistrée, mais la partie n'a pas été mise à jour (HTTP ${reponsePartie.status})`);
+      }
     }
     alert('Données sauvegardées avec succès !');
 

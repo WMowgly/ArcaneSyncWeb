@@ -179,7 +179,12 @@
     .entity-item strong{display:block;font-size:12px;margin-bottom:3px}
     .entity-item .row{margin-top:5px}
     .entity-item button{padding:3px 5px;font-size:10.5px}
-    .entity-groupe-titre{margin:4px 0 0;font-size:12px;display:flex;align-items:center;gap:6px}
+    .entity-groupe-titre{margin:4px 0 0;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;user-select:none}
+    .entity-groupe-titre::-webkit-details-marker{display:none}
+    .entity-groupe-titre::before{content:'▾';display:inline-block;width:10px;transition:transform .15s}
+    .entity-groupe:not([open]) > .entity-groupe-titre::before{transform:rotate(-90deg)}
+    .entity-groupe-titre .badge{margin:0}
+    .entity-groupe-corps{display:grid;gap:5px;margin-top:5px}
     .badge{display:inline-block;padding:1px 6px;border-radius:8px;background:#efe4cd;font-size:10px;margin:0 3px 2px 0}
     .badge.hidden-badge{background:#f7e2e2;color:#7a2222}
     .empty,#inspector-empty{font-size:11.5px;opacity:.65;margin:0}
@@ -1792,6 +1797,11 @@
     // Liste des entités présentes sur la carte
     // ---------------------------------------------------------------------
 
+    // Groupes (PJ / MOB) repliés par le MJ, mémorisés dans le navigateur.
+    const groupesReplies = new Set((() => {
+      try { return JSON.parse(localStorage.getItem('arcanesync.carte.groupesReplies')) || []; } catch (_) { return []; }
+    })());
+
     function renderEntityList() {
       const conteneur = document.getElementById('entity-list');
       const m = map();
@@ -1809,9 +1819,22 @@
         { titre: 'MOB', liste: tokens.filter(t => t.kind === 'mob').sort(parNom) }
       ];
 
+      // Chaque groupe se replie ; l'état survit au rafraîchissement de la liste.
       conteneur.innerHTML = groupes.map(groupe => `
-        <h4 class="entity-groupe-titre">${groupe.titre} <span class="badge">${groupe.liste.length}</span></h4>
-        ${groupe.liste.length ? groupe.liste.map(ligneEntite).join('') : '<p class="empty">Aucun.</p>'}`).join('');
+        <details class="entity-groupe" data-groupe="${groupe.titre}" ${groupesReplies.has(groupe.titre) ? '' : 'open'}>
+          <summary class="entity-groupe-titre">${groupe.titre} <span class="badge">${groupe.liste.length}</span></summary>
+          <div class="entity-groupe-corps">
+            ${groupe.liste.length ? groupe.liste.map(ligneEntite).join('') : '<p class="empty">Aucun.</p>'}
+          </div>
+        </details>`).join('');
+
+      conteneur.querySelectorAll('details.entity-groupe').forEach(groupe => {
+        groupe.addEventListener('toggle', () => {
+          if (groupe.open) groupesReplies.delete(groupe.dataset.groupe);
+          else groupesReplies.add(groupe.dataset.groupe);
+          try { localStorage.setItem('arcanesync.carte.groupesReplies', JSON.stringify([...groupesReplies])); } catch (_) { /* stockage indisponible */ }
+        });
+      });
 
       function ligneEntite(token) {
         return `

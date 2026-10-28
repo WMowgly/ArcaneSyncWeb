@@ -12,14 +12,14 @@ module.exports = {
     });
     const inventaireAvant = JSON.stringify(session(PLAYER).inventaire || []);
 
-    // Fiche : valeurs de partie en lecture seule, mises à jour en direct.
+    // Fiche : valeurs de partie modifiables, mises à jour en direct.
     await page.ouvrir(`fiche_perso.html?PlayerId=${PLAYER}`);
     await page.attendre("document.getElementById('player_name').value !== '' && document.getElementById('player_hp').value !== ''");
     await page.attendre(`document.getElementById('player_hp_current').value === '${max - 5}'`, 20);
     verifier(await page.evaluer("document.getElementById('player_hp_current').value") === String(max - 5),
       'fiche : PV actuels lus dans la partie');
-    verifier(await page.evaluer("['player_hp_current','player_mana_current','player_dura_current','def_protection','player_vie_bonus','player_intox'].every(id => document.getElementById(id).readOnly)"),
-      'fiche : champs d\'état de partie en lecture seule');
+    verifier(await page.evaluer("['player_hp_current','player_mana_current','player_dura_current','def_protection','player_vie_bonus','player_intox'].every(id => !document.getElementById(id).readOnly)"),
+      'fiche : champs d\'état de partie modifiables');
     await api('POST', '/api/session/player', { id: PLAYER, nouvellesDonnees: { hp: { current: max - 6 } } });
     verifier(await page.attendre(`document.getElementById('player_hp_current').value === '${max - 6}'`, 20),
       'fiche : mise à jour en direct depuis la partie');
@@ -30,6 +30,23 @@ module.exports = {
       "document.getElementById('player_name').value !== ''"), 'fiche : rechargée après enregistrement');
     verifier(await page.evaluer('location.search') === `?PlayerId=${PLAYER}`, 'fiche : URL courte après enregistrement');
     verifier(session(PLAYER).hp.current === max - 6, 'fiche : PV de partie conservés après enregistrement');
+
+    // PV saisis sur la fiche : la saisie n'est pas écrasée par le direct,
+    // et l'enregistrement met la partie à jour.
+    await page.evaluer(`(() => { const c = document.getElementById('player_hp_current');
+      c.value = '${max - 8}'; c.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await api('POST', '/api/session/player', { id: PLAYER, nouvellesDonnees: { hp: { current: max - 7 } } });
+    await page.attendre('false', 4);
+    verifier(await page.evaluer("document.getElementById('player_hp_current').value") === String(max - 8),
+      'fiche : saisie en cours non écrasée par une mise à jour en direct');
+    verifier(await page.naviguerPar("setTimeout(() => document.getElementById('save-data-btn').click(), 0)",
+      "document.getElementById('player_name').value !== ''"), 'fiche : rechargée après modification des PV');
+    verifier(session(PLAYER).hp.current === max - 8, 'fiche : PV saisis enregistrés dans la partie');
+    await page.attendre(`document.getElementById('player_hp_current').value === '${max - 8}'`, 20);
+    verifier(await page.evaluer("document.getElementById('player_hp_current').value") === String(max - 8),
+      'fiche : PV saisis relus après rechargement');
+    // Remise à la valeur attendue par la suite du scénario.
+    await api('POST', '/api/session/player', { id: PLAYER, nouvellesDonnees: { hp: { current: max - 6 } } });
 
     verifier(await page.naviguerPar("setTimeout(() => document.getElementById('retour-jeu-btn').click(), 0)",
       "location.pathname.endsWith('interface_jeu.html') && document.getElementById('player_hp').value !== ''"),

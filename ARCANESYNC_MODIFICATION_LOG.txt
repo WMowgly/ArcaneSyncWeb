@@ -5276,10 +5276,19 @@ FICHE ALLÉGÉE
     - fiche_perso.html : retrait du remplissage par paramètres d'URL
       (~130 lignes) ; la fiche est remplie par le serveur. Les anciens
       liens ?Nom= retrouvent le personnage par son nom.
+    - Valeurs de partie (PV, mana, durabilité, protection, vie bonus,
+      intoxication) de nouveau modifiables sur la fiche : seules celles
+      saisies sont envoyées à la partie (/api/session/player) après
+      l'enregistrement de la fiche, bornées aux nouveaux maximums. Une
+      saisie en cours n'est pas écrasée par les mises à jour en direct.
+
+CARTE MJ
+    - map.html : groupes PJ et MOB de « Sur la carte » repliables ; l'état
+      est conservé au rafraîchissement et mémorisé dans le navigateur.
 
 VALIDATION
 - npm test : 15 fichiers / 29 suites                          : PASS
-- npm run test:e2e : 6 scénarios / 69 contrôles                : PASS
+- npm run test:e2e : 7 scénarios / 78 contrôles                : PASS
 ======================================================================
 FIN VERSION V1.17
 ======================================================================
