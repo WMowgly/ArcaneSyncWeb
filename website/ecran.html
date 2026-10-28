@@ -26,12 +26,14 @@
       margin: 0 8px 0 0; font-family: 'Uncial Antiqua', cursive;
       font-size: 18px; font-weight: 400;
     }
-    .ecran-barre button, .ecran-barre a {
+    .ecran-barre button, .ecran-barre a, .ecran-barre .vue-indicateur {
       font: inherit; font-size: 14px; padding: 5px 12px; border-radius: 6px;
       border: 1px solid #fefae0; background: transparent; color: #fefae0;
       cursor: pointer; text-decoration: none;
     }
-    .ecran-barre button.actif { background: #fefae0; color: var(--encre); font-weight: 600; }
+    /* La vue est choisie par le MJ : l'Écran ne fait que l'indiquer. */
+    .ecran-barre .vue-indicateur { cursor: default; opacity: .55; }
+    .ecran-barre .vue-indicateur.actif { background: #fefae0; color: var(--encre); font-weight: 600; opacity: 1; }
     #ecran-titre { flex: 1; font-size: 14px; opacity: .9; }
     #ecran-statut { font-size: 13px; }
 
@@ -53,8 +55,8 @@
 <body>
   <header class="ecran-barre">
     <h1>🖥️ Écran</h1>
-    <button type="button" data-vue="carte" class="actif">🗺️ Carte</button>
-    <button type="button" data-vue="tableau">📝 Tableau blanc</button>
+    <span class="vue-indicateur actif" data-vue="carte" title="Vue choisie par le MJ">🗺️ Carte</span>
+    <span class="vue-indicateur" data-vue="tableau" title="Vue choisie par le MJ">📝 Tableau blanc</span>
     <span id="ecran-titre"></span>
     <span id="ecran-statut">Connexion…</span>
     <button type="button" id="btn-plein-ecran" title="Plein écran">⛶</button>
@@ -102,7 +104,7 @@
     socket.on('disconnect', () => { statut.textContent = '🔴 Reconnexion…'; });
     socket.on('connect_error', () => { statut.textContent = '🔴 Serveur injoignable'; });
 
-    // --- Choix de la vue ------------------------------------------------------
+    // --- Vue affichée : choisie par le MJ depuis son interface ----------------
     function afficher(vue) {
       document.querySelectorAll('[data-vue]').forEach(b => b.classList.toggle('actif', b.dataset.vue === vue));
       document.getElementById('vue-carte').hidden = vue !== 'carte';
@@ -116,20 +118,15 @@
         conteneur.appendChild(cadre);
       }
       if (vue === 'carte') renderer.resize();
-      try { localStorage.setItem('arcanesync-ecran-vue', vue); } catch (_) {}
     }
 
-    document.querySelectorAll('[data-vue]').forEach(bouton =>
-      bouton.addEventListener('click', () => afficher(bouton.dataset.vue)));
+    // Le serveur envoie la vue à la connexion, puis à chaque choix du MJ.
+    socket.on('ecranVue', ({ vue } = {}) => afficher(vue === 'tableau' ? 'tableau' : 'carte'));
 
     document.getElementById('btn-plein-ecran').addEventListener('click', () => {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else document.documentElement.requestFullscreen?.();
     });
-
-    let vueInitiale = 'carte';
-    try { vueInitiale = localStorage.getItem('arcanesync-ecran-vue') || 'carte'; } catch (_) {}
-    afficher(vueInitiale === 'tableau' ? 'tableau' : 'carte');
   })();
   </script>
 </body>

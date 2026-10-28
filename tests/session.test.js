@@ -93,7 +93,7 @@ try {
   }
 
   // Simuler une modification depuis la Fiche de Perso.
-  const nouveauHpPersonnage = (joueur.hp?.current ?? 0) + 3;
+  const nouveauHpPersonnage = Math.max(0, (joueur.hp?.current ?? 0) - 3);
 
   const ok = sauvegardeData(
     { id: joueur.id },
@@ -110,12 +110,27 @@ try {
     throw new Error('La modification de la Fiche de Perso n\'est pas persistée.');
   }
 
-  // Après une sauvegarde de fiche, la session doit recevoir la nouvelle valeur.
+  // Règle : la fiche porte la définition, la partie l'état de jeu. Enregistrer
+  // la fiche ne doit PAS écraser les PV en cours dans la partie.
+  sauvegarderEtatSession(joueur.id, { survie: { reussi: [true, false, false], echec: [false, true, false] } });
   synchroniserSessionDepuisPersonnage(joueurApres);
 
   const sessionApresFiche = getSessionPlayerById(joueur.id);
-  if (sessionApresFiche.hp.current !== nouveauHpPersonnage) {
-    throw new Error('La Fiche de Perso ne synchronise pas la session.');
+  if (sessionApresFiche.hp.current !== nouveauHp) {
+    throw new Error(`La fiche a écrasé les PV de la partie (${sessionApresFiche.hp.current} au lieu de ${nouveauHp}).`);
+  }
+  if (!sessionApresFiche.survie?.reussi[0] || !sessionApresFiche.survie?.echec[1]) {
+    throw new Error('La fiche a écrasé les jets de survie de la partie.');
+  }
+
+  // En revanche, un maximum modifié sur la fiche s'applique, et la valeur en
+  // cours reste bornée par ce nouveau maximum.
+  const maxReduit = Math.max(0, nouveauHp - 2);
+  sauvegardeData({ id: joueur.id }, { hp: { max: maxReduit, current: maxReduit } });
+  synchroniserSessionDepuisPersonnage(getJoueurById(joueur.id));
+  const sessionMaxReduit = getSessionPlayerById(joueur.id);
+  if (sessionMaxReduit.hp.max !== maxReduit || sessionMaxReduit.hp.current !== maxReduit) {
+    throw new Error(`Maximum de la fiche non appliqué : ${JSON.stringify(sessionMaxReduit.hp)}`);
   }
 
   console.log('PASS: session séparée + interface -> session uniquement + fiche -> session');
@@ -132,7 +147,7 @@ try {
 
 
 // v1.5.1 frontend/API contract checks
-const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const serverSource = require('./_sources').sourceServeur();
 const mjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'mj.html'), 'utf8');
 const selectionSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'selecte_player.html'), 'utf8');
 
@@ -155,7 +170,7 @@ if (!selectionSource.includes("socket.on('sessionUpdated'")) {
 
 // v1.6 mob contract checks
 const mobModule = require('../mob');
-const serverSourceV16 = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const serverSourceV16 = require('./_sources').sourceServeur();
 const mjSourceV16 = fs.readFileSync(path.join(__dirname, '..', 'website', 'mj.html'), 'utf8');
 const sessionSourceV16 = fs.readFileSync(path.join(__dirname, '..', 'session.js'), 'utf8');
 
@@ -224,7 +239,7 @@ if(gameSourceV17.includes('id="player-statuses"'))throw new Error('Les statuts n
 if(!gameSourceV17.includes('id="player-stats"'))throw new Error('Statistiques absentes de l’interface de jeu.');
 
 // v1.8 MJ full player management checks
-const serverSourceV18 = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const serverSourceV18 = require('./_sources').sourceServeur();
 const popupMJSourceV18 = fs.readFileSync(path.join(__dirname, '..', 'website', 'popupmj.js'), 'utf8');
 const sessionSourceV18 = fs.readFileSync(path.join(__dirname, '..', 'session.js'), 'utf8');
 
@@ -300,7 +315,7 @@ if (!mjSourceV183.includes('await loadActiveMobs();')) {
 const fsV191 = require('fs');
 const pathV191 = require('path');
 const sessionSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'session.js'), 'utf8');
-const serverSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'server.js'), 'utf8');
+const serverSourceV191 = require('./_sources').sourceServeur();
 const jeuSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'interface_jeu.html'), 'utf8');
 const ficheSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'fiche_perso.html'), 'utf8');
 const mjSourceV191 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'mj.html'), 'utf8');
@@ -396,7 +411,17 @@ if (!ficheSourceV111.includes('function getInventaire()')) throw new Error('Coll
 if (!ficheSourceV111.includes('inventory-equipped-check')) throw new Error('Contrôle équipement absent de la fiche joueur.');
 if (!mjPopupSourceV111.includes('setupMJInventoryEditor')) throw new Error('Éditeur graphique inventaire MJ absent.');
 if (!createPlayerSourceV111.includes('inventaire: []')) throw new Error('Initialisation inventaire création joueur absente.');
-if (!interfaceJeuSourceV111.includes('inventaire: safeJSONParse')) throw new Error('Inventaire non conservé dans le flux Interface de Jeu.');
+// L'Interface de Jeu n'édite pas l'inventaire : elle ne doit plus le renvoyer
+// (une copie périmée venue de l'URL écrasait celui de la partie).
+if (interfaceJeuSourceV111.includes('inventaire: safeJSONParse')) throw new Error('L’Interface de Jeu renvoie encore un inventaire issu de l’URL.');
+{
+  const sessionMod = require('../session');
+  const joueurInv = require('../joueur').getJoueurs()[0];
+  sessionMod.ensureSessionPlayer(joueurInv);
+  sessionMod.sauvegarderEtatSession(joueurInv.id, { inventaire: [{ id: 'o1', nom: 'Corde', quantite: 1 }] });
+  sessionMod.sauvegarderEtatSession(joueurInv.id, { hp: { current: 0 } });
+  if (sessionMod.getSessionPlayerById(joueurInv.id).inventaire?.[0]?.nom !== 'Corde') throw new Error('Inventaire de la partie perdu lors d’une sauvegarde sans inventaire.');
+}
 console.log('PASS: V1.11 inventaire structuré + équipement + persistance session');
 
 
@@ -411,7 +436,7 @@ if (!styleSourceV111.includes('.mj-inventory-table')) throw new Error('Styles de
 
 
 // v1.11.2 bidirectional inventory/equipment checks
-const serverSourceV112 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'server.js'), 'utf8');
+const serverSourceV112 = require('./_sources').sourceServeur();
 const sessionSourceV112 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'session.js'), 'utf8');
 const ficheSourceV112 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'fiche_perso.html'), 'utf8');
 
@@ -437,10 +462,7 @@ if (!ficheSourceV112.includes("inventaire: getInventaire()")) {
 // ======================================================================
 // V1.12 — Reconnexion & resynchronisation de l'état autoritaire
 // ======================================================================
-const serverSourceV112Reconnect = fsV191.readFileSync(
-  pathV191.join(__dirname, '..', 'server.js'),
-  'utf8'
-);
+const serverSourceV112Reconnect = require('./_sources').sourceServeur();
 const interfaceSourceV112Reconnect = fsV191.readFileSync(
   pathV191.join(__dirname, '..', 'website', 'interface_jeu.html'),
   'utf8'

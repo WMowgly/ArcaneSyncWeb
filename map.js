@@ -773,81 +773,6 @@ function trouverCaseLibre(map, occupees, candidats, bloquantes) {
 }
 
 /**
- * Remplace intégralement le décor d'une carte (génération / régénération).
- *
- * Les tokens sont CONSERVÉS : seule leur position est corrigée s'ils se
- * retrouvent dans un obstacle. La mémoire d'exploration est effacée, car
- * elle décrivait un décor qui n'existe plus.
- */
-function remplacerDecor(mapId, donnees = {}) {
-  return muterMap(mapId, brouillon => {
-    if (donnees.type !== undefined) {
-      // Le type de lieu suit le décor : la palette du MJ s'adapte
-      // automatiquement après une régénération.
-      brouillon.type = texte(donnees.type, '', 40);
-    }
-    if (donnees.grid) {
-      brouillon.grid = normaliserGrid({ ...brouillon.grid, ...donnees.grid });
-    }
-
-    if (donnees.background) {
-      brouillon.background = {
-        color: couleur(donnees.background.color, brouillon.background.color)
-      };
-    }
-
-    const source = Array.isArray(donnees.elements)
-      ? donnees.elements
-      : Object.values(donnees.elements || {});
-
-    const elements = {};
-    source.forEach(element => {
-      const normalise = normaliserElement(element, brouillon.grid, { id: generateId('elem') });
-      elements[normalise.id] = normalise;
-    });
-    brouillon.elements = elements;
-
-    // Le décor a changé : les zones explorées ne veulent plus rien dire.
-    brouillon.fog = normaliserFog({ ...brouillon.fog, revealed: [] }, brouillon.grid);
-
-    // Les annotations sont du contenu écrit par le MJ : on ne les efface
-    // jamais dans son dos, on se contente de les ramener dans la grille.
-    // Le bouton « Effacer les annotations » reste à sa main.
-    Object.values(brouillon.annotations).forEach(annotation => {
-      annotation.points = annotation.points.map(point => ({
-        x: Math.min(point.x, brouillon.grid.cols),
-        y: Math.min(point.y, brouillon.grid.rows)
-      }));
-    });
-
-    const bloquantes = cellulesBloquantes(brouillon, 'movement');
-    const occupees = new Set();
-    const candidats = Array.isArray(donnees.spawn) ? donnees.spawn : [];
-
-    Object.values(brouillon.tokens).forEach(token => {
-      token.x = Math.min(Math.max(0, token.x), brouillon.grid.cols - 1);
-      token.y = Math.min(Math.max(0, token.y), brouillon.grid.rows - 1);
-
-      const cle = cellKey(token.x, token.y);
-      if (!bloquantes.has(cle) && !occupees.has(cle)) {
-        occupees.add(cle);
-        return;
-      }
-
-      const libre = trouverCaseLibre(brouillon, occupees, candidats, bloquantes);
-      token.x = libre.x;
-      token.y = libre.y;
-      occupees.add(cellKey(libre.x, libre.y));
-    });
-
-    return {
-      elementCount: Object.keys(elements).length,
-      generatedType: texte(donnees.type, '', 40) || undefined
-    };
-  });
-}
-
-/**
  * Cases candidates pour un placement automatique, ordonnées du plus
  * pertinent au moins pertinent.
  *
@@ -1998,7 +1923,6 @@ module.exports = {
   supprimerElements,
   basculerPorte,
   basculerPortes,
-  remplacerDecor,
   trouverCaseLibre,
 
   setDrawingConfig,

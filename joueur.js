@@ -149,6 +149,19 @@ function supprimerJoueur({ id, nom }) {
   return true;
 }
 
+/**
+ * Ressource {current, max} : la valeur actuelle reste entre 0 et le maximum
+ * (même règle que la partie, voir session.js).
+ */
+function bornerRessource(ressource) {
+  const borne = { ...ressource };
+  const max = Number(borne.max);
+  if (borne.current === undefined || !Number.isFinite(max)) return borne;
+  const actuel = Number(borne.current);
+  borne.current = Number.isFinite(actuel) ? Math.max(0, Math.min(actuel, Math.max(0, max))) : 0;
+  return borne;
+}
+
 function sauvegardeData({ id, nom }, nouvellesDonnees) {
   console.log(
     "Tentative de mise à jour du joueur :",
@@ -177,25 +190,25 @@ function sauvegardeData({ id, nom }, nouvellesDonnees) {
       ...(joueurActuel.stats || {}),
       ...(nouvellesDonnees.stats || {})
     },
-    hp: {
+    hp: bornerRessource({
       ...(joueurActuel.hp || {}),
       ...(nouvellesDonnees.hp || {})
-    },
-    mana: {
+    }),
+    mana: bornerRessource({
       ...(joueurActuel.mana || {}),
       ...(nouvellesDonnees.mana || {})
-    },
+    }),
     armure: {
       ...(joueurActuel.armure || {}),
       ...(nouvellesDonnees.armure || {}),
-      durabilite: {
+      durabilite: bornerRessource({
         ...((joueurActuel.armure && joueurActuel.armure.durabilite) || {}),
         ...((nouvellesDonnees.armure && nouvellesDonnees.armure.durabilite) || {})
-      },
-      protection: {
+      }),
+      protection: bornerRessource({
         ...((joueurActuel.armure && joueurActuel.armure.protection) || {}),
         ...((nouvellesDonnees.armure && nouvellesDonnees.armure.protection) || {})
-      }
+      })
     }
   };
 

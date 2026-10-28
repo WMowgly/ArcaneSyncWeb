@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Création de Personnage</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css"/> 
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="police-lisible.css"/>
   <style>
+    /* Même présentation que la Fiche de Personnage : sections encadrées,
+       sections courtes deux par deux, listes de sorts filtrables. */
     body {
-      font-family: 'Uncial Antiqua', cursive;
       background-size: cover;
       background-color: #fdf6e3;
       color: #3b2f1e;
@@ -24,8 +26,10 @@
       background: rgba(255, 248, 220, 0.9);
       border: 4px solid #8b5e3c;
       border-radius: 12px;
-      padding: 50px 20px 20px 20px;
-      margin-bottom: 30px;
+      padding: 38px 20px 20px;
+      margin: 0 auto 26px;
+      max-width: 1500px;
+      box-sizing: border-box;
       box-shadow: 0 0 10px #3b2f1e99;
       overflow: hidden;
     }
@@ -42,11 +46,13 @@
       box-shadow: 2px 2px 4px #00000040;
       z-index: 2;
     }
+    .section h3 { margin: 10px 0 0; font-size: 17px; color: #5c3b21; }
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 15px;
     }
+    .grid.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .field {
       display: flex;
       flex-direction: column;
@@ -57,7 +63,6 @@
       color: #3b2f1e;
     }
     input, textarea, select {
-      font-family: 'Uncial Antiqua', cursive;
       padding: 6px 10px;
       font-size: 16px;
       background: #fefae0;
@@ -66,44 +71,56 @@
       box-shadow: inset 0 0 4px #8b5e3c44;
       box-sizing: border-box;
       width: 100%;
+      color: #3b2f1e;
     }
-    textarea {
-      resize: vertical;
-      height: 100px;
+    input[readonly] { background: transparent; border: 2px dashed #c9b28c; box-shadow: none; }
+    textarea { resize: vertical; height: 110px; }
+    textarea.textarea-courte { height: 80px; }
+
+    .duo, .double-section-container {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 26px;
+      max-width: 1500px;
+      margin: 0 auto;
     }
-    button {
-      font-family: 'Uncial Antiqua', cursive;
-      padding: 10px 30px;
-      font-size: 18px;
-      background: #8b5e3c;
-      color: #fefae0;
-      border: 2px solid #5c3b21;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 20px auto;
-      display: block;
-    }
-    button:hover {
-      background: #5c3b21;
-    }
-    @media (max-width: 768px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .grid { grid-template-columns: 1fr; }
-    }
+    .duo > .section, .double-section-container > .section { max-width: none; margin: 0 0 26px; }
+
+    .weapons-table { width: 100%; }
+    .competences-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .competences-table th, .competences-table td { border: 1px solid #8b5e3c; padding: 8px; text-align: left; }
+    .competences-table th { background-color: rgba(139, 94, 60, 0.2); }
+    .competences-vide { opacity: .7; font-style: italic; }
+
+    .status-text { margin-top: 5px; font-size: 0.9em; font-style: italic; }
+    #player_armor { font-weight: bold; }
+
     .sort-row {
       background: rgba(139, 94, 60, 0.1);
       padding: 15px;
       margin-bottom: 10px;
       border-radius: 8px;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr auto;
       gap: 10px;
       align-items: center;
     }
+    #sorts-mineurs-container .sort-row { grid-template-columns: 2fr 1fr auto; }
+    .sort-nom { display: flex; align-items: center; min-width: 0; }
+    .sort-entetes {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 10px;
+      padding: 0 15px 4px;
+      font-size: 13px;
+      color: #6b5135;
+    }
+    .sort-entetes.sans-niveau { grid-template-columns: 2fr 1fr auto; }
+    .filtre-type-ligne { display: flex; justify-content: flex-end; margin: -6px 0 6px; }
+    .filtre-type-ligne label { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 0; }
+    .filtre-type-ligne select { width: auto; font-size: 13px; padding: 3px 8px; }
+
     .add-btn {
-      font-family: 'Uncial Antiqua', cursive;
       background: #8b5e3c;
       color: #fefae0;
       border: none;
@@ -112,17 +129,8 @@
       cursor: pointer;
       margin-top: 10px;
     }
-    .add-btn:hover {
-      background: #5c3b21;
-    }
-    .sort-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr auto;  /* Modifié pour ajouter une colonne pour le bouton */
-      gap: 10px;
-      align-items: center;
-    }
+    .add-btn:hover { background: #5c3b21; }
     .delete-btn {
-      font-family: 'Uncial Antiqua', cursive;
       background: #d32f2f;
       color: #fefae0;
       border: none;
@@ -131,476 +139,484 @@
       cursor: pointer;
       font-size: 14px;
     }
-    .delete-btn:hover {
-      background: #b71c1c;
+    .delete-btn:hover { background: #b71c1c; }
+    .description-btn {
+      background: #8b5e3c;
+      color: #fefae0;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 8px;
     }
+    .description-btn:hover { background: #5c3b21; }
+    .description-content {
+      display: none;
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(139, 94, 60, 0.1);
+      border-radius: 4px;
+      font-size: 0.9em;
+      grid-column: 1 / -1;
+      white-space: pre-line;
+    }
+    .description-content.visible { display: block; }
 
+    #save_player_creation {
+      padding: 10px 30px;
+      font-size: 18px;
+      background: #8b5e3c;
+      color: #fefae0;
+      border: 2px solid #5c3b21;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 2px 2px 4px #3b2f1e66;
+      margin: 20px 0;
+    }
+    #save_player_creation:hover { background: #5c3b21; }
+    #save_player_creation:disabled { opacity: .6; cursor: wait; }
+
+    @media (max-width: 900px) {
+      .duo, .double-section-container { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      body { padding: 24px 16px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .grid, .grid.grid-2 { grid-template-columns: minmax(0, 1fr); }
+      .sort-row, #sorts-mineurs-container .sort-row { grid-template-columns: minmax(0, 1fr) auto; }
+      .sort-row .sort-nom { grid-column: 1 / -1; }
+      .sort-entetes { display: none; }
+    }
   </style>
 </head>
 <body>
   <h1>Création de Personnage</h1>
+
   <div class="section">
     <h2>Informations Générales</h2>
     <div class="grid">
-      <div class="field"><label>Nom</label><input id="player_name" type="text"></div>
-      <div class="field"><label>Classe</label><select id="player_class"></select></div>
-      <div class="field"><label>Race</label><select id="player_race"></select></div>
-      <div class="field"><label>Niveau</label><input id="player_level" type="number" min="1"></div>
+      <div class="field"><label for="player_name">Nom</label><input id="player_name" type="text"></div>
+      <div class="field"><label for="player_class">Classe</label><select id="player_class"></select></div>
+      <div class="field"><label for="player_race">Race</label><select id="player_race"></select></div>
+      <div class="field"><label for="player_level">Niveau</label><input id="player_level" type="number" min="1" value="1"></div>
     </div>
   </div>
-  <div class="section">
-    <h2>Statistiques</h2>
-    <div class="grid">
-      <div class="field"><label>Force</label><input id="stat_force" type="number"></div>
-      <div class="field"><label>Dextérité</label><input id="stat_dexterite" type="number"></div>
-      <div class="field"><label>Magie</label><input id="stat_magie" type="number"></div>
-      <div class="field"><label>Constitution</label><input id="stat_constitution" type="number"></div>
-      <div class="field"><label>Charisme</label><input id="stat_charisme" type="number"></div>
-      <div class="field"><label>Perception</label><input id="stat_perception" type="number"></div>
-      <div class="field"><label>Chance</label><input id="stat_chance" type="number"></div>
-      <div class="field"><label>Intelligence</label><input id="stat_intelligence" type="number"></div>
-    </div>
-  </div>
-  <div class="section">
-    <h2>Survie et Défense</h2>
-    <div class="grid">
-      <div class="field"><label>Vie</label><input id="player_hp" type="number"></div>
-      <div class="field" style="display: none;"><input id="player_hp_current" type="hidden"></div>
-      <div class="field"><label>Mana</label><input id="player_mana" type="number"></div>
-      <div class="field" style="display: none;"><input id="player_mana_current" type="hidden"></div>
-      <div class="field"><label>Vie bonus</label><input id="def_bonus_vie" type="number"></div>
-      <div class="field"><label>Intox.</label><input id="def_intox" type="text"></div>
-    </div><!-- fin du grid -->
-  </div>
 
-    <div class="sections-container">
-        <!-- Section Sac -->
-        <div class="section">
-            <h2>Sac</h2>
-            <div class="content-area">
-                <textarea id="eq_sac"></textarea>
-            </div>
-        </div>
-    
-        <!-- Section Ceinture/dos -->
-        <div class="section">
-            <h2>Ceinture/dos</h2>
-            <div class="content-area">
-                <textarea id="eq_ceinture"></textarea>
-            </div>
-        </div>
-    
-        <!-- Section Armes -->
-        <div class="section">
-            <h2>Armes</h2>
-            <table class="weapons-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Dégâts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td><input id="weapon_type_1" type="text"></td><td><input id="weapon_dmg_1" type="text"></td></tr>
-                    <tr><td><input id="weapon_type_2" type="text"></td><td><input id="weapon_dmg_2" type="text"></td></tr>
-                    <tr><td><input id="weapon_type_3" type="text"></td><td><input id="weapon_dmg_3" type="text"></td></tr>
-                    <tr><td><input id="weapon_type_4" type="text"></td><td><input id="weapon_dmg_4" type="text"></td></tr>
-                    <tr><td><input id="weapon_type_5" type="text"></td><td><input id="weapon_dmg_5" type="text"></td></tr>
-                </tbody>
-            </table>
-        </div>
-    
-        <!-- Section Armure -->
-        <div class="section">
-            <h2>Armures</h2>
-            <div class="armor-section">
-                <div class="armor-fields">
-                  <div class="field"><label>Type d'armure</label><select id="eq_armure"></select></div>
-                    <div class="field"><label>Résistance</label><input id="eq_resistance" type="text"></div>
-                    <div class="field"><label>Durabilité</label><input id="eq_durabilite" type="number"></div>
-                    <div class="field" style="display: none;"><input id="eq_durabilite_current" type="hidden"></div>
-      
-                    <div class="field">
-                      <label>État de l'armure</label>
-                      <input type="text" id="player_armor" readonly>
-                      <div id="armor_effect" class="status-text"></div>
-                    </div>
-                    <div class="field" style="display: none;"><input id="def_protection" type="hidden"></div>
-                    <div class="field"><label>Valeur protection</label><input id="def_protection_max" type="number"></div>
-                  </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="double-section-container">
-        <div class="section">
-            <h2>Sorts</h2>
-            <div id="sorts-container">
-                <!-- Les sorts seront ajoutés ici dynamiquement -->
-            </div>
-            <button type="button" class="add-btn" id="add-sort-btn">Ajouter un sort</button>
-        </div>
-            
-        <div class="section">
-            <h2>Attaques Spéciales</h2>
-            <div id="attack-special-container">
-                    <!-- Les attaques spéciales seront ajoutés ici dynamiquement -->
-            </div>
-            <button type="button" class="add-btn" id="add-attack-spe-btn">Ajouter une attaque spéciale</button>
-        </div>
+  <div class="duo">
+    <div class="section">
+      <h2>Statistiques</h2>
+      <div class="grid">
+        <div class="field"><label for="stat_force">Force</label><input id="stat_force" type="number"></div>
+        <div class="field"><label for="stat_dexterite">Dextérité</label><input id="stat_dexterite" type="number"></div>
+        <div class="field"><label for="stat_magie">Magie</label><input id="stat_magie" type="number"></div>
+        <div class="field"><label for="stat_constitution">Constitution</label><input id="stat_constitution" type="number"></div>
+        <div class="field"><label for="stat_charisme">Charisme</label><input id="stat_charisme" type="number"></div>
+        <div class="field"><label for="stat_perception">Perception</label><input id="stat_perception" type="number"></div>
+        <div class="field"><label for="stat_chance">Chance</label><input id="stat_chance" type="number"></div>
+        <div class="field"><label for="stat_intelligence">Intelligence</label><input id="stat_intelligence" type="number"></div>
+      </div>
     </div>
 
     <div class="section">
-        <h2>Sorts mineurs</h2>
-        <div id="sorts-mineurs-container">
-            <!-- Les sorts mineurs seront ajoutés ici dynamiquement -->
-        </div>
-        <button type="button" class="add-btn" id="add-sort-mineur-btn">Ajouter un sort mineur</button>
+      <h2>Survie et Défense</h2>
+      <div class="grid grid-2">
+        <div class="field"><label for="player_hp">Vie (max)</label><input id="player_hp" type="number" min="0"></div>
+        <div class="field"><label for="player_mana">Mana (max)</label><input id="player_mana" type="number" min="0"></div>
+        <div class="field"><label for="def_bonus_vie">Vie bonus</label><input id="def_bonus_vie" type="number" min="0"></div>
+        <div class="field"><label for="def_intox">Intox.</label><input id="def_intox" type="number" min="0" max="100"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="duo">
+    <div class="section">
+      <h2>Armure</h2>
+      <div class="field"><label for="eq_armure">Type d'armure</label><select id="eq_armure"></select></div>
+      <div class="field"><label for="eq_resistance">Résistance</label><input id="eq_resistance" type="text"></div>
+      <div class="field"><label for="eq_durabilite">Durabilité (max)</label><input id="eq_durabilite" type="number" min="0"></div>
+      <div class="field">
+        <label for="player_armor">État de l'armure</label>
+        <input type="text" id="player_armor" readonly>
+        <div id="armor_effect" class="status-text"></div>
+      </div>
+      <div class="field"><label for="def_protection_max">Valeur de Protection (max)</label><input id="def_protection_max" type="number" min="0"></div>
     </div>
 
+    <div class="section">
+      <h2>Armes</h2>
+      <table class="weapons-table">
+        <thead><tr><th>Type</th><th>Dégâts</th></tr></thead>
+        <tbody>
+          <tr><td><input id="weapon_type_1" type="text"></td><td><input id="weapon_dmg_1" type="text"></td></tr>
+          <tr><td><input id="weapon_type_2" type="text"></td><td><input id="weapon_dmg_2" type="text"></td></tr>
+          <tr><td><input id="weapon_type_3" type="text"></td><td><input id="weapon_dmg_3" type="text"></td></tr>
+          <tr><td><input id="weapon_type_4" type="text"></td><td><input id="weapon_dmg_4" type="text"></td></tr>
+          <tr><td><input id="weapon_type_5" type="text"></td><td><input id="weapon_dmg_5" type="text"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Inventaire : il se complète ensuite depuis la Fiche de Personnage. -->
+  <div class="section">
+    <h2>Sac</h2>
+    <textarea id="eq_sac" class="textarea-courte"></textarea>
+  </div>
+
+  <div class="double-section-container">
+    <div class="section">
+      <h2>Sorts</h2>
+      <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="sorts-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
+      <div class="sort-entetes"><span>Sort</span><span>Dégâts</span><span>Niveau</span><span></span></div>
+      <div id="sorts-container"></div>
+      <button type="button" class="add-btn" id="add-sort-btn">Ajouter un sort</button>
+    </div>
+
+    <div class="section">
+      <h2>Attaques Spéciales</h2>
+      <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="attack-special-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
+      <div class="sort-entetes"><span>Attaque</span><span>Dégâts</span><span>Niveau</span><span></span></div>
+      <div id="attack-special-container"></div>
+      <button type="button" class="add-btn" id="add-attack-spe-btn">Ajouter une attaque</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Sorts mineurs</h2>
+    <div class="filtre-type-ligne"><label>Type <select class="filtre-type" data-conteneur="sorts-mineurs-container" aria-label="Filtrer par type"><option value="">Tous les types</option></select></label></div>
+    <div class="sort-entetes sans-niveau"><span>Sort mineur</span><span>Dégâts</span><span></span></div>
+    <div id="sorts-mineurs-container"></div>
+    <button type="button" class="add-btn" id="add-sort-mineur-btn">Ajouter un sort mineur</button>
+  </div>
+
+  <div class="section">
+    <h2>Compétences de classe et passifs</h2>
+    <h3>Compétences de Classe</h3>
+    <table class="competences-table" id="competences-classe-table">
+      <thead><tr><th>Nom</th><th>Effets</th><th>Niveau</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <h3>Compétences Raciales</h3>
+    <table class="competences-table" id="competences-raciales-table">
+      <thead><tr><th>Nom</th><th>Effets</th><th>Niveau</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <div class="section">
     <h2>Compétences spéciales du personnage</h2>
-    <div class="field">
-      <textarea id="skills_speciales"></textarea>
-    </div>
+    <textarea id="skills_speciales"></textarea>
   </div>
 
   <div class="section">
     <h2>Biographie</h2>
-    <div class="field">
-      <textarea id="bio"></textarea>
-    </div>
+    <textarea id="bio"></textarea>
   </div>
 
   <div class="section">
     <h2>Choix de level up et Effets permanents</h2>
-    <div class="field">
-      <textarea id="levelup"></textarea>
-    </div>
+    <textarea id="levelup"></textarea>
   </div>
 
   <div style="text-align: center;">
-    <button id="save_player_creation">Sauvegarder</button>
+    <button id="save_player_creation" type="button">Sauvegarder</button>
   </div>
 
   <script src="navbar.js"></script>
   <script>
-    async function loadGameData() {
-      try {
-        const response = await fetch('/api/game-database');
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des données');
+    // Base de jeu (classes, races, armures, compétences, sorts de sorts.json),
+    // chargée une seule fois pour toute la page.
+    let baseJeu = null;
+    const chargerBase = () => baseJeu || (baseJeu = fetch('/api/game-database').then(r => {
+      if (!r.ok) throw new Error('Erreur lors du chargement des données du jeu');
+      return r.json();
+    }));
+
+    const GROUPE_MAGIQUE = '✨ Avec affinité magique';
+    const GROUPE_CLASSIQUE = 'Attaques spéciales';
+
+    function echapper(valeur) {
+      return String(valeur ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function remplirListe(select, valeurs) {
+      valeurs.filter(Boolean).forEach(valeur => select.add(new Option(valeur, valeur)));
+    }
+
+    /** Description affichée sous un sort : texte de référence + détails. */
+    function texteDescriptionSort(sortData) {
+      const details = [
+        sortData.duree ? `Durée : ${sortData.duree}` : '',
+        sortData.type_action ? `Action : ${sortData.type_action}` : '',
+        sortData.cout_charges != null ? `Coût : ${sortData.cout_charges} charge(s) d'imposition` : '',
+        sortData.armes ? `Armes : ${sortData.armes}` : ''
+      ].filter(Boolean).join(' · ');
+      return [sortData.description || '', details].filter(Boolean).join('\n');
+    }
+
+    // --- Compétences : déduites de la classe et de la race ------------------
+    async function majCompetences() {
+      const base = await chargerBase();
+      const remplir = (selecteur, competences) => {
+        const corps = document.querySelector(`${selecteur} tbody`);
+        corps.innerHTML = competences.length
+          ? competences.map(c => `<tr data-nom="${echapper(c.nom)}" data-effet="${echapper(c.effet)}" data-niveau="${echapper(c.niveau)}">
+              <td>${echapper(c.nom)}</td><td>${echapper(c.effet)}</td><td>${echapper(c.niveau)}</td></tr>`).join('')
+          : '<tr><td colspan="3" class="competences-vide">Aucune compétence.</td></tr>';
+      };
+      remplir('#competences-classe-table', base.competences_classes?.[document.getElementById('player_class').value] || []);
+      remplir('#competences-raciales-table', base.competences_races?.[document.getElementById('player_race').value] || []);
+    }
+
+    function getCompetences() {
+      const lire = (selecteur, type) => [...document.querySelectorAll(`${selecteur} tbody tr[data-nom]`)]
+        .map(ligne => ({
+          nom: ligne.dataset.nom,
+          effet: ligne.dataset.effet || '',
+          niveau: parseInt(ligne.dataset.niveau) || 1,
+          type
+        }));
+      return [...lire('#competences-classe-table', 'classe'), ...lire('#competences-raciales-table', 'racial')];
+    }
+
+    // --- Armure -----------------------------------------------------------------
+    // À la création, l'armure est neuve : durabilité actuelle = maximum.
+    function majEtatArmure() {
+      const duraMax = parseInt(document.getElementById('eq_durabilite').value) || 0;
+      const [etat, couleur, effet] = duraMax > 0
+        ? ['Armure Neuve', '#2e7d32', 'Protection maximale']
+        : ["Absence d'armure", '#000000', 'Plus aucune protection'];
+      const champ = document.getElementById('player_armor');
+      champ.value = etat;
+      champ.style.color = couleur;
+      const texte = document.getElementById('armor_effect');
+      texte.textContent = effet;
+      texte.style.color = couleur;
+    }
+
+    // --- Sorts et attaques ------------------------------------------------------
+    // type : 'majeur' | 'mineur' | 'special'. Les options sont regroupées
+    // (école, ou attaques classiques / magiques) pour le filtre « Type ».
+    async function creerLigne(type) {
+      const base = await chargerBase();
+      const liste = { majeur: base.sorts_majeurs, mineur: base.sorts_mineurs, special: base.attack_special }[type] || [];
+
+      const ligne = document.createElement('div');
+      ligne.className = 'sort-row';
+      ligne.dataset.type = type;
+
+      const select = document.createElement('select');
+      select.className = 'sort-select';
+      select.add(new Option(type === 'special' ? 'Sélectionner une attaque' : 'Sélectionner un sort', ''));
+      const groupes = {};
+      liste.forEach(entree => {
+        const label = type === 'special'
+          ? (entree.affinite_magique ? GROUPE_MAGIQUE : GROUPE_CLASSIQUE)
+          : entree.ecole_nom;
+        const option = new Option(type === 'special' && entree.affinite_magique ? `✨ ${entree.nom}` : entree.nom, entree.nom);
+        option.dataset.degats = entree.degats || '';
+        option.dataset.niveau = entree.niveau ?? '';
+        option.dataset.description = texteDescriptionSort(entree);
+        if (!label) { select.add(option); return; }
+        if (!groupes[label]) {
+          groupes[label] = document.createElement('optgroup');
+          groupes[label].label = label;
+          select.appendChild(groupes[label]);
         }
-        const gameData = await response.json();
+        groupes[label].appendChild(option);
+      });
 
-        // Remplir la liste des classes
-        const classSelect = document.getElementById('player_class');
-        gameData.classes.forEach(classData => {
-          const option = document.createElement('option');
-          option.value = classData.classe;
-          option.textContent = classData.classe;
-          classSelect.appendChild(option);
-        });
+      const boutonDescription = document.createElement('button');
+      boutonDescription.type = 'button';
+      boutonDescription.className = 'description-btn';
+      boutonDescription.textContent = '?';
+      boutonDescription.title = 'Voir la description';
 
-        // Remplir la liste des races
-        const raceSelect = document.getElementById('player_race');
-        gameData.races.forEach(raceData => {
-          const option = document.createElement('option');
-          option.value = raceData.race;
-          option.textContent = raceData.race;
-          raceSelect.appendChild(option);
-        });
+      const nom = document.createElement('div');
+      nom.className = 'sort-nom';
+      nom.append(select, boutonDescription);
 
-        // Remplir la liste des armures
-        const armorSelect = document.getElementById('eq_armure');
-        gameData.armures.forEach(armorData => {
-          const option = document.createElement('option');
-          option.value = armorData.armure;
-          option.textContent = armorData.armure;
-          armorSelect.appendChild(option);
-        });
+      const degats = document.createElement('input');
+      degats.type = 'text';
+      degats.className = 'sort-degats';
+      degats.placeholder = 'ex. 1d6+2';
 
+      const niveau = document.createElement('input');
+      niveau.type = 'number';
+      niveau.className = 'sort-niveau';
+      niveau.readOnly = true;
+
+      const supprimer = document.createElement('button');
+      supprimer.type = 'button';
+      supprimer.className = 'delete-btn';
+      supprimer.textContent = '×';
+      supprimer.title = 'Supprimer';
+
+      const description = document.createElement('div');
+      description.className = 'description-content';
+
+      // Les dégâts sont pré-remplis par la référence, puis restent modifiables.
+      select.addEventListener('change', () => {
+        const choisi = select.selectedOptions[0];
+        degats.value = choisi.dataset.degats || '';
+        niveau.value = choisi.dataset.niveau || '';
+        description.textContent = choisi.dataset.description || 'Aucune description disponible';
+      });
+      boutonDescription.addEventListener('click', () => description.classList.toggle('visible'));
+      supprimer.addEventListener('click', () => ligne.remove());
+
+      ligne.append(nom, degats);
+      if (type !== 'mineur') ligne.append(niveau);
+      ligne.append(supprimer, description);
+      return ligne;
+    }
+
+    function lireLignes(conteneur, avecNiveau) {
+      return [...document.querySelectorAll(`#${conteneur} .sort-row`)]
+        .filter(ligne => ligne.querySelector('select').value)
+        .map(ligne => ({
+          nom: ligne.querySelector('select').value,
+          degats: ligne.querySelector('.sort-degats').value || '',
+          ...(avecNiveau ? { niveau: parseInt(ligne.querySelector('.sort-niveau').value) || 1 } : {})
+        }));
+    }
+
+    function getArmes() {
+      const armes = [];
+      for (let i = 1; i <= 5; i++) {
+        const type = document.getElementById(`weapon_type_${i}`).value.trim();
+        if (type) armes.push({ type, degats: document.getElementById(`weapon_dmg_${i}`).value || '' });
+      }
+      return armes;
+    }
+
+    // --- Filtre « Type » : n'affiche que les entrées du type choisi -----------
+    function installerFiltres(base) {
+      const types = {
+        'sorts-container': (base.sorts_majeurs || []).map(s => s.ecole_nom),
+        'sorts-mineurs-container': (base.sorts_mineurs || []).map(s => s.ecole_nom),
+        'attack-special-container': (base.attack_special || []).map(a => (a.affinite_magique ? GROUPE_MAGIQUE : GROUPE_CLASSIQUE))
+      };
+      document.querySelectorAll('.filtre-type').forEach(filtre => {
+        const conteneur = document.getElementById(filtre.dataset.conteneur);
+        remplirListe(filtre, [...new Set(types[filtre.dataset.conteneur] || [])]);
+        const appliquer = () => {
+          conteneur.querySelectorAll('select').forEach(select => {
+            const choisi = select.selectedOptions[0];
+            select.querySelectorAll('optgroup').forEach(groupe => {
+              groupe.hidden = Boolean(filtre.value) && groupe.label !== filtre.value && !groupe.contains(choisi);
+            });
+          });
+        };
+        filtre.addEventListener('change', appliquer);
+        // Les lignes ajoutées ensuite suivent le filtre en cours.
+        new MutationObserver(appliquer).observe(conteneur, { childList: true });
+      });
+    }
+
+    // --- Initialisation -----------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const base = await chargerBase();
+        remplirListe(document.getElementById('player_class'), (base.classes || []).map(c => c.classe));
+        remplirListe(document.getElementById('player_race'), (base.races || []).map(r => r.race));
+        remplirListe(document.getElementById('eq_armure'), (base.armures || []).map(a => a.armure));
+        installerFiltres(base);
+        await majCompetences();
       } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur lors du chargement des données du jeu');
       }
-    }
-
-    // Appeler la fonction au chargement de la page
-    document.addEventListener('DOMContentLoaded', loadGameData);
-
-    document.getElementById('save_player_creation').addEventListener('click', async () => {
-      // Vérification basique
-    const required = ['player_name', 'player_class', 'player_race', 'player_level'];
-    for (const id of required) {
-      if (!document.getElementById(id).value) {
-        alert('Veuillez remplir tous les champs requis.');
-        return;
-      }
-    }
-
-    try {
-    // Copie des valeurs actuelles
-    document.getElementById('player_hp_current').value = document.getElementById('player_hp').value;
-    document.getElementById('player_mana_current').value = document.getElementById('player_mana').value;
-    document.getElementById('eq_durabilite_current').value = document.getElementById('eq_durabilite').value;
-    document.getElementById('def_protection').value = document.getElementById('def_protection_max').value;
-
-    // Collecte des sorts
-    const sortsMajeurs = [];
-    document.querySelectorAll('#sorts-container .sort-row').forEach(row => {
-      const select = row.querySelector('select');
-      const degats = row.querySelector('input[type="text"]');
-      const niveau = row.querySelector('input[type="number"]');
-      if (select.value) {
-        sortsMajeurs.push({
-          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
-          degats: degats.value,
-          niveau: parseInt(niveau.value) || 1
-        });
-      }
+      majEtatArmure();
     });
 
-    // Collecte des sorts mineurs
-    const sortsMineurs = [];
-    document.querySelectorAll('#sorts-mineurs-container .sort-row').forEach(row => {
-      const select = row.querySelector('select');
-      const degats = row.querySelector('input[type="text"]');
-      if (select.value) {
-        sortsMineurs.push({
-          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
-          degats: degats.value
-        });
-      }
-    });
+    document.getElementById('player_class').addEventListener('change', majCompetences);
+    document.getElementById('player_race').addEventListener('change', majCompetences);
+    document.getElementById('eq_durabilite').addEventListener('input', majEtatArmure);
 
-    // Collecte des attaques spéciales
-    const attackSpecial = [];
-    document.querySelectorAll('#attack-special-container .sort-row').forEach(row => {
-      const select = row.querySelector('select');
-      const degats = row.querySelector('input[type="text"]');
-      const niveau = row.querySelector('input[type="number"]');
-      if (select.value) {
-        attackSpecial.push({
-          nom: select.options[select.selectedIndex].dataset.nom || select.options[select.selectedIndex].text,
-          degats: degats.value,
-          niveau: parseInt(niveau.value) || 1
-        });
-      }
+    const ajouter = (bouton, conteneur, type) => document.getElementById(bouton).addEventListener('click', async () => {
+      document.getElementById(conteneur).appendChild(await creerLigne(type));
     });
+    ajouter('add-sort-btn', 'sorts-container', 'majeur');
+    ajouter('add-sort-mineur-btn', 'sorts-mineurs-container', 'mineur');
+    ajouter('add-attack-spe-btn', 'attack-special-container', 'special');
 
-    const data = {
-      nom: document.getElementById('player_name').value,
-      classe: document.getElementById('player_class').value,
-      race: document.getElementById('player_race').value,
-      niveau: parseInt(document.getElementById('player_level').value) || 1,
-      stats: {
-        force: parseInt(document.getElementById('stat_force').value) || 0,
-        dexterite: parseInt(document.getElementById('stat_dexterite').value) || 0,
-        magie: parseInt(document.getElementById('stat_magie').value) || 0,
-        constitution: parseInt(document.getElementById('stat_constitution').value) || 0,
-        charisme: parseInt(document.getElementById('stat_charisme').value) || 0,
-        perception: parseInt(document.getElementById('stat_perception').value) || 0,
-        chance: parseInt(document.getElementById('stat_chance').value) || 0,
-        intelligence: parseInt(document.getElementById('stat_intelligence').value) || 0
-      },
-      bio: document.getElementById('bio').value || '',
-      sac: document.getElementById('eq_sac').value || '',
-      ceinture: document.getElementById('eq_ceinture').value || '',
-      inventaire: [],
-      armure: {
-        type: document.getElementById('eq_armure').value || '',
-        resistance: document.getElementById('eq_resistance').value || '',
-        durabilite: {
-          max: parseInt(document.getElementById('eq_durabilite').value) || 0,
-          current: parseInt(document.getElementById('eq_durabilite_current').value) || 0
+    // --- Enregistrement -------------------------------------------------------------
+    document.getElementById('save_player_creation').addEventListener('click', async event => {
+      const valeur = id => document.getElementById(id).value;
+      const nombre = id => Math.max(0, parseInt(valeur(id)) || 0);
+
+      for (const id of ['player_name', 'player_class', 'player_race', 'player_level']) {
+        if (!valeur(id).trim()) {
+          alert('Veuillez remplir le nom, la classe, la race et le niveau.');
+          return;
+        }
+      }
+
+      // À la création, chaque valeur actuelle part de son maximum.
+      const hp = nombre('player_hp');
+      const mana = nombre('player_mana');
+      const durabilite = nombre('eq_durabilite');
+      const protection = nombre('def_protection_max');
+
+      const data = {
+        nom: valeur('player_name').trim(),
+        classe: valeur('player_class'),
+        race: valeur('player_race'),
+        niveau: parseInt(valeur('player_level')) || 1,
+        stats: {
+          force: parseInt(valeur('stat_force')) || 0,
+          dexterite: parseInt(valeur('stat_dexterite')) || 0,
+          magie: parseInt(valeur('stat_magie')) || 0,
+          constitution: parseInt(valeur('stat_constitution')) || 0,
+          charisme: parseInt(valeur('stat_charisme')) || 0,
+          perception: parseInt(valeur('stat_perception')) || 0,
+          chance: parseInt(valeur('stat_chance')) || 0,
+          intelligence: parseInt(valeur('stat_intelligence')) || 0
         },
-        protection: {
-          max: parseInt(document.getElementById('def_protection_max').value) || 0,
-          current: parseInt(document.getElementById('def_protection').value) || 0
-        }
-      },
-      hp: {
-        max: parseInt(document.getElementById('player_hp').value) || 0,
-        current: parseInt(document.getElementById('player_hp_current').value) || 0
-      },
-      mana: {
-        max: parseInt(document.getElementById('player_mana').value) || 0,
-        current: parseInt(document.getElementById('player_mana_current').value) || 0
-      },
-      bonus_vie: parseInt(document.getElementById('def_bonus_vie').value) || 0,
-      intox: document.getElementById('def_intox').value || '0',
-      spells: sortsMajeurs,
-      sorts_mineurs: sortsMineurs,
-      competences: getCompetences(),
-      skills_speciales: document.getElementById('skills_speciales').value || '',
-      levelup: document.getElementById('levelup').value || '',
-      armes: getArmes(),
-      attaques_speciales: attackSpecial,
-    };
+        bio: valeur('bio'),
+        sac: valeur('eq_sac'),
+        ceinture: '',
+        inventaire: [],
+        armure: {
+          type: valeur('eq_armure'),
+          resistance: valeur('eq_resistance'),
+          durabilite: { max: durabilite, current: durabilite },
+          protection: { max: protection, current: protection }
+        },
+        hp: { max: hp, current: hp },
+        mana: { max: mana, current: mana },
+        bonus_vie: nombre('def_bonus_vie'),
+        intox: String(nombre('def_intox')),
+        spells: lireLignes('sorts-container', true),
+        sorts_mineurs: lireLignes('sorts-mineurs-container', false),
+        competences: getCompetences(),
+        skills_speciales: valeur('skills_speciales'),
+        levelup: valeur('levelup'),
+        armes: getArmes(),
+        attaques_speciales: lireLignes('attack-special-container', true)
+      };
 
-    console.log('Données à envoyer:', data);
-
-    const response = await fetch('/api/joueurs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur HTTP: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Réponse du serveur:', result);
-    alert('Joueur enregistré avec succès !');
-    window.location.href = '/selecte_player.html';
-
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    alert(`Erreur lors de la sauvegarde: ${error.message}`);
-  }
-});
-
-// Fonctions utilitaires à ajouter
-function getCompetences() {
-  const competences = [];
-  for (let i = 1; i <= 3; i++) {
-    const nom = document.getElementById(`class_skill_name_${i}`).value;
-    if (nom) {
-      competences.push({
-        nom: nom,
-        effet: document.getElementById(`class_skill_effect_${i}`).value || '',
-        niveau: parseInt(document.getElementById(`class_skill_lvl_${i}`).value) || 1
-      });
-    }
-  }
-  return competences;
-}
-
-function getArmes() {
-  const armes = [];
-  for (let i = 1; i <= 5; i++) {
-    const type = document.getElementById(`weapon_type_${i}`).value;
-    if (type) {
-      armes.push({
-        type: type,
-        degats: document.getElementById(`weapon_dmg_${i}`).value || ''
-      });
-    }
-  }
-  return armes;
-}
-
-// Après le chargement de la page
-async function createSortRow(type = 'majeur') {
-    try {
-        const response = await fetch('/api/game-database');
-        if (!response.ok) throw new Error('Erreur de chargement des sorts');
-        const gameData = await response.json();
-        
-        const sortRow = document.createElement('div');
-        sortRow.className = 'sort-row';
-        
-        // Select pour le nom du sort
-        const selectSort = document.createElement('select');
-        selectSort.className = 'sort-select';
-        
-        // Déterminer quelle liste utiliser selon le type
-        let sorts;
-        switch(type) {
-            case 'majeur':
-                sorts = gameData.sorts_majeurs;
-                break;
-            case 'mineur':
-                sorts = gameData.sorts_mineurs;
-                break;
-            case 'special':
-                sorts = gameData.attack_special;
-                break;
-            default:
-                sorts = [];
-        }
-        
-        // Option par défaut
-        selectSort.innerHTML = '<option value="">Sélectionner un ' + 
-            (type === 'special' ? 'attaque' : 'sort') + '</option>';
-        
-        // Ajouter les options
-        sorts.forEach(sort => {
-            const option = document.createElement('option');
-            option.value = sort.id;
-            // ✨ signale une attaque avec affinité magique ; le nom
-            // enregistré reste celui de la référence (dataset.nom).
-            option.dataset.nom = sort.nom || '';
-            option.textContent = sort.affinite_magique ? `✨ ${sort.nom}` : (sort.nom || '');
-            option.dataset.degats = sort.degats || '';
-            option.dataset.niveau = sort.niveau || '';
-            selectSort.appendChild(option);
+      const bouton = event.currentTarget;
+      bouton.disabled = true;
+      try {
+        const response = await fetch('/api/joueurs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
         });
-
-        // Champs pour les dégâts et le niveau. Les dégâts sont pré-remplis
-        // par la référence (sorts.json) puis restent modifiables.
-        const degatsInput = document.createElement('input');
-        degatsInput.type = 'text';
-        degatsInput.placeholder = 'ex. 1d6+2';
-        
-        const niveauInput = document.createElement('input');
-        niveauInput.type = 'number';
-        niveauInput.readOnly = true;
-
-        // Événement de changement
-        selectSort.addEventListener('change', (e) => {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            degatsInput.value = selectedOption.dataset.degats || '';
-            niveauInput.value = selectedOption.dataset.niveau || '';
-        });
-
-        // Créer le bouton de suppression
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = '×';
-        deleteBtn.title = 'Supprimer';
-        deleteBtn.addEventListener('click', () => {
-            sortRow.remove();
-        });
-
-        // Ajouter les éléments à la ligne
-        sortRow.appendChild(selectSort);
-        sortRow.appendChild(degatsInput);
-        if (type === 'majeur' || type === 'special') {
-            sortRow.appendChild(niveauInput);
-        }
-        sortRow.appendChild(deleteBtn);
-
-        return sortRow;
-    } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors du chargement des données');
-    }
-}
-
-    // Gestionnaire pour le bouton d'ajout de sort majeur
-    document.getElementById('add-sort-btn').addEventListener('click', async () => {
-        const container = document.getElementById('sorts-container');
-        const sortRow = await createSortRow('majeur');
-        container.appendChild(sortRow);
-    });
-
-    // Gestionnaire pour le bouton d'ajout de sort mineur
-    document.getElementById('add-sort-mineur-btn').addEventListener('click', async () => {
-        const container = document.getElementById('sorts-mineurs-container');
-        const sortRow = await createSortRow('mineur');
-        container.appendChild(sortRow);
-    });
-
-    // Gestionnaire pour le bouton d'ajout d'attaque spéciale'
-    document.getElementById('add-attack-spe-btn').addEventListener('click', async () => {
-        const container = document.getElementById('attack-special-container');
-        const sortRow = await createSortRow('special');
-        container.appendChild(sortRow);
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.message || `Erreur HTTP: ${response.status}`);
+        alert('Joueur enregistré avec succès !');
+        window.location.href = '/selecte_player.html';
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error);
+        alert(`Erreur lors de la sauvegarde: ${error.message}`);
+        bouton.disabled = false;
+      }
     });
   </script>
 </body>

@@ -95,7 +95,7 @@ try {
   // ---------------------------------------------------------------------
   // 4. Câblage serveur et interface
   // ---------------------------------------------------------------------
-  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serverSource = require('./_sources').sourceServeur();
   const route = serverSource.match(/app\.post\('\/api\/maps\/:mapId\/resolution'[^]*?\n\}\);/);
   verifier(route && route[0].includes('refuserSiPasMj'), 'La route de résolution doit être réservée au MJ.');
   verifier(serverSource.includes("modele = { ...modele, color: req.body.color }"), 'La pose par lot doit accepter une couleur.');

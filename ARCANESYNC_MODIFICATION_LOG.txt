@@ -5097,3 +5097,147 @@ VALIDATION
 ======================================================================
 FIN VERSION V1.13.12
 ======================================================================
+
+
+======================================================================
+VERSION V1.16 — TROIS INTERFACES, CODE MJ ET DONNÉES DE PARTIE FIABLES
+Date : 28 octobre 2026
+======================================================================
+
+Cette entrée regroupe toutes les évolutions depuis V1.13.12 : d'abord les
+demandes successives (interfaces, carte, sorts, mise en page), puis un
+plan d'amélioration en cinq priorités, chacune validée avant la suivante.
+
+----------------------------------------------------------------------
+ÉVOLUTIONS DEMANDÉES (avant le plan)
+----------------------------------------------------------------------
+
+ACCUEIL ET NAVIGATION
+    - Trois interfaces choisies depuis l'accueil : MJ, Joueur, Écran.
+    - La barre de navigation ne montre que les menus de l'interface
+      choisie ; côté joueur, ceux du personnage ouvert.
+    - Nouvelle page ecran.html : affichage partagé de la carte (vision du
+      groupe) ou du tableau blanc.
+
+CARTE
+    - Boutons Ouvrir/Fermer retirés ; options de quadrillage (résolution
+      x1 à x4, cases plus fines) ; nuancier de 16 couleurs pour le décor.
+    - Brouillard de guerre désactivé partout (toujours testé).
+    - Jetons plus petits ; carte retirée côté joueur.
+
+SORTS ET DONNÉES DE JEU
+    - Sorts.txt converti en database/sorts.json : écoles, sorts mineurs
+      (niveau 0), attaques spéciales (✨ = affinité magique), dégâts de
+      référence, métamorphoses.
+    - Interface « Données de jeu » (modification.html) : création,
+      modification, duplication, suppression des sorts et attaques.
+    - Fiche : filtre par type sur les listes de sorts et d'attaques.
+
+INTERFACE MJ
+    - Éditeur de joueur sans JSON ; statuts retirés des personnages.
+    - Commandes PV / Mana : − quantité + Max, jauges groupées.
+    - Valeurs actuelles bornées à 0..maximum ; mise en page adaptative.
+
+----------------------------------------------------------------------
+PRIORITÉ 1 — FIABILITÉ DES DONNÉES DE PARTIE
+----------------------------------------------------------------------
+
+PERTE CORRIGÉE. Enregistrer la fiche recopiait dans la partie les valeurs
+actuelles périmées de data.json : les dégâts infligés par le MJ étaient
+effacés. Règle désormais : la fiche porte la DÉFINITION (stats,
+maximums, sorts) ; la partie porte l'ÉTAT DE JEU (PV, mana, durabilité,
+protection, vie bonus, intox, jets de survie).
+    - session.js : synchroniserSessionDepuisPersonnage garde l'état de
+      jeu, borné par les nouveaux maximums.
+    - joueur.js et session.js : bornes 0..max à chaque enregistrement.
+    - Jets de survie enregistrés dans la partie (autrefois perdus).
+    - Fiche : valeurs de partie en lecture seule (pointillés), mises à
+      jour en direct ; bouton « Mettre à jour depuis la partie » retiré.
+    - Liens courts : seul ?PlayerId= voyage dans l'URL.
+
+----------------------------------------------------------------------
+PRIORITÉ 2 — CODE MJ
+----------------------------------------------------------------------
+
+Le rôle MJ n'était que DÉCLARÉ par le navigateur.
+    - mjcode.js : code MJ choisi à la première entrée MJ, stocké en
+      empreinte salée dans mj.json (jamais en clair). Variable
+      ARCANESYNC_MJ_CODE prioritaire. Code oublié : supprimer mj.json
+      puis redémarrer le serveur.
+    - website/mj-code.js : code ajouté aux appels /api et au socket ;
+      fenêtre de saisie, bloquante sur les pages MJ.
+    - Serveur : rôle MJ accordé seulement avec le code (HTTP et sockets) ;
+      routes MJ jusqu'ici ouvertes protégées ; /api/session/scene ne
+      livre plus la vue MJ sans code ; sans code, un joueur n'enregistre
+      que son état de jeu.
+    - Limites : protection de réseau local (pas d'identité des joueurs,
+      pas de HTTPS).
+
+----------------------------------------------------------------------
+PRIORITÉ 3 — COHÉRENCE DES INTERFACES
+----------------------------------------------------------------------
+
+    - Cartes des mobs au format des joueurs (étiquettes PV/Mana, Max).
+    - create_player.html réécrite sur le modèle de la fiche. BUG CORRIGÉ :
+      la création lisait des champs inexistants et échouait toujours.
+    - police-lisible.css : texte courant lisible, Uncial Antiqua réservée
+      aux titres (interface de jeu, fiche, création).
+    - Écran piloté par le MJ (« Écran : Carte | Tableau blanc »), vue
+      enregistrée dans la partie (ecranVue).
+    - Tableau blanc enregistré (tableau.js, tableau_dessins.json). BUG
+      CORRIGÉ : les dessins s'effaçaient à chaque nouveau rendu.
+    - Fiche : équipement (armes, inventaire, sac) volontairement inchangé.
+
+----------------------------------------------------------------------
+PRIORITÉ 4 — DONNÉES DE JEU
+----------------------------------------------------------------------
+
+    - 43 dégâts de référence réduits à l'expression principale ;
+      Jugement dernier (2d20+20) et Intervention divine (1d20+4)
+      complétés d'après leur description.
+    - Métamorphoses : onglet dans Données de jeu (routes MJ
+      /api/reference/metamorphoses) et section sur la fiche des druides.
+    - game_database.json : listes de test retirées, id_armure corrigé.
+    - Restent à corriger dans Sorts.txt : Singularité arcanique (dégâts
+      d'impact), Projectiles arcaniques (phrase coupée), Coup de bouclier
+      (niveau), At'gouar (compétence), valeurs doubles (Arc électrique,
+      Lumière du sacre, Attaque vitale), bonus incohérents (Rebond
+      arcanique, Frappe de destruction arcanique).
+
+----------------------------------------------------------------------
+PRIORITÉ 5 — MAINTENANCE
+----------------------------------------------------------------------
+
+CODE MORT RETIRÉ
+    - website/old/, website/map_joueur.html (inaccessible).
+    - mapgen.js : moteur de génération retiré (1279 → 238 lignes) ; le
+      catalogue de décors reste.
+    - map.js : remplacerDecor (ne servait qu'à la régénération).
+    - Statuts manuels des personnages (routes et fonctions) ; le
+      catalogue reste pour les créatures, l'agonie reste automatique.
+
+SERVER.JS DÉCOUPÉ (2206 → 532 lignes), sans changer les routes
+    serveur/routes-mj.js, routes-joueurs.js, routes-session.js,
+    routes-mobs.js, routes-reference.js, routes-cartes.js ;
+    serveur/acces.js (rôle MJ), serveur/diffusion-carte.js.
+    server.js garde le démarrage et les sockets. 84 routes vérifiées
+    identiques avant / après. tests/_sources.js : les vérifications de
+    câblage lisent server.js + serveur/.
+
+TESTS DE BOUT EN BOUT : npm run test:e2e
+    tests/e2e/ : 4 scénarios (code MJ, données de partie, interfaces,
+    données de jeu), 53 contrôles dans Edge ou Chrome sans interface.
+    Chaque scénario part d'une copie des données et d'un serveur dédié
+    (port 3100) : la partie en cours n'est jamais touchée.
+
+----------------------------------------------------------------------
+VALIDATION
+----------------------------------------------------------------------
+
+- npm test : 13 fichiers / 26 suites                          : PASS
+- npm run test:e2e : 4 scénarios / 53 contrôles                : PASS
+- scripts inline des pages modifiées (vm.Script)               : PASS
+- serveur du port 3000 jamais coupé ; tests sur le port 3100   : PASS
+======================================================================
+FIN VERSION V1.16
+======================================================================

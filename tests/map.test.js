@@ -454,7 +454,7 @@ try {
   // ---------------------------------------------------------------------
   // 11. Câblage serveur et interfaces (convention de vérification statique)
   // ---------------------------------------------------------------------
-  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serverSource = require('./_sources').sourceServeur();
   const routesAttendues = [
     "app.get('/api/map/active'",
     "app.post('/api/maps'",
@@ -552,10 +552,9 @@ try {
         `Route de bestiaire sans contrôle de rôle : ${signature}`);
     });
 
-  // `mjSource` / `joueurSource` sont déclarés plus bas dans ce fichier :
-  // on relit ici sous des noms explicites pour éviter la zone morte.
+  // `mjSource` est déclaré plus bas dans ce fichier : on relit ici sous un
+  // nom explicite pour éviter la zone morte.
   const carteMjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
-  const carteJoueurSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map_joueur.html'), 'utf8');
 
   assert(carteMjSource.includes('data-onglet="bestiaire"'), 'Onglet Bestiaire absent de la Carte MJ.');
   assert(carteMjSource.includes('data-onglet="jeu"'), 'Onglet « En jeu » absent de la Carte MJ.');
@@ -569,14 +568,10 @@ try {
   assert(!/for \(const cell of cells\)[\s\S]{0,200}\/elements`/.test(carteMjSource),
     'La boucle historique « une requête par case » subsiste.');
 
-  // Le Bestiaire est un outil de MJ : il n'a rien à faire côté joueur.
-  assert(!carteJoueurSource.includes('best-list'), "L'interface joueur ne doit pas exposer le Bestiaire.");
-  assert(!carteJoueurSource.includes('mob-templates'),
-    "L'interface joueur ne doit pas connaître les modèles de créature.");
-  assert(!carteJoueurSource.includes('elements/batch'),
-    "L'interface joueur ne doit pas pouvoir poser de décor.");
+  // La carte joueur a été retirée : seuls le MJ et l'Écran affichent la carte.
+  assert(!fs.existsSync(path.join(__dirname, '..', 'website', 'map_joueur.html')), 'La carte joueur doit avoir été retirée.');
 
-  ['map.html', 'map_joueur.html'].forEach(fichier => {
+  ['map.html'].forEach(fichier => {
     const source = fs.readFileSync(path.join(__dirname, '..', 'website', fichier), 'utf8');
     assert(source.includes('100dvh'), `${fichier} : coque à hauteur verrouillée absente.`);
     assert(source.includes('min-height:0') || source.includes('min-height: 0'),
@@ -586,15 +581,14 @@ try {
   });
 
   const mjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
-  const joueurSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map_joueur.html'), 'utf8');
 
   // Le brouillard est désactivé dans l'application : plus d'outil côté MJ.
   assert(!mjSource.includes("data-tool=\"fog-reveal\""), 'Les outils de brouillard ne doivent plus être proposés.');
   assert(mjSource.includes('spawn-mob'), 'Ajout de créature absent de l\'interface MJ.');
   assert(mjSource.includes('gmNotes'), 'Champ de notes MJ absent de l\'inspecteur.');
-  assert(!joueurSource.includes("role: 'mj'"), "L'interface joueur ne doit jamais demander la vue MJ.");
-  assert(!joueurSource.includes('gmNotes'), "L'interface joueur ne doit pas manipuler de notes MJ.");
-  assert(joueurSource.includes("socket.on('mapState'"), 'Réception temps réel absente de l\'interface joueur.');
+  const ecranSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'ecran.html'), 'utf8');
+  assert(!ecranSource.includes("role: 'mj'") && !ecranSource.includes('gmNotes'), "L'Écran ne doit jamais demander la vue MJ.");
+  assert(ecranSource.includes("socket.on('mapState'"), 'Réception temps réel absente de l\'Écran.');
 
   console.log('PASS: V1.13 cartes — modèle, droits, vision, brouillard et non-exposition MJ');
 } finally {
@@ -626,7 +620,7 @@ try {
 // Ces contrôles verrouillent le chemin, pas seulement l'existence.
 // ---------------------------------------------------------------------
 {
-  const serveur = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serveur = require('./_sources').sourceServeur();
   const carteMj = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
 
   const route = serveur.indexOf("app.get('/api/map/vue-joueur/:playerId'");
@@ -758,9 +752,6 @@ try {
   const coeur = fs.readFileSync(path.join(__dirname, '..', 'website', 'map-core.js'), 'utf8');
   assert(coeur.includes('state.map.self ? state.map.tokens?.[state.map.self.tokenId]'),
     'L\'aura doit s\'ancrer sur le jeton du spectateur à défaut de sélection.');
-  const joueurSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map_joueur.html'), 'utf8');
-  assert(joueurSource.includes('opt-aura'), 'L\'aura est absente de l\'interface joueur.');
-  assert(joueurSource.includes('mapTogglePorte'), 'Le joueur ne peut pas manœuvrer de porte.');
 
   // V1.13.12b — Le centre de l'aura doit passer par px(), qui ajoute la
   // GOUTTIÈRE. Sans elle le cercle était décalé de 22 px sur chaque axe,

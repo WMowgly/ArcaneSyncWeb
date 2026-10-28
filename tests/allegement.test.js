@@ -146,7 +146,7 @@ assert(pas2.payload.vision, 'La vision du joueur a changé : elle doit être ren
 // perdre lors d'une refonte de emitMapState.
 // ---------------------------------------------------------------------
 
-const serveur = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const serveur = require('./_sources').sourceServeur();
 
 const posteRequest = serveur.indexOf("socket.on('mapRequest'");
 assert(posteRequest !== -1, 'mapRequest introuvable.');
@@ -163,7 +163,7 @@ assert(coeur.includes('map.reprises.forEach'), 'La fusion est absente du moteur 
 assert(/if \(!ancien \|\| ancien\.id !== map\.id\) return false;/.test(coeur),
   'Le moteur doit refuser de fusionner une projection d\'une autre carte.');
 
-['map.html', 'map_joueur.html'].forEach(page => {
+['map.html', 'ecran.html'].forEach(page => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'website', page), 'utf8');
   assert(/if \(!renderer\.setMap\([^)]*\)\) \{[\s\S]{0,120}mapRequest/.test(source),
     `${page} doit redemander un état complet quand la fusion échoue.`);

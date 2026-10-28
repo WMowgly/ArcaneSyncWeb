@@ -40,7 +40,8 @@ const FICHIERS = [
   'session.json',
   'maps.json',
   'mob_templates.json',
-  'tableau.json'
+  'tableau.json',
+  'tableau_dessins.json'
 ];
 
 // Un dossier par processus : `npm test` enchaîne les suites, et deux exécutions

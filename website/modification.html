@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
+  <script src="mj-code.js"></script>
   <style>
     /* Interface Modification (réservée au MJ) : une liste filtrable à
        gauche, l'éditeur de l'entrée choisie à droite. */
@@ -85,6 +86,7 @@
       <button type="button" data-onglet="sorts" class="actif">Sorts <span class="compte"></span></button>
       <button type="button" data-onglet="mineurs">Sorts mineurs <span class="compte"></span></button>
       <button type="button" data-onglet="attaques">Attaques spéciales <span class="compte"></span></button>
+      <button type="button" data-onglet="metamorphoses">Métamorphoses <span class="compte"></span></button>
       <button type="button" data-onglet="bestiaire">Bestiaire <span class="compte"></span></button>
     </nav>
 
@@ -123,7 +125,7 @@
     // -----------------------------------------------------------------------
     // État
     // -----------------------------------------------------------------------
-    let ref = { ecoles: [], sorts: [], attaques_speciales: { liste: [] } };
+    let ref = { ecoles: [], sorts: [], attaques_speciales: { liste: [] }, metamorphoses: { formes: [] } };
     let modeles = [];
     let categories = [];
     let onglet = 'sorts';
@@ -184,6 +186,15 @@
         filtre: () => [['', 'Toutes'], ['classique', 'Classiques'], ['magique', `${MAGIE} Avec affinité magique`]],
         filtrer: (a, v) => !v || (v === 'magique') === (a.affinite_magique === true),
         nouveau: () => ({ nom: '', armes: '', niveau: 1, affinite_magique: false, description: '' })
+      },
+      // Formes animales des druides.
+      metamorphoses: {
+        entrees: () => ref.metamorphoses?.formes || [],
+        meta: f => [`niv. ${f.niveau ?? '—'}`, f.taille, `PV ${f.pv ?? 0}`, f.attaque_base].filter(Boolean).join(' · '),
+        filtre: () => [['', 'Tous les niveaux'], ...[...new Set((ref.metamorphoses?.formes || []).map(f => f.niveau))]
+          .sort((a, b) => a - b).map(n => [String(n), `Niveau ${n}`])],
+        filtrer: (f, v) => !v || String(f.niveau) === v,
+        nouveau: () => ({ nom: '', niveau: 1, for: 0, dex: 0, const: 0, pv: 0, taille: '', attaque_base: '', description: '', competence: null })
       },
       bestiaire: {
         entrees: () => modeles,
@@ -279,6 +290,23 @@
       ].join('');
     }
 
+    function formulaireForme(f) {
+      return [
+        champ('nom', 'Nom', saisie('nom', f.nom, 'required maxlength="120"'), true),
+        champ('niveau', 'Niveau', saisie('niveau', f.niveau, 'type="number" min="0" max="20"')),
+        champ('taille', 'Taille', saisie('taille', f.taille, 'list="liste-tailles" maxlength="40" placeholder="—"')),
+        champ('for', 'FOR', saisie('for', f.for, 'type="number" min="0" max="999"')),
+        champ('dex', 'DEX', saisie('dex', f.dex, 'type="number" min="0" max="999"')),
+        champ('const', 'CONST', saisie('const', f.const, 'type="number" min="0" max="999"')),
+        champ('pv', 'PV (bonus)', saisie('pv', f.pv, 'type="number" min="0" max="999"')),
+        champ('attaque_base', 'Attaque de base', saisie('attaque_base', f.attaque_base, 'maxlength="200" placeholder="ex. 1d8 + 2"'), true),
+        champ('competence_nom', 'Compétence', saisie('competence_nom', f.competence?.nom, 'maxlength="120" placeholder="—"'), true),
+        champ('competence_effet', 'Effet de la compétence', `<textarea name="competence_effet" style="min-height:70px">${escapeHtml(f.competence?.effet)}</textarea>`, true),
+        champ('description', 'Description', `<textarea name="description">${escapeHtml(f.description)}</textarea>`, true),
+        '<datalist id="liste-tailles"><option value="Petit"><option value="Moyen"><option value="Grand"></datalist>'
+      ].join('');
+    }
+
     function formulaireModele(m) {
       const cats = categories.map(c => [c.id, `${c.icone} ${c.nom}`]);
       const stats = STATS.map(([cle, libelle]) =>
@@ -302,6 +330,7 @@
       sorts: 'Référence des sorts (sorts.json). Les dégâts de référence pré-remplissent la fiche ; chaque personnage peut ensuite les ajuster.',
       mineurs: 'Les sorts mineurs sont les sorts de niveau 0. Les dégâts de référence pré-remplissent la fiche.',
       attaques: 'Référence des attaques spéciales (sorts.json). Le niveau peut rester vide. ✨ = affinité magique.',
+      metamorphoses: 'Formes animales des druides (sorts.json). En forme animale, le druide prend la FOR, la DEX et la CONST de la forme ; ses PV s\'ajoutent en PV bonus.',
       bestiaire: 'Modèles de créatures réutilisables, partagés avec la carte MJ. Les créatures déjà en jeu ne sont pas modifiées.'
     };
 
@@ -314,6 +343,7 @@
         : (iconeEntree(entree) ? `${iconeEntree(entree)} ${entree.nom}` : entree.nom);
       $('editeur-aide').textContent = AIDES[onglet];
       $('editeur').innerHTML = onglet === 'attaques' ? formulaireAttaque(entree)
+        : onglet === 'metamorphoses' ? formulaireForme(entree)
         : onglet === 'bestiaire' ? formulaireModele(entree)
         : formulaireSort(entree, onglet === 'mineurs');
       $('editeur-actions').hidden = false;
@@ -353,8 +383,14 @@
         return { nom: val('nom'), armes: val('armes'), niveau: nombre('niveau'), degats: val('degats'),
           affinite_magique: f.querySelector('[name="affinite_magique"]').checked, description: val('description') };
       }
+      if (onglet === 'metamorphoses') {
+        return { nom: val('nom'), niveau: nombre('niveau'), taille: val('taille'),
+          for: nombre('for'), dex: nombre('dex'), const: nombre('const'), pv: nombre('pv'),
+          attaque_base: val('attaque_base'), description: val('description'),
+          competence: { nom: val('competence_nom'), effet: val('competence_effet') } };
+      }
       if (onglet === 'bestiaire') {
-        const hp = Math.max(0, nombre('hp') || 0), mana = Math.max(0, nombre('mana') || 0);
+        const hp =Math.max(0, nombre('hp') || 0), mana = Math.max(0, nombre('mana') || 0);
         return {
           nom: val('nom').trim(), categorie: val('categorie'), icone: val('icone').trim() || undefined,
           // Un modèle se définit à pleine ressource.
@@ -374,16 +410,19 @@
 
     const URLS = {
       sorts: '/api/reference/sorts', mineurs: '/api/reference/sorts',
-      attaques: '/api/reference/attaques', bestiaire: '/api/mob-templates'
+      attaques: '/api/reference/attaques', metamorphoses: '/api/reference/metamorphoses',
+      bestiaire: '/api/mob-templates'
     };
-    const cleResultat = () => (onglet === 'attaques' ? 'attaque' : onglet === 'bestiaire' ? 'template' : 'sort');
+    const CLES_RESULTAT = { attaques: 'attaque', metamorphoses: 'forme', bestiaire: 'template' };
+    const cleResultat = () => CLES_RESULTAT[onglet] || 'sort';
 
     async function enregistrer() {
       const donnees = lireFormulaire();
       if (!String(donnees.nom || '').trim()) { setStatut('Le nom est obligatoire.', true); return; }
 
       const avant = entreeCourante();
-      if (avant && onglet !== 'bestiaire' && avant.nom !== donnees.nom.trim()
+      // Les fiches mémorisent le nom des sorts et attaques (pas des formes ni des modèles).
+      if (avant && ['sorts', 'mineurs', 'attaques'].includes(onglet) && avant.nom !== donnees.nom.trim()
         && !confirm(`Renommer « ${avant.nom} » ?\n\nLes personnages qui l'ont déjà verront l'ancien nom marqué « hors base » sur leur fiche (sans perte).`)) return;
 
       try {

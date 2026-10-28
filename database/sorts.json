@@ -91,7 +91,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Invoque une lance magique pouvant être lancée. Quand celle-ci touche une entité, elle se désintègre, infligeant 1d8 +2 DGT, et apportant un avantage lors du prochain coup infligés.",
-      "degats": "1d8+2 ; +2DGT ; 2DGT"
+      "degats": "1d8+2"
     },
     {
       "id": "commun-illusion-imparfaite",
@@ -146,7 +146,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Le lanceur invoque une petite boule de magma jetable, explosant à l'impact, et brûlant toutes les surfaces. Son avancée lente la rend facilement esquivable.\nInflige 1d6+2 DGT.",
-      "degats": "1d6+2 ; +2DGT ; 2DGT"
+      "degats": "1d6+2"
     },
     {
       "id": "commun-manipulation-de-jelra",
@@ -399,7 +399,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Le lanceur tire un trait arcanique de sa main ou son baton. Inflige 1d6+2. Gagne 1d6 tous les 5 niveaux du joueur.",
-      "degats": "1d6+2 ; 1d6"
+      "degats": "1d6+2"
     },
     {
       "id": "arcanique-impulsion-rapide",
@@ -410,7 +410,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Le lanceur tend la paume de sa main, simbibant de magie, et la tend vers sa cible. Celle-ci est propulsé en arrière surn une courte distance. Ce sort réussit toujours. Inflige 1d4+2 dgt.e.Gagne 1d4 tous les 5 niveaux.",
-      "degats": "1d4+2 ; 1d4 ; +2dgt ; 2dgt"
+      "degats": "1d4+2"
     },
     {
       "id": "arcanique-runes-mineure-d-emprisonnement",
@@ -454,7 +454,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Lance une impulsion arcanique infligeant 1d6 +4 dégâts à une cible, rebondissant sur toutes les cibles proches et renforçant les dégâts de + 2DGT à chaque fois. 6 cibles au maximum.",
-      "degats": "1d6+4 ; +2DGT ; 2DGT"
+      "degats": "1d6+4"
     },
     {
       "id": "arcanique-projectiles-arcaniques",
@@ -498,7 +498,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Invoque une épée spectrale de 1d12 + 4 DGt, qui dure jusqu’au prochain repos ou révocation.\nPossède la capacité d’arme “Brûlure des arcanes”.",
-      "degats": "1d12+4 ; +4DGt ; 4DGt"
+      "degats": "1d12+4"
     },
     {
       "id": "arcanique-attaque-guidee",
@@ -531,7 +531,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Deux runes sont placées sur une surface solide proche. Si celle-ci est déclenchée, inflige 1d12 +4 DGt et projette la cible.",
-      "degats": "1d12+4 ; +4DGt ; 4DGt"
+      "degats": "1d12+4"
     },
     {
       "id": "arcanique-flux-arcaniques",
@@ -542,7 +542,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Un flux de magie s’abat depuis vos mains sur une cible : inflige 2d20 DGT/TOUR. Impossible de vous attaquer de front. Le joueur ne peut se déplacer ou effectuer d’autres actions. Sort avec concentration.",
-      "degats": "2d20 ; 2d20DGT"
+      "degats": "2d20"
     },
     {
       "id": "arcanique-poussiere-explosives",
@@ -553,7 +553,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Répand une poussière hautement explosive dans une zone fermée ou confinée, partiellement invisible.\nExplose au bout de deux tours, infligeant 2D20 DGt + 8 à toutes les entités présentes.",
-      "degats": "2D20 ; 2D20DGt"
+      "degats": "2d20"
     },
     {
       "id": "arcanique-toucher-repulsif",
@@ -575,7 +575,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "SI quatres sorts arcaniques ont été lancés dans le même tour, vous pouvez invoquer une source arcanique. Celle-ci donne un bonus de dégats de 12DGT à tous les prochains sorts alliés durant les deux prochains tours.",
-      "degats": "12DGT"
+      "degats": "12"
     },
     {
       "id": "arcanique-inversion-des-coups",
@@ -586,7 +586,7 @@
       "type_action": "Principale + Secondaire",
       "element": null,
       "description": "Cible un personnage humanoïde. Les deux prochaines attaques qu’il réalisera n'inflige aucun dégâts, se faisant parrer par une épée magique. Ensuite, il subira 2d12 + 4 DGT.",
-      "degats": "2d12+4 ; +4DGT ; 4DGT"
+      "degats": "2d12+4"
     },
     {
       "id": "arcanique-frappe-explosive-arcanique",
@@ -597,7 +597,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Une frappe extrêmement puissante s'abat de vos mains, sous forme d’un intense rayon d’une courte durée, en plein sur votre adversaire. Inflige 2D20 + 10 et détruit l’armure.",
-      "degats": "2D20+10"
+      "degats": "2d20+10"
     },
     {
       "id": "arcanique-teleportation-de-groupe",
@@ -630,7 +630,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Un rayon arcanique traversant toutes les cibles rencontrés, les brûlant et affligeant 2d20 + 12 dégâts.\nLes cibles restent en état de brûlure pendant 3 tours, subissant 8 DGT par tour.",
-      "degats": "2d20+12 ; 8DGT"
+      "degats": "2d20+12"
     },
     {
       "id": "arcanique-zone-de-domination-arcanique",
@@ -663,7 +663,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Inflige 1d8dgt +1. Gagne 1d6 de dégâts tous les 5 niveaux.\nRend 1PV. Gagne +1PV au niveau 10.",
-      "degats": "1d8 ; 1d6 ; 1d8dgt ; 1PV"
+      "degats": "1d8"
     },
     {
       "id": "druidique-arme-de-bois",
@@ -707,7 +707,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Sélectionne une cible. Celle-ci va être attaquée par de nombreuses ronces l’immobilisant, infligeant 1d8 +4 DGT par tour, tant que la cible n’aura pas réussi un jet de FOR.",
-      "degats": "1d8+4 ; +4DGT ; 4DGT"
+      "degats": "1d8+4"
     },
     {
       "id": "druidique-duel-animal",
@@ -718,7 +718,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Vos attaques sur les animaux infligent maintenant 1d12 DGT supplémentaires jusqu’au prochain repos.",
-      "degats": "1d12 ; 1d12DGT"
+      "degats": "1d12"
     },
     {
       "id": "druidique-baie-regeneratrice",
@@ -729,7 +729,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Depuis la terre, vous utilisez les ressources de la nature voisine pour générer deux baies régénératrices, restaurant chacune 4PV et comblant un repas.\nNe peut être utilisé qu’une fois par repos.",
-      "degats": "4PV"
+      "degats": "4 PV"
     },
     {
       "id": "druidique-evolution-naturelle",
@@ -773,7 +773,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Invoque une fine couche de sève, avec de nombreuses épines sur un joueur cible. Toutes les entités l’attaquant subiront 2d6+4 dgt de poison pendant deux tours.",
-      "degats": "2d6+4 ; +4dgt ; 4dgt"
+      "degats": "2d6+4"
     },
     {
       "id": "druidique-offensive-epineuse",
@@ -795,7 +795,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Confère 10 points de vie temporaire à tous les alliés autours. Rend 1d6 +1 PV.",
-      "degats": "1d6+1 ; 1PV"
+      "degats": "1d6+1"
     },
     {
       "id": "druidique-connexion-a-la-nature",
@@ -828,7 +828,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Permet d’invoquer un cocon de ronce, protégeant la cible voulue jusqu'à 24 DGT. La cible ne peut néanmoins plus bouger.",
-      "degats": "24DGT"
+      "degats": "24"
     },
     {
       "id": "druidique-lien-de-la-nature",
@@ -883,7 +883,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Une large zone circulaire de 3x3m² apparaît, avec des ronces sortant du sol agrippant toutes cibles alentours.\nLes cibles sont immobilisées pendant deux tours, mais peuvent tenter d’attaquer. Elles subissent 2d10+2 dgt/tour.",
-      "degats": "2d10+2 ; +2dgt ; 2dgt"
+      "degats": "2d10+2"
     },
     {
       "id": "druidique-volonte-de-la-nature",
@@ -894,7 +894,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Une très large zone circulaire apparaît. Toutes entités alliées gagnent 12PV/TOUR. Dure 1 tour, et 3 si des éléments naturels sont autour.",
-      "degats": "12PV"
+      "degats": "12 PV"
     },
     {
       "id": "druidique-controle-animal-superieur",
@@ -916,7 +916,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Inflige 1d6+2 DGT à une cible. Gagne 1d6 DGT tous les 5 niveaux. Permet de rendre une zone glissante et gelée.",
-      "degats": "1d6+2 ; 1d6 ; 1d6DGT ; +2DGT ; 2DGT"
+      "degats": "1d6+2"
     },
     {
       "id": "elementaire-trait-de-feu",
@@ -927,7 +927,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Inflige 1d6+2 DGT à une cible. Gagne 1d6 DGT tous les 5 niveaux. Enflamme les matériaux inflammables.",
-      "degats": "1d6+2 ; 1d6 ; 1d6DGT ; +2DGT ; 2DGT"
+      "degats": "1d6+2"
     },
     {
       "id": "elementaire-arc-electrique",
@@ -938,7 +938,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Inflige 1d6+2 dgt à une cible. Si le sort est maintenu, inflige 1d10 + 2 le tour suivant. Gagne 1d6/1d10 tous les 5 niveaux.",
-      "degats": "1d6+2 ; 1d10+2 ; 1d6 ; 1d10 ; +2dgt ; 2dgt"
+      "degats": "1d6+2"
     },
     {
       "id": "elementaire-missiles-de-glace",
@@ -982,7 +982,7 @@
       "type_action": "Principale",
       "element": "FEU",
       "description": "Embrase une zone de 6x6m au sol autour de vous. Vous êtes insensible aux dégâts de la zone.\nInflige 2d8 +2 DGT a chaque entité en son sein.",
-      "degats": "2d8+2 ; +2DGT ; 2DGT"
+      "degats": "2d8+2"
     },
     {
       "id": "elementaire-toucher-glacial",
@@ -1026,7 +1026,7 @@
       "type_action": "Principale",
       "element": "GLACE",
       "description": "Invoque un mur de glace de 3 mètres de long, et 2 mètres de haut. Ce mur à 50PV, mais peut être désactivé à tout moment, invoquant 8 pics de glace infligeant 1d6DGT chacun.",
-      "degats": "1d6 ; 1d6DGT ; 50PV"
+      "degats": "1d6"
     },
     {
       "id": "elementaire-bloc-de-glace",
@@ -1037,7 +1037,7 @@
       "type_action": "Principale",
       "element": "GLACE",
       "description": "Vous invoquez un bloc de glace sur une cible, l'immobilisation totalement pendant un tour, le rendant invulnérable.\nSi la cible est vous, ou un allié, rend 12PV.",
-      "degats": "12PV"
+      "degats": "12 PV"
     },
     {
       "id": "elementaire-acier-brulant-armes",
@@ -1048,7 +1048,7 @@
       "type_action": "Principale + Secondaire",
       "element": "FEU",
       "description": "Choisis trois armes adverses avec des parties métalliques et les fais chauffer à des températures extrêmes, les désarmant et les brûlant de 2D6 DGT.",
-      "degats": "2D6 ; 2D6DGT"
+      "degats": "2d6"
     },
     {
       "id": "elementaire-acier-brulant-armure",
@@ -1059,7 +1059,7 @@
       "type_action": "Incantation : 1 tour",
       "element": "FEU",
       "description": "Choisis une armure adverse avec des parties métalliques et la fais chauffer à des températures extrêmes, le brûlant très fortement de 1D20 + 10 tant que le sort est maintenu.",
-      "degats": "1D20+10"
+      "degats": "1d20+10"
     },
     {
       "id": "elementaire-boule-de-feu-superieure",
@@ -1081,7 +1081,7 @@
       "type_action": "Principale",
       "element": "FEU",
       "description": "Fais tomber une boule de feu causant d'importants dégâts aux structures. Inflige 2d20 + 8 DGT dans un diamètre de 12 mètres. Toutes les cibles mourant du sort sont carbonisées et aucun stuff n’est récupérable sur eux.",
-      "degats": "2d20+8 ; +8DGT ; 8DGT"
+      "degats": "2d20+8"
     },
     {
       "id": "elementaire-tempete-de-glace",
@@ -1125,7 +1125,7 @@
       "type_action": "Secondaire",
       "element": null,
       "description": "Soignez une cible que vous pouvez toucher de 1d10 PV.\nRend 1d6 +1 si la cible est à distance.",
-      "degats": "1d10 ; 1d6+1"
+      "degats": "1d10"
     },
     {
       "id": "lumiere-justice-du-sacre",
@@ -1257,7 +1257,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Une entité divine vous assiste dans votre quête. Toute cible vous attaquant pendant cinq tour subis une attaque d’une entité divine imposante de 1d20 dégâts +4.",
-      "degats": "1d20"
+      "degats": "1d20+4"
     },
     {
       "id": "lumiere-jugement-dernier",
@@ -1268,7 +1268,7 @@
       "type_action": "Principale",
       "element": null,
       "description": "Un imposant trait de lumière est invoqué du ciel et descend sur terre, brûlant tout dans un rayon de 5m. Doit être incanté pendant un tour avant le lancement.\nInflige 20 + 2d20 tant que la cible est dans le rayon.\nDégâts x2 sur démons et morts vivants.\nDure 2 tours.",
-      "degats": "2d20"
+      "degats": "2d20+20"
     },
     {
       "id": "imposition-imposition-des-mains-rapide",
@@ -1356,7 +1356,7 @@
         "niveau": 2,
         "affinite_magique": false,
         "description": "Une attaque très puissante permettant d’infliger +2D10 DGT a une cible et traversant l’armure.",
-        "degats": "2D10 ; 2D10DGT"
+        "degats": "2d10"
       },
       {
         "id": "attaque-lancer-d-arme",
@@ -1365,7 +1365,7 @@
         "niveau": 1,
         "affinite_magique": false,
         "description": "Une attaque à distance, permettant d’utiliser une arme à une main pour infliger de lourds dégâts. DGT de l’arme +1D12 DGT.",
-        "degats": "1D12 ; 1D12DGT"
+        "degats": "1d12"
       },
       {
         "id": "attaque-double-frappe",
@@ -1428,7 +1428,7 @@
         "niveau": 1,
         "affinite_magique": false,
         "description": "Si l’ennemi est en position de désavantage (contre un allié par exemple), inflige + 10 DGT fixe.",
-        "degats": "+10DGT ; 10DGT"
+        "degats": "+10"
       },
       {
         "id": "attaque-frappe-percante-au-cac",
@@ -1437,7 +1437,7 @@
         "niveau": 1,
         "affinite_magique": false,
         "description": "Si l’ennemi est en position de désavantage (contre un allié par exemple), inflige + 10 DGT. fixe.",
-        "degats": "+10DGT ; 10DGT"
+        "degats": "+10"
       },
       {
         "id": "attaque-jeu-de-lame",
@@ -1482,7 +1482,7 @@
         "niveau": null,
         "affinite_magique": false,
         "description": "Attaque une cible unique avec un bouclier. Inflige 1d6 DGT, et le stun durant le prochain tour.",
-        "degats": "1d6 ; 1d6DGT"
+        "degats": "1d6"
       },
       {
         "id": "attaque-choc-terrestre",
@@ -1500,7 +1500,7 @@
         "niveau": 1,
         "affinite_magique": false,
         "description": "Inflige les dégâts classiques de l’arme, puis inflige un coup de pommeau, infligeant 1d6 + 2 DGT supplémentaire et assommant brièvement la cible, retardant son action à la fin du tour.",
-        "degats": "1d6+2 ; +2DGT ; 2DGT"
+        "degats": "1d6+2"
       },
       {
         "id": "attaque-incapacite",
@@ -1527,7 +1527,7 @@
         "niveau": 1,
         "affinite_magique": true,
         "description": "Génère 6 projectiles compatibles avec l’arme utilisée. Ceux-ci, lorsqu’ils frappent leur cible, se désagrègent en une courte explosion, infligeant 3 DGT et projetant l’ennemi à terre.",
-        "degats": "3DGT"
+        "degats": "3"
       },
       {
         "id": "attaque-frappe-lourde-magique",
@@ -1536,7 +1536,7 @@
         "niveau": 2,
         "affinite_magique": true,
         "description": "Une attaque très puissante permettant d’infliger +3D10 DGT a une cible et détruisant l’armure. L’attaque provoque une puissante onde de choc.",
-        "degats": "3D10 ; 3D10DGT"
+        "degats": "3d10"
       },
       {
         "id": "attaque-affutage-magique",
@@ -1563,7 +1563,7 @@
         "niveau": 2,
         "affinite_magique": true,
         "description": "Une attaque parfaitement menée, aidée par une forte impulsion magique. Permet de viser un membre précis d’une cible (bras, jambes) et de lui infliger +2D6 DGT tout en l’incapacitant.",
-        "degats": "2D6 ; 2D6DGT"
+        "degats": "2d6"
       },
       {
         "id": "attaque-emprise-arcanique",

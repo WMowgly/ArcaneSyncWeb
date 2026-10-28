@@ -1,23 +1,22 @@
 ArcaneSync
-Version: V1.13.12
-Name: Portes côté Joueur et Aura Utilisable
+Version: V1.16
+Name: Trois Interfaces, Code MJ et Données de Partie Fiables
 
 Objectif :
-Fournir une carte de jeu partagée, éditée en temps réel par le MJ, avec
-une vision propre à chaque personnage et un brouillard de guerre. Le
-serveur construit une projection distincte par rôle : une information
-réservée au MJ n'est jamais sérialisée vers un client joueur.
+Organiser l'application autour de trois interfaces choisies depuis
+l'accueil : MJ (partie, joueurs, mobs, carte, tableau blanc, données de
+jeu), Joueur (jeu, fiche, tableau blanc) et Écran (affichage partagé de la
+carte ou du tableau blanc, piloté par le MJ).
 
-Le MJ peut générer une carte à partir d'un type de lieu (forêt, caverne,
-bâtiment, ruines, ville, plaine). Le décor produit est composé d'éléments
-ordinaires : il reste entièrement modifiable.
+La fiche porte la définition du personnage ; la partie (session) porte
+l'état de jeu (PV, mana, armure, jets de survie). Les actions du MJ sont
+protégées par un code MJ. Les sorts, attaques spéciales et métamorphoses
+viennent de la référence database/sorts.json, modifiable par le MJ.
 
-Le dessin et l'écriture du tableau blanc sont également disponibles sur
-la carte, avec un calque MJ, un calque partagé, et un découpage des
-tracés par le brouillard de guerre.
+Le serveur reste autoritaire : chaque client reçoit la projection de son
+rôle, et une information réservée au MJ n'est jamais envoyée à un joueur.
 
 Version précédente :
-V1.12 — Reconnexion & Resynchronisation de l'État Autoritaire
-Permettre aux clients de récupérer automatiquement l'état officiel du
-serveur après une connexion ou une reconnexion Socket.IO, sans considérer
-leur état local comme une source de vérité.
+V1.13.12 — Portes côté Joueur et Aura Utilisable
+Carte de jeu partagée, éditée en temps réel par le MJ, avec une vision
+propre à chaque personnage.

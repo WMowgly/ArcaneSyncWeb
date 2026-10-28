@@ -2,8 +2,8 @@
 // Sorts et attaques de référence.
 //
 // database/sorts.json (converti depuis Sorts.txt) est la référence des sorts
-// et des attaques spéciales. Il remplace les listes de test de
-// game_database.json, sous les noms que les pages lisent déjà :
+// et des attaques spéciales (game_database.json n'en contient plus), servie
+// sous les noms que les pages lisent déjà :
 //   sorts_mineurs  = sorts de niveau 0
 //   sorts_majeurs  = les autres (impositions des mains en fin de liste)
 //   attack_special = attaques spéciales
@@ -28,7 +28,7 @@ function listesSortsReference(chemin = fichierSorts()) {
   try {
     ref = JSON.parse(fs.readFileSync(chemin, 'utf8'));
   } catch (erreur) {
-    console.error('sorts.json illisible, listes de game_database.json conservées :', erreur);
+    console.error('sorts.json illisible, listes de sorts vides :', erreur);
     return null;
   }
 
@@ -85,6 +85,9 @@ function lireReference() {
   if (!Array.isArray(ref.sorts)) ref.sorts = [];
   if (!ref.attaques_speciales || !Array.isArray(ref.attaques_speciales.liste)) {
     ref.attaques_speciales = { regles: ref.attaques_speciales?.regles || '', liste: [] };
+  }
+  if (!ref.metamorphoses || !Array.isArray(ref.metamorphoses.formes)) {
+    ref.metamorphoses = { regles: ref.metamorphoses?.regles || '', formes: [] };
   }
   return ref;
 }
@@ -190,6 +193,46 @@ function validerAttaque(ref, donnees, idExclu) {
   };
 }
 
+/** Caractéristique d'une forme animale (FOR, DEX, CONST, PV) : entier de 0 à 999. */
+function caracteristique(valeur) {
+  if (valeur === null || valeur === undefined || valeur === '') return null;
+  const n = Number(valeur);
+  return Number.isInteger(n) && n >= 0 && n <= 999 ? n : NaN;
+}
+
+/** Valide et normalise une métamorphose (forme animale des druides). */
+function validerForme(ref, donnees, idExclu) {
+  const nom = texte(donnees.nom, 120);
+  if (!nom) return { message: 'Le nom de la forme est obligatoire.' };
+  if (nomPris(ref.metamorphoses.formes, nom, idExclu)) return { message: `Une forme « ${nom} » existe déjà.` };
+
+  const niveau = entierOuNull(donnees.niveau);
+  if (niveau === null || Number.isNaN(niveau)) return { message: `Le niveau est obligatoire (entier de 0 à ${MAX_NIVEAU}).` };
+
+  const valeurs = {};
+  for (const [cle, libelle] of [['for', 'FOR'], ['dex', 'DEX'], ['const', 'CONST'], ['pv', 'PV']]) {
+    valeurs[cle] = caracteristique(donnees[cle]);
+    if (valeurs[cle] === null || Number.isNaN(valeurs[cle])) return { message: `${libelle} : entier de 0 à 999 attendu.` };
+  }
+
+  const nomCompetence = texte(donnees.competence?.nom, 120);
+  const effetCompetence = texte(donnees.competence?.effet, 2000);
+  return {
+    forme: {
+      nom,
+      description: texte(donnees.description, 4000),
+      niveau,
+      for: valeurs.for,
+      dex: valeurs.dex,
+      const: valeurs.const,
+      taille: texteOuNull(donnees.taille, 40),
+      pv: valeurs.pv,
+      attaque_base: texteOuNull(donnees.attaque_base, 200),
+      competence: nomCompetence || effetCompetence ? { nom: nomCompetence, effet: effetCompetence } : null
+    }
+  };
+}
+
 function enregistrer(ref, resultat) {
   return ecrireReference(ref)
     ? { success: true, ...resultat }
@@ -280,6 +323,49 @@ function dupliquerAttaque(id) {
   return enregistrer(ref, { attaque: copie });
 }
 
+function creerForme(donnees = {}) {
+  const ref = lireReference();
+  const { forme, message } = validerForme(ref, donnees);
+  if (!forme) return { success: false, message };
+  const complete = { id: idUnique(ref, `forme-${slug(forme.nom)}`), ...forme };
+  ref.metamorphoses.formes.push(complete);
+  return enregistrer(ref, { forme: complete });
+}
+
+function modifierForme(id, donnees = {}) {
+  const ref = lireReference();
+  const formes = ref.metamorphoses.formes;
+  const index = formes.findIndex(f => f.id === id);
+  if (index === -1) return { success: false, introuvable: true, message: 'Forme introuvable.' };
+  const { forme, message } = validerForme(ref, { ...formes[index], ...donnees }, id);
+  if (!forme) return { success: false, message };
+  formes[index] = { id, ...forme };
+  return enregistrer(ref, { forme: formes[index] });
+}
+
+function supprimerForme(id) {
+  const ref = lireReference();
+  const formes = ref.metamorphoses.formes;
+  const index = formes.findIndex(f => f.id === id);
+  if (index === -1) return { success: false, introuvable: true, message: 'Forme introuvable.' };
+  const [retiree] = formes.splice(index, 1);
+  return enregistrer(ref, { forme: retiree });
+}
+
+function dupliquerForme(id) {
+  const ref = lireReference();
+  const formes = ref.metamorphoses.formes;
+  const index = formes.findIndex(f => f.id === id);
+  if (index === -1) return { success: false, introuvable: true, message: 'Forme introuvable.' };
+  const source = formes[index];
+  let nom = `${source.nom} (copie)`, n = 2;
+  while (nomPris(formes, nom)) nom = `${source.nom} (copie ${n++})`;
+  const copie = { ...JSON.parse(JSON.stringify(source)), nom };
+  copie.id = idUnique(ref, `forme-${slug(nom)}`);
+  formes.splice(index + 1, 0, copie);
+  return enregistrer(ref, { forme: copie });
+}
+
 module.exports = {
   fichierSorts,
   listesSortsReference,
@@ -291,5 +377,9 @@ module.exports = {
   creerAttaque,
   modifierAttaque,
   supprimerAttaque,
-  dupliquerAttaque
+  dupliquerAttaque,
+  creerForme,
+  modifierForme,
+  supprimerForme,
+  dupliquerForme
 };

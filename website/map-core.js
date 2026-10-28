@@ -1,8 +1,8 @@
 /* ---------------------------------------------------------------------------
  * map-core.js — ArcaneSync V1.13
  *
- * Moteur de rendu partagé entre l'outil MJ (map.html) et la vue joueur
- * (map_joueur.html).
+ * Moteur de rendu partagé entre l'outil MJ (map.html) et l'Écran partagé
+ * (ecran.html, vue du groupe).
  *
  * Ce fichier ne contient AUCUNE logique de droits : il se contente
  * d'afficher la projection reçue du serveur. Les deux interfaces reçoivent

@@ -167,11 +167,12 @@ verifier(lire().attaques_speciales.liste.length === 28, 'Les attaques doivent re
 verifier(lire().metamorphoses.formes.length === 6, 'Les métamorphoses ne doivent jamais être touchées.');
 
 // Câblage des routes : écritures réservées au MJ.
-const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
-verifier(serverSource.includes("require('./sorts')") && serverSource.includes('listesSortsReference()'),
+const serverSource = require('./_sources').sourceServeur();
+verifier(/require\('\.\.?\/sorts'\)/.test(serverSource) && serverSource.includes('listesSortsReference()'),
   '/api/game-database doit servir les listes de sorts.json.');
 const routesEcriture = serverSource.match(/app\.(post|put|delete)\('\/api\/reference[^]*?\n\}\);/g) || [];
-verifier(routesEcriture.length === 8 && routesEcriture.every(r => r.includes('refuserSiPasMj')),
-  `Les 8 routes d'écriture de la référence doivent être réservées au MJ (${routesEcriture.length} trouvées).`);
+// Sorts, attaques et métamorphoses : créer, modifier, supprimer, dupliquer.
+verifier(routesEcriture.length === 12 && routesEcriture.every(r => r.includes('refuserSiPasMj')),
+  `Les 12 routes d'écriture de la référence doivent être réservées au MJ (${routesEcriture.length} trouvées).`);
 
 console.log('PASS: sorts — référence sorts.json, listes des fiches, édition MJ (créer, modifier, dupliquer, supprimer), sauvegarde');

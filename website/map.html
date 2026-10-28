@@ -8,6 +8,7 @@
   <link rel="icon" type="image/png" href="img/icon.png">
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
+  <script src="mj-code.js"></script>
   <style>
     :root{
       --parchemin:#fdf6e3;
@@ -1088,16 +1089,9 @@
       }
     }
 
-    /**
-     * Applique ou retire un statut, sur un personnage comme sur une
-     * créature. Les deux passent par des routes distinctes mais partagent
-     * le même catalogue.
-     */
+    /** Applique ou retire un statut sur une créature. */
     async function basculerStatut(token, statutId, dejaApplique) {
-      const estMob = token.kind === 'mob';
-      const base = estMob
-        ? `/api/mobs/${encodeURIComponent(token.entityId)}/statuses`
-        : `/api/session/player/${encodeURIComponent(token.entityId)}/statuses`;
+      const base = `/api/mobs/${encodeURIComponent(token.entityId)}/statuses`;
 
       try {
         if (dejaApplique) {

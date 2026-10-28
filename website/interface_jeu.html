@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface de Jeu</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css"/> 
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="police-lisible.css"/>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* Largeur adaptée : trois colonnes de champs restent lisibles. */
@@ -193,6 +194,7 @@
   <script src="navbar.js"></script>
   <script>
     let params;
+    let etatServeur = null;   // dernier état officiel reçu du serveur
 
 
     function escapeNotesHtml(value) {
@@ -269,6 +271,7 @@
       params = new URLSearchParams(window.location.search);
       initializeFields();
       setupValidators();
+      setupSurvie();
       updateArmorState();
 
       // Pour afficher le nom du joueur dans le titre
@@ -443,76 +446,58 @@
       document.getElementById('player_intox').value = joueur.intox ?? 0;
       if (joueur.stats) renderStats(joueur.stats);
 
-      // Garder l'URL cohérente avec l'état officiel. Le nom et l'armure y
-      // sont réécrits : la sauvegarde les relit dans l'URL, qui peut ne
-      // contenir que le PlayerId (lien de la barre de navigation).
+      // Jets de survie : état de la partie.
+      for (let i = 0; i < 3; i++) {
+        document.querySelector(`input[name="survie${i + 1}"][value="reussi"]`).checked = joueur.survie?.reussi?.[i] === true;
+        document.querySelector(`input[name="survie${i + 1}"][value="echec"]`).checked = joueur.survie?.echec?.[i] === true;
+      }
+
+      // L'état officiel est conservé ici : la sauvegarde s'en sert au lieu de
+      // relire l'URL, qui ne porte plus que l'identifiant du personnage.
+      etatServeur = joueur;
       if (joueur.id) {
-        params.set("PlayerId", joueur.id);
+        params = new URLSearchParams({ PlayerId: joueur.id });
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
       }
       if (joueur.nom) {
-        params.set("Nom", joueur.nom);
         document.querySelector("h1").innerText = `Interface de Jeu – ${joueur.nom}`;
       }
-      if (joueur.classe) params.set("Classe", joueur.classe);
-      if (joueur.race) params.set("Race", joueur.race);
-      params.set("Type d'armure", joueur.armure?.type || '');
-      params.set("Résistance", joueur.armure?.resistance || '');
-      params.set("VieMax", String(joueur.hp?.max ?? 0));
-      params.set("VieCurrent", String(joueur.hp?.current ?? 0));
-      params.set("ManaMax", String(joueur.mana?.max ?? 0));
-      params.set("ManaCurrent", String(joueur.mana?.current ?? 0));
-      params.set("DuraMax", String(joueur.armure?.durabilite?.max ?? 0));
-      params.set("DuraCurrent", String(joueur.armure?.durabilite?.current ?? 0));
-      params.set("Valeur protection max", String(joueur.armure?.protection?.max ?? 0));
-      params.set("Valeur protection", String(joueur.armure?.protection?.current ?? 0));
-      params.set("Vie bonus", String(joueur.bonus_vie ?? 0));
-      params.set("Intox.", String(joueur.intox ?? 0));
-      params.set("Inventaire", JSON.stringify(joueur.inventaire || []));
-      params.set("Armes", JSON.stringify(joueur.armes || []));
-
-      window.history.replaceState(
-        {},
-        '',
-        `${window.location.pathname}?${params.toString()}`
-      );
 
       bornerRessources();
       updateArmorState();
       console.log('État serveur synchronisé pour :', joueur.nom);
     }
 
+    // Le personnage est entièrement chargé depuis le serveur (l'URL ne porte
+    // que son identifiant) : en attendant, les statistiques sont vides.
     function initializeFields() {
-      // Injection des valeurs max et actuelles dans les champs
-      document.getElementById('player_hp').value = params.get("VieMax");
-      document.getElementById('player_hp_current').value = params.get("VieCurrent");
-      document.getElementById('player_mana').value = params.get("ManaMax");
-      document.getElementById('player_mana_current').value = params.get("ManaCurrent");
-      document.getElementById('player_protection_max').value = params.get("Valeur protection max") || '0';
-      document.getElementById('player_protection_current').value = params.get("Valeur protection") || '0';
-      document.getElementById('player_dura_max').value = params.get("DuraMax") || '0';
-      document.getElementById('player_dura_current').value = params.get("DuraCurrent") || '0';
-      document.getElementById('player_intox').value = params.get("Intox.") || '0';
-      document.getElementById('player_vie_bonus').value = params.get("Vie bonus") || '0';
-      document.getElementById('player_name').value = params.get("Nom") || '';
-      document.getElementById('player_class').value = params.get("Classe") || '';
-      document.getElementById('player_race').value = params.get("Race") || '';
-      renderStats({
-        force: params.get('Force'), dexterite: params.get('Dexterite'), magie: params.get('Magie'),
-        constitution: params.get('Constitution'), charisme: params.get('Charisme'),
-        perception: params.get('Perception'), chance: params.get('Chance'),
-        intelligence: params.get('Intelligence')
+      renderStats({});
+    }
+
+    /** Jets de survie : enregistrés dans la partie dès qu'une case change. */
+    function lireSurvie() {
+      const cases = valeur => [1, 2, 3].map(i =>
+        document.querySelector(`input[name="survie${i}"][value="${valeur}"]`).checked);
+      return { reussi: cases('reussi'), echec: cases('echec') };
+    }
+
+    function setupSurvie() {
+      document.querySelectorAll('input[name^="survie"]').forEach(caseSurvie => {
+        caseSurvie.addEventListener('change', async () => {
+          const playerId = params.get('PlayerId');
+          if (!playerId) return;
+          try {
+            const reponse = await fetch('/api/session/player', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: playerId, nouvellesDonnees: { survie: lireSurvie() } })
+            });
+            if (!reponse.ok) throw new Error(`Erreur HTTP ${reponse.status}`);
+          } catch (erreur) {
+            console.error('Jets de survie non enregistrés :', erreur);
+          }
+        });
       });
-
-      // Initialiser les cases à cocher de survie
-      for (let i = 1; i <= 3; i++) {
-        const reussi = params.get(`Survie${i}_reussi`) === 'true';
-        const echec = params.get(`Survie${i}_echec`) === 'true';
-        document.querySelector(`input[name="survie${i}"][value="reussi"]`).checked = reussi;
-        document.querySelector(`input[name="survie${i}"][value="echec"]`).checked = echec;
-      }
-
-      bornerRessources();
-      updateArmorState();
     }
 
     // Valeur actuelle / maximum : la saisie est bloquée entre 0 et le
@@ -584,119 +569,42 @@
     }
     </script>
     <script>
+        // La fiche se charge depuis le serveur : seul l'identifiant est transmis.
         document.getElementById("fiche-btn").addEventListener("click", () => {
-          const currentParams = new URLSearchParams(window.location.search);
-          window.location.href = `fiche_perso.html?${currentParams.toString()}`;
+          const id = new URLSearchParams(window.location.search).get('PlayerId') || '';
+          window.location.href = `fiche_perso.html?PlayerId=${encodeURIComponent(id)}`;
         });
     </script>
     <script>
+      // Sauvegarde de l'état de jeu (valeurs actuelles, vie bonus, intox,
+      // jets de survie) dans la partie. Tout le reste vient de l'état chargé
+      // depuis le serveur, jamais de l'URL.
       document.getElementById("save-btn").addEventListener("click", async () => {
         try {
-          const params = new URLSearchParams(window.location.search);
-          const nom = params.get("Nom");
-          
-          if (!nom) {
-            throw new Error('Erreur : nom du joueur non trouvé');
-          }
-
-          // Fonction utilitaire pour parser les données JSON en toute sécurité
-          function safeJSONParse(value, defaultValue) {
-            if (!value) return defaultValue;
-            try {
-              // Vérifier si la valeur est déjà un objet
-              if (typeof value === 'object') return value;
-              // Essayer de décoder l'URI et parser le JSON
-              const decoded = decodeURIComponent(value);
-              return JSON.parse(decoded);
-            } catch (e) {
-              console.warn('Erreur parsing JSON:', e);
-              return defaultValue;
-            }
-          }
-
-          // Construction des données à envoyer
-          const donnees = {
-            nom: nom,
-            classe: document.getElementById('player_class').value,
-            race: document.getElementById('player_race').value,
-            niveau: parseInt(params.get('Niveau')) || 1,
-            // Les statistiques sont transmises individuellement dans l'URL
-            // par popupjoueur.js. Ne pas utiliser un paramètre JSON 'stats'
-            // qui n'existe pas dans le flux actuel, sinon une sauvegarde depuis
-            // cette interface peut remettre les statistiques à 0.
-            stats: {
-              force: parseInt(params.get('Force')) || 0,
-              dexterite: parseInt(params.get('Dexterite')) || 0,
-              magie: parseInt(params.get('Magie')) || 0,
-              constitution: parseInt(params.get('Constitution')) || 0,
-              charisme: parseInt(params.get('Charisme')) || 0,
-              perception: parseInt(params.get('Perception')) || 0,
-              chance: parseInt(params.get('Chance')) || 0,
-              intelligence: parseInt(params.get('Intelligence')) || 0
-            },
-            hp: {
-              max: parseInt(document.getElementById('player_hp').value) || 0,
-              current: parseInt(document.getElementById('player_hp_current').value) || 0
-            },
-            mana: {
-              max: parseInt(document.getElementById('player_mana').value) || 0,
-              current: parseInt(document.getElementById('player_mana_current').value) || 0
-            },
-            armure: {
-              type: params.get("Type d'armure") || '',
-              resistance: params.get("Résistance") || '',
-              durabilite: {
-                max: parseInt(document.getElementById('player_dura_max').value) || 0,
-                current: parseInt(document.getElementById('player_dura_current').value) || 0
-              },
-              protection: {
-                max: parseInt(document.getElementById('player_protection_max').value) || 0,
-                current: parseInt(document.getElementById('player_protection_current').value) || 0
-              }
-            },
-            bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
-            intox: document.getElementById('player_intox').value || '0',
-            bio: params.get('Biographie') || '',
-            sac: params.get('Sac') || '',
-            ceinture: params.get('Ceinture / Dos') || '',
-            spells: safeJSONParse(params.get('Sorts'), []),
-            sorts_mineurs: safeJSONParse(params.get('Sorts mineurs'), []),
-            competences: safeJSONParse(params.get('Competences'), []),
-            skills_speciales: params.get('Skills speciales') || '',
-            levelup: params.get('Choix de level up') || '',
-            armes: safeJSONParse(params.get('Armes'), []),
-            inventaire: safeJSONParse(params.get('Inventaire'), []),
-            attaques_speciales: safeJSONParse(
-              params.get('Attaques speciales') || params.get('Attaques Spéciales'),
-              []
-            ),
-          };
-
-          console.log('État de session à envoyer:', donnees);
-
           const playerId = params.get("PlayerId");
-
-          if (!playerId) {
-            throw new Error('PlayerId manquant pour la sauvegarde de session');
+          if (!playerId || !etatServeur) {
+            throw new Error('Personnage non chargé : rechargez la page.');
           }
+          const entier = id => parseInt(document.getElementById(id).value) || 0;
+
+          const nouvellesDonnees = {
+            hp: { max: entier('player_hp'), current: entier('player_hp_current') },
+            mana: { max: entier('player_mana'), current: entier('player_mana_current') },
+            armure: {
+              type: etatServeur.armure?.type || '',
+              resistance: etatServeur.armure?.resistance || '',
+              durabilite: { max: entier('player_dura_max'), current: entier('player_dura_current') },
+              protection: { max: entier('player_protection_max'), current: entier('player_protection_current') }
+            },
+            bonus_vie: entier('player_vie_bonus'),
+            intox: document.getElementById('player_intox').value || '0',
+            survie: lireSurvie()
+          };
 
           const response = await fetch('/api/session/player', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id: playerId,
-              nouvellesDonnees: {
-                hp: donnees.hp,
-                mana: donnees.mana,
-                armure: donnees.armure,
-                bonus_vie: donnees.bonus_vie,
-                intox: donnees.intox,
-                inventaire: donnees.inventaire,
-                armes: donnees.armes
-              }
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: playerId, nouvellesDonnees })
           });
 
           if (!response.ok) {
@@ -704,31 +612,12 @@
             throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
           }
 
-          const result = await response.json();
-          console.log('Sauvegarde réussie:', result);
-          
-          // Mise à jour des paramètres dans l'URL
-          const newParams = new URLSearchParams(window.location.search);
-          newParams.set("VieCurrent", donnees.hp.current.toString());
-          newParams.set("VieMax", donnees.hp.max.toString());
-          newParams.set("ManaCurrent", donnees.mana.current.toString());
-          newParams.set("ManaMax", donnees.mana.max.toString());
-          newParams.set("DuraCurrent", donnees.armure.durabilite.current.toString());
-          newParams.set("DuraMax", donnees.armure.durabilite.max.toString());
-          newParams.set("Valeur protection", donnees.armure.protection.current.toString());
-          newParams.set("Valeur protection max", donnees.armure.protection.max.toString());
-          newParams.set("Vie bonus", donnees.bonus_vie.toString());
-          newParams.set("Intox.", donnees.intox);
-          newParams.set("Inventaire", JSON.stringify(donnees.inventaire || []));
-          newParams.set("Armes", JSON.stringify(donnees.armes || []));
-
-          window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+          await response.json();
           alert('État de session sauvegardé avec succès !');
-
-      } catch (error) {
+        } catch (error) {
           console.error('Erreur détaillée:', error);
           alert(`Erreur lors de la sauvegarde: ${error.message}`);
-      }
+        }
     });
     </script>
 </body>

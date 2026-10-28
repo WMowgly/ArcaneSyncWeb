@@ -202,7 +202,7 @@ try {
 
   // Le serveur doit importer la fonction : l'oubli s'est déjà produit,
   // et le try/catch le rendait silencieux.
-  const serveurSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serveurSource = require('./_sources').sourceServeur();
   assert(/const \{[^}]*sauvegarderFichiers[^}]*\} = require\('\.\/storage'\)/.test(serveurSource),
     'server.js doit importer sauvegarderFichiers, sinon la rotation reste inerte.');
   assert(serveurSource.includes('sauvegarderDonnees()'),

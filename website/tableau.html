@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
+  <script src="mj-code.js"></script>
   <style>
     body {
       margin: 0;
@@ -224,6 +225,11 @@
     let lastPoint = null;
     let selectedColor = '#000000';
     let drawSize = 3;
+    // Dessins enregistrés (traits et textes) : redessinés à chaque rendu de
+    // la scène, et conservés par le serveur pour les écrans qui arrivent.
+    let traces = [];
+    let traitEnCours = null;
+    const FOND = '#fffdf7';
 
     roleEl.textContent =
       role === 'mj' ? '🎲 Mode MJ' :
@@ -347,7 +353,7 @@
 
     function renderScene() {
       ctx.clearRect(0,0,scene.width,scene.height);
-      ctx.fillStyle='#fffdf7';
+      ctx.fillStyle=FOND;
       ctx.fillRect(0,0,scene.width,scene.height);
 
       const grid=Number(scene.gridSize)||50;
@@ -360,7 +366,30 @@
         ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(scene.width,y);ctx.stroke();
       }
 
+      // Dessins sous les pions : un trait ne masque jamais un participant.
+      traces.forEach(dessinerTrace);
+      if(traitEnCours) dessinerTrace(traitEnCours);
+
       Object.values(scene.tokens || {}).forEach(renderToken);
+    }
+
+    function dessinerTrace(trace) {
+      if(trace.type==='texte'){
+        ctx.fillStyle=trace.color;
+        ctx.font=`${trace.size*5}px Uncial Antiqua`;
+        ctx.fillText(trace.text,trace.x,trace.y);
+        return;
+      }
+      const points=trace.points||[];
+      if(points.length<2) return;
+      ctx.beginPath();
+      ctx.moveTo(points[0][0],points[0][1]);
+      points.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));
+      ctx.strokeStyle=trace.color;
+      ctx.lineWidth=trace.size;
+      ctx.lineCap='round';
+      ctx.lineJoin='round';
+      ctx.stroke();
     }
 
     function renderTokenList() {
@@ -453,10 +482,19 @@
     function addText(point) {
       const text=prompt('Entrez votre texte :');
       if(!text) return;
-      ctx.fillStyle=selectedColor;
-      ctx.font=`${drawSize*5}px Uncial Antiqua`;
-      ctx.fillText(text,point.x,point.y);
-      socket.emit('text',{x:point.x,y:point.y,text,color:selectedColor,size:drawSize});
+      const texte={type:'texte',x:point.x,y:point.y,text,color:selectedColor,size:drawSize};
+      traces.push(texte);
+      dessinerTrace(texte);
+      socket.emit('text',texte);
+    }
+
+    // Fin du geste : le trait complet est enregistré par le serveur.
+    function terminerTrait() {
+      const trait=traitEnCours;
+      traitEnCours=null;
+      if(!trait || trait.points.length<2) return;
+      traces.push(trait);
+      socket.emit('tableauTrait',trait);
     }
 
     function setTool(tool) {
@@ -497,6 +535,12 @@
 
       drawing=true;
       lastPoint=point;
+      traitEnCours={
+        type:'trait',
+        color:activeTool==='erase'?FOND:selectedColor,
+        size:drawSize,
+        points:[[point.x,point.y]]
+      };
       canvas.setPointerCapture?.(event.pointerId);
     });
 
@@ -510,12 +554,14 @@
       }
 
       if(!drawing || !lastPoint) return;
-      const color=activeTool==='erase'?'#fffdf7':selectedColor;
+      const color=activeTool==='erase'?FOND:selectedColor;
       drawLine(lastPoint.x,lastPoint.y,point.x,point.y,color,drawSize,true);
+      traitEnCours?.points.push([point.x,point.y]);
       lastPoint=point;
     });
 
     function stopPointer(){
+      if(drawing) terminerTrait();
       drawing=false;
       lastPoint=null;
       if(dragTokenId){
@@ -553,6 +599,18 @@
       setStatus('🟢 Scène synchronisée en temps réel.');
       socket.emit('stateSyncRequest');
       socket.emit('sceneRequest');
+      socket.emit('tableauTracesRequest');
+    });
+
+    socket.on('tableauTraces',({traces:enregistrees}={})=>{
+      traces=Array.isArray(enregistrees)?enregistrees:[];
+      renderScene();
+    });
+
+    // Trait terminé par un autre participant : ses segments sont déjà
+    // affichés en direct ; on le garde pour les prochains rendus.
+    socket.on('tableauTrait',trait=>{
+      if(trait) traces.push(trait);
     });
 
     // V1.12 : le snapshot autoritaire permet de reconstruire immédiatement
@@ -582,17 +640,18 @@
     });
 
     socket.on('text',data=>{
-      ctx.fillStyle=data.color;
-      ctx.font=`${data.size*5}px Uncial Antiqua`;
-      ctx.fillText(data.text,data.x,data.y);
+      const texte={...data,type:'texte'};
+      traces.push(texte);
+      dessinerTrace(texte);
     });
 
     socket.on('clearDrawings',()=>{
+      traces=[];
+      traitEnCours=null;
       renderScene();
     });
 
     socket.on('playerUpdate',loadScene);
-    socket.on('playerStatusUpdated',loadScene);
     socket.on('sessionPlayerUpdate',loadScene);
     socket.on('gmPlayerUpdated',loadScene);
     socket.on('sessionUpdated',loadScene);

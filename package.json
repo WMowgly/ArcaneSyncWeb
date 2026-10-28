@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js && node tests/sorts.test.js && node tests/quadrillage.test.js",
+    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js && node tests/sorts.test.js && node tests/quadrillage.test.js && node tests/codemj.test.js && node tests/interfaces.test.js && node tests/donnees.test.js",
     "start": "node server.js",
     "test:sorts": "node tests/sorts.test.js",
     "test:quadrillage": "node tests/quadrillage.test.js",
@@ -13,7 +13,11 @@
     "test:mapgen": "node tests/mapgen.test.js",
     "test:annotations": "node tests/annotations.test.js",
     "test:storage": "node tests/storage.test.js",
-    "test:allegement": "node tests/allegement.test.js"
+    "test:allegement": "node tests/allegement.test.js",
+    "test:codemj": "node tests/codemj.test.js",
+    "test:interfaces": "node tests/interfaces.test.js",
+    "test:donnees": "node tests/donnees.test.js",
+    "test:e2e": "node tests/e2e/lancer.js"
   },
   "repository": {
     "type": "git",

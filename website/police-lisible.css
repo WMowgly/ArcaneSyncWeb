@@ -1,0 +1,20 @@
+/* police-lisible.css
+   ---------------------------------------------------------------------------
+   Pages joueur (Interface de Jeu, Fiche, Création) : Uncial Antiqua reste
+   réservée aux titres, comme sur les pages MJ. Le texte courant, les champs
+   et les boutons passent en police lisible.
+
+   Les pages déclarent Uncial Antiqua sur de nombreux sélecteurs (champs,
+   boutons, classes dédiées) : !important évite de les reprendre un par un.
+   Restent décoratifs : les titres, la barre de navigation et les valeurs
+   des jauges (comme sur les cartes du MJ).
+   --------------------------------------------------------------------------- */
+body,
+body :not(h1, h2, h3, h4, h5, :is(h1, h2, h3, h4, h5) *, .navbar-container, .navbar-container *, .stat-bar-text) {
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Uncial Antiqua', cursive;
+  font-weight: 400;
+}

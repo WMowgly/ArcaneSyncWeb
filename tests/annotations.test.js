@@ -269,21 +269,12 @@ try {
   assert(pointReduit.x <= 10 && pointReduit.y <= 6,
     'Les annotations doivent être ramenées dans la nouvelle grille.');
 
-  // La régénération de décor ne détruit pas le travail écrit du MJ.
-  const apresRegen = recharge.remplacerDecor(mapId, {
-    elements: [{ kind: 'mur', x: 0, y: 0, w: 1, h: 1 }],
-    spawn: [{ x: 3, y: 3 }]
-  });
-  assert(apresRegen.success, 'Remplacement du décor impossible.');
-  assert(apresRegen.map.annotations[survivant.annotationId],
-    'Les annotations ne doivent pas être effacées par une régénération de décor.');
-
   recharge.deleteMap(mapId);
 
   // ---------------------------------------------------------------------
   // 9. Câblage serveur et interfaces
   // ---------------------------------------------------------------------
-  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serverSource = require('./_sources').sourceServeur();
   assert(serverSource.includes("app.post('/api/maps/:mapId/annotations'"), 'Route de création absente.');
   assert(serverSource.includes("app.delete('/api/maps/:mapId/annotations/:annotationId'"), 'Route de suppression absente.');
   assert(serverSource.includes("app.delete('/api/maps/:mapId/annotations'"), 'Route d\'effacement en masse absente.');
@@ -292,16 +283,17 @@ try {
   assert(serverSource.includes('segmentAutorisePour'), 'Le relais temps réel doit filtrer par brouillard.');
 
   const mjSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map.html'), 'utf8');
-  const joueurSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map_joueur.html'), 'utf8');
   const coreSource = fs.readFileSync(path.join(__dirname, '..', 'website', 'map-core.js'), 'utf8');
 
   assert(mjSource.includes('data-tool="dessin"'), 'Outil de dessin absent de l\'interface MJ.');
   assert(mjSource.includes('data-tool="texte"'), 'Outil d\'écriture absent de l\'interface MJ.');
   assert(mjSource.includes('annot-layer'), 'Sélecteur de calque absent de l\'interface MJ.');
   assert(mjSource.includes('annot-players'), 'Autorisation des joueurs absente de l\'interface MJ.');
-  assert(joueurSource.includes("data-tool=\"draw\""), 'Outil de dessin absent de l\'interface joueur.');
-  assert(joueurSource.includes("socket.on('mapDrawPreview'"), 'Aperçu temps réel absent de l\'interface joueur.');
-  assert(!joueurSource.includes('annot-layer'), 'Le joueur ne doit pas disposer du calque MJ.');
+  // La carte joueur (map_joueur.html) a été retirée : l'Écran affiche les
+  // annotations en direct.
+  assert(!fs.existsSync(path.join(__dirname, '..', 'website', 'map_joueur.html')), 'La carte joueur doit avoir été retirée.');
+  assert(fs.readFileSync(path.join(__dirname, '..', 'website', 'ecran.html'), 'utf8').includes("socket.on('mapDrawPreview'"),
+    'Aperçu temps réel des annotations absent de l\'Écran.');
   assert(coreSource.includes('dessinerAnnotations'), 'Rendu des annotations absent du moteur partagé.');
   assert(coreSource.includes('pointFromEvent'), 'Coordonnées fractionnaires absentes du moteur partagé.');
 

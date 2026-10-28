@@ -6,6 +6,7 @@
   <title>Fiche de Personnage</title>
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="police-lisible.css"/>
   <script src="/socket.io/socket.io.js"></script> 
   <style>
     body {
@@ -388,6 +389,32 @@
     cursor: pointer;
   }
   .retour-jeu-btn:hover { background: #f0e2c4; }
+    /* État de la partie (session) : affiché, jamais saisi sur la fiche. */
+    .section input.etat-partie {
+      border-style: dashed;
+      cursor: default;
+    }
+    /* Métamorphoses (druides) */
+    .metamorphoses-regles { margin: 0 0 12px; font-size: .9em; white-space: pre-line; }
+    .metamorphoses-liste {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    }
+    .forme {
+      border: 2px solid #8b5e3c; border-radius: 8px; padding: 10px 12px;
+      background: #fefae0;
+    }
+    .forme.verrouillee { opacity: .55; border-style: dashed; }
+    .forme h3 { margin: 0 0 4px; font-size: 17px; color: #5c3b21; }
+    .forme-meta { font-size: .85em; color: #6b5135; margin: 0 0 6px; }
+    .forme-stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+    .forme-stats span { border: 1px solid #c9b28c; border-radius: 6px; padding: 2px 8px; font-size: .9em; }
+    .forme p { margin: 4px 0; font-size: .92em; }
+    .note-etat-partie {
+      margin: 0 0 10px;
+      font-size: 0.85em;
+      opacity: 0.8;
+    }
 </style>
 </head>
 <body>
@@ -424,11 +451,12 @@
     </div>
     <div class="section">
       <h2>Survie et Défense</h2>
+      <p class="note-etat-partie">Les champs en pointillés reflètent la partie en cours : ils se modifient dans l'Interface de Jeu ou par le MJ.</p>
       <div class="grid grid-2">
           <div class="field">
           <label>Vie</label>
           <div class="dual-input">
-            <input type="number" id="player_hp_current" min="0" placeholder="Min">
+            <input type="number" id="player_hp_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
             <span class="divider-span">/</span>
             <input type="number" id="player_hp">
           </div>
@@ -437,7 +465,7 @@
         <div class="field">
           <label>Mana</label>
           <div class="dual-input">
-            <input type="number" id="player_mana_current" min="0" placeholder="Min">
+            <input type="number" id="player_mana_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
             <span class="divider-span">/</span>
             <input type="number" id="player_mana">
           </div>
@@ -445,11 +473,11 @@
 
           <div style="display: flex; flex-direction: column;">
             <label>Vie bonus</label>
-            <input type="number" id="player_vie_bonus" min="0" placeholder="0">
+            <input type="number" id="player_vie_bonus" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
           </div>
           <div style="display: flex; flex-direction: column;">
             <label>Intox.</label>
-            <input type="number" id="player_intox" placeholder="0" min="0" max="100">
+            <input type="number" id="player_intox" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
           </div>
 
       </div><!-- fin du grid -->
@@ -468,7 +496,7 @@
                       <div class="field">
                         <label>Durabilité</label>
                         <div class="dual-input">
-                          <input type="number" id="player_dura_current" min="0" placeholder="0">
+                          <input type="number" id="player_dura_current" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
                           <span class="divider-span">/</span>
                           <input type="number" id="player_dura_max" placeholder="Max">
                         </div>
@@ -482,7 +510,7 @@
                       <div class="field">
                         <label>Valeur de Protection</label>
                         <div class="dual-input">
-                          <input type="number" id="def_protection" min="0" placeholder="0">
+                          <input type="number" id="def_protection" class="etat-partie" readonly title="Valeur de la partie en cours : elle se modifie dans l'Interface de Jeu ou par le MJ.">
                           <span class="divider-span">/</span>
                           <input type="number" id="def_protection_max" placeholder="Max">
                         </div>
@@ -626,6 +654,14 @@
   </div>
 </div>
 
+  <!-- Druides : formes animales de la référence (sorts.json), en lecture
+       seule. Les formes accessibles au niveau du personnage sont mises en avant. -->
+  <div class="section" id="metamorphoses-section" hidden>
+    <h2>Métamorphoses</h2>
+    <p class="metamorphoses-regles" id="metamorphoses-regles"></p>
+    <div class="metamorphoses-liste" id="metamorphoses-liste"></div>
+  </div>
+
   <div class="section">
     <h2>Compétences spéciales du personnage</h2>
     <div class="field">
@@ -650,12 +686,6 @@
   <div style="text-align: center;">
 <button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
     <button type="button" class="retour-jeu-btn" id="retour-jeu-btn-bas">← Retour à l'interface de jeu</button>
-    <button
-      id="import-session-btn"
-      type="button"
-      title="Importe l'état actuel de la partie dans cette fiche de personnage">
-      ↻ Mettre à jour depuis la partie
-    </button>
   </div>
 
   <script src="navbar.js"></script>
@@ -985,9 +1015,13 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
 
       // L'état serveur devient maintenant la base de la prochaine sauvegarde.
       params.set('PlayerId', joueur.id);
+
+      // Les valeurs actuelles viennent de la partie en cours (session).
+      await chargerEtatPartie();
       updateArmorState();
 
       console.log('État officiel du personnage chargé depuis le serveur :', joueur.id);
+      document.dispatchEvent(new CustomEvent('fiche:chargee'));
     } catch (error) {
       // Ne pas bloquer l'utilisateur si une ancienne URL peut encore servir
       // de fallback. La sauvegarde pourra signaler une erreur si nécessaire.
@@ -996,6 +1030,36 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
   }
 
   window.arcaneLoadAuthoritativePlayerState = loadAuthoritativePlayerState;
+
+  // -------------------------------------------------------------------
+  // État de partie : PV, mana, durabilité, protection, bonus de vie et
+  // intoxication actuels viennent de la session, source de vérité du jeu.
+  // La fiche les affiche en lecture seule.
+  // -------------------------------------------------------------------
+  function appliquerEtatPartie(etat) {
+    if (!etat) return;
+    if (etat.hp) fillField('player_hp_current', etat.hp.current ?? 0);
+    if (etat.mana) fillField('player_mana_current', etat.mana.current ?? 0);
+    if (etat.armure?.durabilite) fillField('player_dura_current', etat.armure.durabilite.current ?? 0);
+    if (etat.armure?.protection) fillField('def_protection', etat.armure.protection.current ?? 0);
+    if (etat.bonus_vie !== undefined) fillField('player_vie_bonus', etat.bonus_vie ?? 0);
+    if (etat.intox !== undefined) fillField('player_intox', etat.intox ?? 0);
+    updateArmorState();
+  }
+
+  async function chargerEtatPartie() {
+    if (!playerId) return;
+    try {
+      const response = await fetch(`/api/session/player/${encodeURIComponent(playerId)}`);
+      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
+      appliquerEtatPartie(await response.json());
+    } catch (error) {
+      console.error("Impossible de charger l'état de la partie:", error);
+    }
+  }
+
+  window.arcaneAppliquerEtatPartie = appliquerEtatPartie;
+  window.arcaneChargerEtatPartie = chargerEtatPartie;
 
   document.getElementById('add-inventory-item')?.addEventListener('click', () => {
     document.getElementById('inventory-body')?.appendChild(createInventoryRow());
@@ -1138,59 +1202,12 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
     }
     alert('Données sauvegardées avec succès !');
 
-    // Construire la nouvelle URL avec le nom du personnage
+    // Recharger la fiche : seul l'identifiant voyage dans l'URL,
+    // tout le reste est relu depuis le serveur.
     const urlParams = new URLSearchParams();
-      if (savedPlayerId) {
-        urlParams.set('PlayerId', savedPlayerId);
-      }
-      urlParams.set('Nom', donnees.nom);
-      urlParams.set('Classe', donnees.classe);
-      urlParams.set('Race', donnees.race);
-      urlParams.set('Niveau', donnees.niveau.toString());
-      urlParams.set('VieMax', donnees.hp.max.toString());
-      urlParams.set('VieCurrent', donnees.hp.current.toString());
-      urlParams.set('ManaMax', donnees.mana.max.toString());
-      urlParams.set('ManaCurrent', donnees.mana.current.toString());
-      urlParams.set('Vie bonus', donnees.bonus_vie.toString());
-      urlParams.set('Valeur protection', donnees.armure.protection.current.toString());
-      urlParams.set('Valeur protection max', donnees.armure.protection.max.toString());
-      urlParams.set('DuraMax', donnees.armure.durabilite.max.toString());
-      urlParams.set('DuraCurrent', donnees.armure.durabilite.current.toString());
-      urlParams.set("Type d'armure", donnees.armure.type);
-      urlParams.set('Résistance', donnees.armure.resistance);
-      urlParams.set('Intox.', donnees.intox);
-
-      // Stats
-      urlParams.set('Force', donnees.stats.force.toString());
-      urlParams.set('Dexterite', donnees.stats.dexterite.toString());
-      urlParams.set('Magie', donnees.stats.magie.toString());
-      urlParams.set('Constitution', donnees.stats.constitution.toString());
-      urlParams.set('Charisme', donnees.stats.charisme.toString());
-      urlParams.set('Perception', donnees.stats.perception.toString());
-      urlParams.set('Chance', donnees.stats.chance.toString());
-      urlParams.set('Intelligence', donnees.stats.intelligence.toString());
-
-      // Inventaire
-      urlParams.set('Sac', donnees.sac);
-      urlParams.set('Ceinture / Dos', donnees.ceinture);
-
-      // Sorts et compétences
-      urlParams.set('Sorts', JSON.stringify(donnees.spells));
-      urlParams.set('Sorts mineurs', JSON.stringify(donnees.sorts_mineurs));
-      urlParams.set('Competences', JSON.stringify(donnees.competences));
-      urlParams.set('Armes', JSON.stringify(donnees.armes));
-      urlParams.set('Inventaire', JSON.stringify(donnees.inventaire));
-      urlParams.set('Attaques speciales', JSON.stringify(donnees.attaques_speciales));
-
-      // Autres
-      urlParams.set('Skills speciales', donnees.skills_speciales);
-      urlParams.set('Biographie', donnees.bio);
-      urlParams.set('Choix de level up', donnees.levelup);
-
-      const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-        
-    // Mettre à jour l'URL et recharger la page
-    window.location.href = newUrl;
+    if (savedPlayerId) urlParams.set('PlayerId', savedPlayerId);
+    else urlParams.set('Nom', donnees.nom);
+    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
 
   } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -1712,76 +1729,25 @@ window.addEventListener('DOMContentLoaded', () => {
   </script>
 
 <script>
-// -------------------------------------------------------------------
-  // IMPORT MANUEL : état de la partie -> Fiche de Perso
-  // -------------------------------------------------------------------
-  async function importerEtatPartieDansFiche() {
-    const playerId = window.arcanePlayerId || '';
-
-    if (!playerId) {
-      alert("Impossible d'importer l'état de la partie : PlayerId manquant.");
-      return;
-    }
-
-    const confirmation = window.confirm(
-      "Importer l'état actuel de la partie dans cette Fiche de Perso ?\n\n" +
-      "Cette action remplacera les valeurs HP, Mana, armure, durabilité, " +
-      "protection, bonus de vie et intoxication enregistrées dans la fiche.\n\n" +
-      "Cette action est volontaire et ne se fait jamais automatiquement."
-    );
-
-    if (!confirmation) return;
-
-    const button = document.getElementById('import-session-btn');
-
-    try {
-      if (button) {
-        button.disabled = true;
-        button.textContent = "↻ Import en cours...";
-      }
-
-      const response = await fetch(
-        `/api/session/player/${encodeURIComponent(playerId)}/apply-to-character`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || `Erreur HTTP ${response.status}`);
-      }
-
-      // Recharger la fiche depuis data.json après l'import.
-      if (typeof window.arcaneLoadAuthoritativePlayerState === 'function') {
-        await window.arcaneLoadAuthoritativePlayerState();
-      }
-
-      alert("L'état actuel de la partie a été importé dans la Fiche de Perso.");
-    } catch (error) {
-      console.error("Erreur lors de l'import de l'état de partie:", error);
-      alert(`Erreur lors de l'import : ${error.message}`);
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.textContent = "↻ Mettre à jour depuis la partie";
-      }
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const importButton = document.getElementById('import-session-btn');
-    if (importButton) {
-      importButton.addEventListener('click', importerEtatPartieDansFiche);
-    }
-  });
+  // Mise à jour en direct : quand le MJ ou l'Interface de Jeu modifient la
+  // partie, les valeurs actuelles affichées sur la fiche suivent.
+  (function () {
+    const id = new URLSearchParams(window.location.search).get('PlayerId');
+    if (!id || typeof io !== 'function') return;
+    const socket = io({ query: { role: 'player', playerId: id } });
+    // Connexion ou reconnexion : relire l'état complet.
+    socket.on('connect', () => window.arcaneChargerEtatPartie?.());
+    socket.on('sessionPlayerUpdate', event => {
+      if (!event || event.playerId !== id) return;
+      if (event.session) window.arcaneAppliquerEtatPartie?.(event.session);
+      else window.arcaneChargerEtatPartie?.();
+    });
+  })();
 </script>
 <script>
-  // Retour à l'interface de jeu : même mécanisme que « Voir Fiche de
-  // Perso » en sens inverse, les paramètres de l'URL sont transmis tels
-  // quels. Une modification non sauvegardée est signalée avant de partir.
+  // Retour à l'interface de jeu : seul l'identifiant voyage dans l'URL,
+  // l'interface recharge le reste depuis le serveur. Une modification non
+  // sauvegardée est signalée avant de partir.
   (function () {
     let modifiee = false;
     // Le filtre « Type » n'est qu'un affichage : il ne modifie pas la fiche.
@@ -1791,8 +1757,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function retournerAuJeu() {
       if (modifiee && !confirm('Des modifications ne sont pas sauvegardées. Revenir quand même à l\'interface de jeu ?')) return;
-      const params = new URLSearchParams(window.location.search);
-      if (window.arcanePlayerId && !params.get('PlayerId')) params.set('PlayerId', window.arcanePlayerId);
+      const actuels = new URLSearchParams(window.location.search);
+      const id = window.arcanePlayerId || actuels.get('PlayerId');
+      const params = new URLSearchParams(id ? { PlayerId: id } : { Nom: actuels.get('Nom') || '' });
       window.location.href = `interface_jeu.html?${params.toString()}`;
     }
 
@@ -1868,8 +1835,51 @@ window.addEventListener('DOMContentLoaded', () => {
     }).catch(() => {});
   })();
 </script>
+<script>
+  // Métamorphoses : affichées pour les druides seulement, d'après la
+  // référence (sorts.json). Les formes au-dessus du niveau du personnage
+  // restent visibles mais atténuées.
+  (function () {
+    const section = document.getElementById('metamorphoses-section');
+    const liste = document.getElementById('metamorphoses-liste');
+    const echapper = valeur => String(valeur ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let reference = null;
 
+    async function majMetamorphoses() {
+      const classe = document.getElementById('player_class').value || '';
+      const estDruide = /druide/i.test(classe);
+      section.hidden = !estDruide;
+      if (!estDruide) return;
 
+      try {
+        reference = reference || await fetch('/api/reference').then(r => r.json());
+      } catch (_) {
+        liste.innerHTML = '<p>Référence des métamorphoses indisponible.</p>';
+        return;
+      }
+      const niveau = parseInt(document.getElementById('player_level').value) || 1;
+      const formes = [...(reference.metamorphoses?.formes || [])].sort((a, b) => (a.niveau ?? 0) - (b.niveau ?? 0));
+      document.getElementById('metamorphoses-regles').textContent = reference.metamorphoses?.regles || '';
+      liste.innerHTML = formes.length ? formes.map(f => {
+        const accessible = (f.niveau ?? 0) <= niveau;
+        return `<article class="forme${accessible ? '' : ' verrouillee'}">
+          <h3>${echapper(f.nom)}</h3>
+          <p class="forme-meta">Niveau ${echapper(f.niveau ?? '—')}${f.taille ? ` · ${echapper(f.taille)}` : ''}${accessible ? '' : ' · pas encore accessible'}</p>
+          <div class="forme-stats"><span>FOR ${echapper(f.for)}</span><span>DEX ${echapper(f.dex)}</span><span>CONST ${echapper(f.const)}</span><span>PV +${echapper(f.pv)}</span></div>
+          ${f.attaque_base ? `<p><strong>Attaque :</strong> ${echapper(f.attaque_base)}</p>` : ''}
+          ${f.competence?.nom ? `<p><strong>${echapper(f.competence.nom)} :</strong> ${echapper(f.competence.effet)}</p>` : ''}
+          ${f.description ? `<p>${echapper(f.description)}</p>` : ''}
+        </article>`;
+      }).join('') : '<p>Aucune forme dans la référence.</p>';
+    }
+
+    document.addEventListener('fiche:chargee', majMetamorphoses);
+    window.addEventListener('load', majMetamorphoses);   // anciens liens sans identifiant
+    document.getElementById('player_class').addEventListener('change', majMetamorphoses);
+    document.getElementById('player_level').addEventListener('input', majMetamorphoses);
+  })();
+</script>
 
 </body>
 </html>

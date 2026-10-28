@@ -72,6 +72,12 @@ function bornerRessource(ressource){
   return borne;
 }
 
+/** Jets de survie : { reussi: [b, b, b], echec: [b, b, b] }. */
+function normaliserSurvie(survie){
+  const trois=liste=>[0,1,2].map(i=>Array.isArray(liste)&&liste[i]===true);
+  return {reussi:trois(survie?.reussi),echec:trois(survie?.echec)};
+}
+
 function synchroniserAgonie(etat){
   const hp=Number(etat?.hp?.current??0);
   let statuts=normaliserStatutsJoueur(etat?.statuts);
@@ -284,8 +290,13 @@ let session = {
   // V1.13 : identifiant de la carte active dans maps.json.
   // Les cartes elles-mêmes vivent hors de la session : seul le choix de
   // la carte en cours d'utilisation appartient à la partie.
-  activeMapId: null
+  activeMapId: null,
+  // Vue affichée par l'Écran partagé, choisie par le MJ.
+  ecranVue: 'carte'
 };
+
+const VUES_ECRAN = ['carte', 'tableau'];
+const normaliserVueEcran = vue => (VUES_ECRAN.includes(vue) ? vue : 'carte');
 
 function lireSession() {
   if (!fs.existsSync(cheminFichier)) {
@@ -329,7 +340,8 @@ function lireSession() {
       },
       activeMapId: typeof donnees.activeMapId === 'string' && donnees.activeMapId
         ? donnees.activeMapId
-        : null
+        : null,
+      ecranVue: normaliserVueEcran(donnees.ecranVue)
     };
   } catch (err) {
     console.error("Erreur lors de la lecture de session.json:", err);
@@ -382,6 +394,9 @@ function extraireEtatSessionDepuisPersonnage(joueur) {
     },
     bonus_vie: joueur.bonus_vie ?? 0,
     intox: joueur.intox ?? 0,
+
+    // Jets de survie : trois cases « réussi » et trois « échec ».
+    survie: normaliserSurvie(joueur.survie),
 
     // Métadonnées utiles à l'interface de jeu.
     stats: { ...(joueur.stats || {}) },
@@ -501,7 +516,8 @@ function importerSession(nouvelleSession) {
     // sur ce serveur, l'interface MJ proposera d'en choisir une autre.
     activeMapId: typeof nouvelleSession.activeMapId === 'string' && nouvelleSession.activeMapId
       ? nouvelleSession.activeMapId
-      : null
+      : null,
+    ecranVue: normaliserVueEcran(nouvelleSession.ecranVue)
   };
 
   if (!ecrireSession(sessionNormalisee)) {
@@ -577,12 +593,34 @@ function synchroniserSessionDepuisPersonnage(joueur) {
     return false;
   }
 
-  const ancienEtat = session.players[joueur.id] || {};
+  // Règle : la fiche porte la DÉFINITION du personnage (stats, maximums,
+  // sorts, inventaire...) ; la partie porte l'ÉTAT DE JEU. Enregistrer la
+  // fiche ne doit donc jamais écraser les PV, le mana, la durabilité, la
+  // protection, la vie bonus, l'intoxication ni les jets de survie en cours :
+  // ils sont conservés, bornés aux éventuels nouveaux maximums.
+  const ancienEtat = session.players[joueur.id];
+  const definition = extraireEtatSessionDepuisPersonnage(joueur);
   const nouvelEtat = {
-    ...ancienEtat,
-    ...extraireEtatSessionDepuisPersonnage(joueur),
+    ...(ancienEtat || {}),
+    ...definition,
     lastSaved: new Date().toISOString()
   };
+
+  if (ancienEtat) {
+    const garder = (nouveau, ancien) =>
+      bornerRessource({ ...nouveau, current: ancien?.current ?? nouveau.current });
+    nouvelEtat.hp = garder(definition.hp, ancienEtat.hp);
+    nouvelEtat.mana = garder(definition.mana, ancienEtat.mana);
+    nouvelEtat.armure = {
+      ...definition.armure,
+      durabilite: garder(definition.armure.durabilite, ancienEtat.armure?.durabilite),
+      protection: garder(definition.armure.protection, ancienEtat.armure?.protection)
+    };
+    nouvelEtat.bonus_vie = ancienEtat.bonus_vie ?? definition.bonus_vie;
+    nouvelEtat.intox = ancienEtat.intox ?? definition.intox;
+    if (ancienEtat.survie) nouvelEtat.survie = ancienEtat.survie;
+    nouvelEtat.statuts = synchroniserAgonie({ hp: nouvelEtat.hp, statuts: ancienEtat.statuts });
+  }
 
   const nouvelleSession = {
     ...session,
@@ -672,6 +710,9 @@ function sauvegarderEtatSession(id, nouvellesDonnees) {
       ...(joueurSession.mana || {}),
       ...(nouvellesDonnees.mana || {})
     }),
+    ...(nouvellesDonnees.survie !== undefined
+      ? { survie: normaliserSurvie(nouvellesDonnees.survie) }
+      : {}),
     statuts: synchroniserAgonie({
       ...joueurSession,
       ...nouvellesDonnees,
@@ -711,28 +752,6 @@ function sauvegarderEtatSession(id, nouvellesDonnees) {
 
 
 
-function ajouterStatutJoueur(id, statutId){
-  const joueur=session.players[id], statut=STATUTS_JOUEUR[statutId];
-  if(!joueur||!statut)return {success:false,message:'Joueur ou statut introuvable.'};
-  if(statutId==='agonie'&&Number(joueur.hp?.current??0)>0)return {success:false,message:'Agonie est automatique à 0 HP.'};
-  const statuts=synchroniserAgonie(joueur);
-  if(statuts.some(s=>s.id===statutId))return {success:false,message:'Ce statut est déjà appliqué.'};
-  statuts.push({id:statut.id,nom:statut.nom,appliedAt:new Date().toISOString()});
-  const ns={...session,players:{...session.players,[id]:{...joueur,statuts,lastSaved:new Date().toISOString()}},lastSaved:new Date().toISOString()};
-  if(!ecrireSession(ns))return {success:false,message:'Impossible de sauvegarder le statut.'};
-  session=ns;return {success:true,player:session.players[id]};
-}
-function retirerStatutJoueur(id, statutId){
-  const joueur=session.players[id];
-  if(!joueur)return {success:false,message:'Joueur introuvable.'};
-  if(statutId==='agonie'&&Number(joueur.hp?.current??0)<=0)return {success:false,message:'Agonie ne peut pas être retirée à 0 HP.'};
-  const anciens=synchroniserAgonie(joueur);
-  if(!anciens.some(s=>s.id===statutId))return {success:false,message:'Ce statut n’est pas appliqué.'};
-  const statuts=anciens.filter(s=>s.id!==statutId);
-  const ns={...session,players:{...session.players,[id]:{...joueur,statuts,lastSaved:new Date().toISOString()}},lastSaved:new Date().toISOString()};
-  if(!ecrireSession(ns))return {success:false,message:'Impossible de retirer le statut.'};
-  session=ns;return {success:true,player:session.players[id]};
-}
 
 
 // ---------------------------------------------------------------------------
@@ -862,6 +881,24 @@ function setActiveMapId(mapId) {
   return { success: true, activeMapId: valeur, modifie: true };
 }
 
+function getEcranVue() {
+  return normaliserVueEcran(session.ecranVue);
+}
+
+function setEcranVue(vue) {
+  if (!VUES_ECRAN.includes(vue)) {
+    return { success: false, message: "Vue d'écran inconnue." };
+  }
+  if (session.ecranVue === vue) return { success: true, vue, modifie: false };
+
+  const nouvelleSession = { ...session, ecranVue: vue, lastSaved: new Date().toISOString() };
+  if (!ecrireSession(nouvelleSession)) {
+    return { success: false, message: "Impossible de sauvegarder la vue de l'écran." };
+  }
+  session = nouvelleSession;
+  return { success: true, vue, modifie: true };
+}
+
 function getSessionMobs() {
   return session.mobs || {};
 }
@@ -922,8 +959,6 @@ module.exports = {
   STATUTS_JOUEUR,
   getStatutsJoueurDisponibles,
   normaliserStatutsJoueur,
-  ajouterStatutJoueur,
-  retirerStatutJoueur,
   ajouterStatutMob,
   retirerStatutMob,
   getPlayerPersonalNotes,
@@ -938,6 +973,8 @@ module.exports = {
   setMobSceneVisibility,
   getActiveMapId,
   setActiveMapId,
+  getEcranVue,
+  setEcranVue,
   getSessionMobs,
   getSessionMobById,
   sauvegarderMobSession,

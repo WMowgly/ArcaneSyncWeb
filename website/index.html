@@ -18,6 +18,8 @@
                 opacity: .9;
             }
             .page-index .choix-icone { font-size: 32px; display: block; margin-bottom: 6px; }
+            .page-index .lien-code-mj { margin-top: 24px; text-align: center; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
+            .page-index .lien-code-mj a { color: inherit; opacity: .8; }
         </style>
     </head>
     <body class="page-index">
@@ -43,13 +45,26 @@
                 </button>
             </a>
         </div>
+        <p class="lien-code-mj"><a href="#" id="changer-code-mj">Changer le code MJ</a></p>
+        <script src="mj-code.js"></script>
         <script>
             // Le choix d'interface règle la barre de navigation des pages
             // partagées (création de personnage, tableau blanc).
             document.querySelectorAll('.choix-interface').forEach(lien => {
-                lien.addEventListener('click', () => {
+                lien.addEventListener('click', async event => {
+                    // MJ : le code est demandé ici, avant d'ouvrir l'interface.
+                    if (lien.dataset.interface === 'mj') {
+                        event.preventDefault();
+                        if (!(await window.ArcaneMJ.assurer())) return;
+                    }
                     try { localStorage.setItem('arcanesync-interface', lien.dataset.interface); } catch (_) {}
+                    if (lien.dataset.interface === 'mj') location.href = lien.href;
                 });
+            });
+
+            document.getElementById('changer-code-mj').addEventListener('click', event => {
+                event.preventDefault();
+                window.ArcaneMJ.changerCode();
             });
         </script>
     </body>

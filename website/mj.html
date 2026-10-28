@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css"/> 
   <link rel="icon" type="image/png" href="img/icon.png"/>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="mj-code.js"></script>
   <style>
     /* ===============================================================
        V1.13.4 — Mise en page de l'interface MJ
@@ -44,6 +45,18 @@
       background: #fff4d6; color: #5c3b21; font-weight: 600;
     }
     .mj-cta:hover { background: #f0e2c4; }
+    /* Choix de ce qu'affiche l'Écran partagé. */
+    .mj-ecran {
+      display: inline-flex; align-items: center; gap: 0; white-space: nowrap;
+      border: 2px solid #8b5e3c; border-radius: 8px; overflow: hidden; background: #fff4d6;
+    }
+    .mj-ecran span { padding: 0 10px; font-weight: 600; color: #5c3b21; }
+    .mj-ecran button {
+      margin: 0; padding: 9px 12px; border: 0; border-left: 1px solid #8b5e3c; border-radius: 0;
+      background: transparent; color: #5c3b21; font: inherit; cursor: pointer;
+    }
+    .mj-ecran button:hover { background: #f0e2c4; }
+    .mj-ecran button[aria-pressed="true"] { background: #8b5e3c; color: #fefae0; font-weight: 600; }
 
     /* Neutralisation de la largeur fixe et des effets de vignette. */
     .mj-page section.card {
@@ -267,29 +280,6 @@
       }
     }
 
-    #mob-management .active-mob-resource-controls {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin: 12px 0;
-    }
-    #mob-management .active-mob-resource {
-      border: 1px solid #8b5e3c;
-      border-radius: 7px;
-      padding: 10px;
-      background: #fff4d6;
-    }
-    #mob-management .active-mob-resource h5 { margin: 0 0 7px; }
-    #mob-management .active-mob-resource-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      align-items: center;
-    }
-    #mob-management .active-mob-resource-actions input {
-      width: 75px;
-      max-width: 100%;
-    }
     #mob-management .mob-status {
       display: inline-block;
       margin: 4px 0;
@@ -299,9 +289,9 @@
       border: 1px solid #8b5e3c;
     }
     #mob-management .mob-status.dead { text-decoration: line-through; opacity: 0.8; }
-    @media (max-width: 600px) {
-      #mob-management .active-mob-resource-controls { grid-template-columns: 1fr; }
-    }
+    /* Les commandes des cartes mobs reprennent celles des joueurs : la
+       marge générique des boutons de carte ne doit pas les décaler. */
+    #mob-management .active-mob-card .gm-ressource-actions button { margin: 0; }
 
     /* Liste des mobs en jeu : grille de cartes compactes, comme les
        joueurs, plutôt qu'une pile de blocs pleine largeur. */
@@ -437,6 +427,11 @@
            « Ouvrir ma carte » de l'Interface de Jeu du joueur. -->
       <a class="mj-cta" href="modification.html">📚 Données de jeu</a>
       <a class="mj-cta" href="map.html">🗺️ Ouvrir la carte de jeu</a>
+      <div class="mj-ecran" role="group" aria-label="Affichage de l'Écran partagé">
+        <span>🖥️ Écran</span>
+        <button type="button" data-ecran-vue="carte" aria-pressed="false">Carte</button>
+        <button type="button" data-ecran-vue="tableau" aria-pressed="false">Tableau blanc</button>
+      </div>
     </header>
 
     <!-- Ordre de la page : ce qui sert pendant la partie d'abord
@@ -899,14 +894,37 @@
       loadAndDisplayPlayers();
     });
 
-    socket.on('playerStatusUpdated', () => loadAndDisplayPlayers());
 
     socket.on('personalNotesUpdated', (event) => {
       if (event?.playerId) loadAndDisplayPlayers();
     });
 
     socket.on('publicNotesUpdated', () => loadPublicNotesMJ());
-  
+
+    // Écran partagé : le MJ choisit la vue ; tous les écrans la suivent.
+    function afficherVueEcran(vue) {
+      document.querySelectorAll('[data-ecran-vue]').forEach(bouton =>
+        bouton.setAttribute('aria-pressed', String(bouton.dataset.ecranVue === vue)));
+    }
+    socket.on('ecranVue', ({ vue } = {}) => afficherVueEcran(vue));
+    fetch('/api/ecran').then(r => r.json()).then(({ vue }) => afficherVueEcran(vue)).catch(() => {});
+    document.querySelectorAll('[data-ecran-vue]').forEach(bouton => {
+      bouton.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/ecran', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vue: bouton.dataset.ecranVue })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || `Erreur HTTP ${response.status}`);
+          afficherVueEcran(result.vue);
+        } catch (error) {
+          alert(`Impossible de changer l'affichage de l'Écran : ${error.message}`);
+        }
+      });
+    });
+
     document.getElementById('public-note-save')?.addEventListener('click', savePublicNoteMJ);
     document.getElementById('public-note-cancel')?.addEventListener('click', resetPublicNoteEditor);
     loadPublicNotesMJ().catch(error => {
@@ -1170,29 +1188,31 @@
             <span class="mob-status ${isDead?'dead':''}">${statusText}</span>
           </div>
           ${m.description?`<p class="active-mob-desc">${escapeHtml(m.description)}</p>`:''}
-          <div class="stat-bar-container">
-            <label>Points de Vie</label>
+          <!-- Même format que les cartes joueurs : jauges groupées, puis une
+               ligne de commandes par jauge, repérée par sa couleur. -->
+          <div class="gm-ressource">
+            <label><span class="gm-pastille gm-pastille-pv"></span>Points de Vie</label>
             <div class="stat-bar"><div class="stat-bar-fill hp-bar" style="width:${pct}%"></div><div class="stat-bar-text">${cur} / ${max}</div></div>
           </div>
-          <div class="stat-bar-container">
-            <label>Points de Mana</label>
+          <div class="gm-ressource">
+            <label><span class="gm-pastille gm-pastille-mana"></span>Points de Mana</label>
             <div class="stat-bar"><div class="stat-bar-fill mana-bar" style="width:${manaPct}%"></div><div class="stat-bar-text">${manaCur} / ${manaMax}</div></div>
           </div>
 
-          <div class="active-mob-resource-controls">
-            <div class="active-mob-resource">
-              <h5>Retirer des HP</h5>
-              <div class="active-mob-resource-actions">
-                <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de HP à retirer">
-                <button data-a="damage" type="button">− HP</button><button data-a="heal" type="button">+ HP</button>
-              </div>
+          <div class="gm-commandes">
+            <div class="gm-ressource-actions">
+              <span class="gm-etiquette gm-etiquette-pv" title="Points de Vie">PV</span>
+              <button data-a="damage" type="button" class="gm-moins" title="Retirer des PV" aria-label="Retirer des PV">−</button>
+              <input data-a="hp-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de PV">
+              <button data-a="heal" type="button" class="gm-plus" title="Ajouter des PV" aria-label="Ajouter des PV">+</button>
+              <button data-a="full-hp" type="button" class="gm-max" title="Remettre les PV au maximum">Max</button>
             </div>
-            <div class="active-mob-resource">
-              <h5>Retirer du Mana</h5>
-              <div class="active-mob-resource-actions">
-                <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de Mana à retirer">
-                <button data-a="drain-mana" type="button">− Mana</button><button data-a="restore-mana" type="button">+ Mana</button>
-              </div>
+            <div class="gm-ressource-actions">
+              <span class="gm-etiquette gm-etiquette-mana" title="Points de Mana">Mana</span>
+              <button data-a="drain-mana" type="button" class="gm-moins" title="Retirer du mana" aria-label="Retirer du mana">−</button>
+              <input data-a="mana-amount" type="number" min="1" step="1" value="1" aria-label="Quantité de mana">
+              <button data-a="restore-mana" type="button" class="gm-plus" title="Ajouter du mana" aria-label="Ajouter du mana">+</button>
+              <button data-a="full-mana" type="button" class="gm-max" title="Remettre le mana au maximum">Max</button>
             </div>
           </div>
 
@@ -1256,6 +1276,14 @@
             {mana:{current:newMana}},
             `${amount} Mana ajouté(s) à ${m.nom}.`
           );
+        };
+
+        // « Max » : la ressource revient d'un clic à son maximum.
+        c.querySelector('[data-a="full-hp"]').onclick=async()=>{
+          await updateMobResources({hp:{current:max}},`PV de ${m.nom} au maximum.`);
+        };
+        c.querySelector('[data-a="full-mana"]').onclick=async()=>{
+          await updateMobResources({mana:{current:manaMax}},`Mana de ${m.nom} au maximum.`);
         };
 
         const reviveButton=c.querySelector('[data-a="revive"]');

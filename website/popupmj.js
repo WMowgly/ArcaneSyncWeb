@@ -427,39 +427,10 @@ export function showMJPopup(joueur) {
   });
 
   overlay.querySelector('.fiche-btn').addEventListener('click', () => {
+    // La fiche se charge depuis le serveur : seul l'identifiant est transmis.
     const params = new URLSearchParams();
     if (joueur.id) params.set('PlayerId', joueur.id);
-    params.set('Nom', joueur.nom || '');
-    params.set('Classe', joueur.classe || '');
-    params.set('Race', joueur.race || '');
-    params.set('Niveau', joueur.niveau ?? 1);
-    params.set('VieMax', joueur.hp?.max ?? 0);
-    params.set('VieCurrent', joueur.hp?.current ?? 0);
-    params.set('ManaMax', joueur.mana?.max ?? 0);
-    params.set('ManaCurrent', joueur.mana?.current ?? 0);
-    params.set('Vie bonus', joueur.bonus_vie ?? 0);
-    params.set('Valeur protection', joueur.armure?.protection?.current ?? 0);
-    params.set('Valeur protection max', joueur.armure?.protection?.max ?? 0);
-    params.set('DuraMax', joueur.armure?.durabilite?.max ?? 0);
-    params.set('DuraCurrent', joueur.armure?.durabilite?.current ?? 0);
-    params.set("Type d'armure", joueur.armure?.type || '');
-    params.set('Résistance', joueur.armure?.resistance || '');
-    params.set('Intox.', joueur.intox ?? 0);
-    const stats = joueur.stats || {};
-    for (const name of ['force','dexterite','magie','constitution','charisme','perception','chance','intelligence']) {
-      params.set(name === 'dexterite' ? 'Dexterite' : name.charAt(0).toUpperCase() + name.slice(1), stats[name] ?? 0);
-    }
-    params.set('Sac', joueur.sac || '');
-    params.set('Ceinture / Dos', joueur.ceinture || '');
-    params.set('Inventaire', JSON.stringify(joueur.inventaire || []));
-    if (joueur.spells) params.set('Sorts', JSON.stringify(joueur.spells));
-    if (joueur.sorts_mineurs) params.set('Sorts mineurs', JSON.stringify(joueur.sorts_mineurs));
-    if (joueur.competences) params.set('Competences', JSON.stringify(joueur.competences));
-    if (joueur.armes) params.set('Armes', JSON.stringify(joueur.armes));
-    if (joueur.attaques_speciales) params.set('Attaques speciales', JSON.stringify(joueur.attaques_speciales));
-    params.set('Skills speciales', joueur.skills_speciales || '');
-    params.set('Biographie', joueur.bio || '');
-    params.set('Choix de level up', joueur.levelup || '');
+    else params.set('Nom', joueur.nom || '');
     window.open(`fiche_perso.html?${params.toString()}`, '_blank');
   });
 

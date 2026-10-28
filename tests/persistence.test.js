@@ -40,7 +40,8 @@ try {
   const originalSpells = JSON.stringify(player.spells);
   const originalAttacks = JSON.stringify(player.attaques_speciales);
   const originalHp = player.hp?.current ?? 0;
-  const newHp = originalHp + 1;
+  // Valeur valide : sous le maximum (la sauvegarde borne désormais actuel/max).
+  const newHp = originalHp > 0 ? originalHp - 1 : Math.min(1, player.hp?.max ?? 0);
 
   const success = sauvegardeData(
     { id: player.id },

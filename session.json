@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-10-27T19:41:37.124Z",
+  "lastSaved": "2026-10-28T17:27:18.528Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -14,7 +14,7 @@
       },
       "mana": {
         "max": 50,
-        "current": 46
+        "current": 45
       },
       "armure": {
         "type": "Armure légère",
@@ -40,7 +40,7 @@
         "chance": 0,
         "intelligence": 0
       },
-      "lastSaved": "2026-10-27T19:41:37.124Z",
+      "lastSaved": "2026-10-27T22:21:41.373Z",
       "personalNotes": "",
       "privateMessages": [
         {
@@ -97,7 +97,19 @@
           "degats": "1d8+2",
           "niveau": 1
         }
-      ]
+      ],
+      "survie": {
+        "reussi": [
+          false,
+          false,
+          false
+        ],
+        "echec": [
+          false,
+          false,
+          false
+        ]
+      }
     },
     "char_d3716eaec00e4dd59c29d950599d1dad": {
       "id": "char_d3716eaec00e4dd59c29d950599d1dad",
@@ -331,7 +343,7 @@
       },
       "mana": {
         "max": 20,
-        "current": 0
+        "current": 1
       },
       "armure": {
         "type": "Armure légère",
@@ -357,10 +369,11 @@
         "chance": 0,
         "intelligence": 0
       },
-      "lastSaved": null,
+      "lastSaved": "2026-10-27T21:14:39.879Z",
       "personalNotes": "",
       "privateMessages": [],
-      "inventaire": []
+      "inventaire": [],
+      "statuts": []
     }
   },
   "mobs": {
@@ -573,5 +586,6 @@
       }
     }
   },
-  "activeMapId": "map_97a4b44fe820c8b5"
+  "activeMapId": "map_97a4b44fe820c8b5",
+  "ecranVue": "tableau"
 }

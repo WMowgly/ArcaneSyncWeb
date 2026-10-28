@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const page = window.location.pathname.split('/').pop() || 'index.html';
   const playerId = params.get('PlayerId');
   const PAGES_MJ = ['mj.html', 'map.html', 'modification.html'];
-  const PAGES_JOUEUR = ['selecte_player.html', 'interface_jeu.html', 'fiche_perso.html', 'map_joueur.html'];
+  const PAGES_JOUEUR = ['selecte_player.html', 'interface_jeu.html', 'fiche_perso.html'];
 
   let choixMemorise = null;
   try { choixMemorise = localStorage.getItem('arcanesync-interface'); } catch (_) {}
