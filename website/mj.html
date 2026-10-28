@@ -331,6 +331,10 @@
     .initiative-table th, .initiative-table td { border-bottom: 1px solid #e0cfa9; padding: 5px 8px; text-align: left; }
     .initiative-table th { font-size: .85em; color: #6b5135; }
     .initiative-table input[type="number"] { width: 80px; margin: 0; }
+    /* Cases à cocher à leur taille (le style général des champs les étirait). */
+    .initiative-table input[type="checkbox"] {
+      width: 18px; height: 18px; margin: 0; padding: 0; background: none; box-shadow: none; accent-color: #8b5e3c; cursor: pointer;
+    }
     .initiative-table .initiative-mob { color: #7a2222; }
     .initiative-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .initiative-actions button, .initiative-ordre button {
@@ -350,7 +354,60 @@
     .initiative-ordre .nom { flex: 1; }
     .initiative-ordre .cache { font-size: .8em; color: #7a2222; }
     .initiative-ordre button { padding: 3px 8px; font-size: .85em; }
+    /* Encoche ⠿ : on la saisit pour déplacer la ligne (souris ou doigt). */
+    .poignee {
+      display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      width: 22px; height: 30px; border-radius: 5px; border: 1px solid #c9b28c; background: #efe4cd;
+      color: #8b5e3c; font-size: 16px; line-height: 1; cursor: grab; user-select: none; touch-action: none;
+    }
+    .poignee:hover { background: #e3d2ad; border-color: #8b5e3c; }
+    .glisse .poignee { cursor: grabbing; background: #8b5e3c; color: #fefae0; }
+    body.reordonnement { user-select: none; cursor: grabbing; }
+    .initiative-ordre li.glisse, .initiative-table tr.glisse { opacity: .5; }
+    .initiative-ordre li.drop-avant { box-shadow: 0 -3px 0 #8b5e3c; }
+    .initiative-ordre li.drop-apres { box-shadow: 0 3px 0 #8b5e3c; }
+    .initiative-table tr.drop-avant > td { box-shadow: inset 0 3px 0 #8b5e3c; }
+    .initiative-table tr.drop-apres > td { box-shadow: inset 0 -3px 0 #8b5e3c; }
+    .initiative-table .cellule-poignee { width: 30px; padding-right: 0; }
+    .initiative-ordre-manuel { margin: 8px 0 0; padding: 6px 10px; border-radius: 6px; background: #fff4d6; border: 1px dashed #8b5e3c; }
+    .initiative-ordre-manuel button {
+      margin: 0 0 0 8px; padding: 3px 10px; border: 1px solid #8b5e3c; border-radius: 6px;
+      background: #fffdf6; color: #5c3b21; font: inherit; cursor: pointer; width: auto; height: auto;
+    }
+    .initiative-ordre .deplacer { display: inline-flex; gap: 2px; }
+    .initiative-ordre .deplacer button { padding: 1px 6px; font-size: .75em; }
+    .initiative-ordre .deplacer button:disabled { opacity: .3; cursor: default; }
     .initiative-statut { min-height: 1.2em; margin: 8px 0 0; }
+
+    /* Repos court / long */
+    .repos-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin: -6px 0 10px; }
+    .repos-actions button, .repos-boutons button {
+      margin: 0; padding: 7px 14px; border: 1px solid #8b5e3c; border-radius: 6px;
+      background: #fff4d6; color: #5c3b21; font: inherit; cursor: pointer; width: auto; height: auto;
+    }
+    .repos-actions button[aria-pressed="true"] { background: #8b5e3c; color: #fefae0; }
+    .repos-panneau {
+      text-align: left; margin: 0 0 14px; padding: 12px 14px;
+      border: 2px solid #8b5e3c; border-radius: 10px; background: #fffdf6;
+    }
+    .repos-panneau h3 { margin: 0 0 8px; }
+    .repos-panneau h4 { margin: 0 0 6px; font-size: .95em; }
+    .repos-colonnes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+    .repos-regles { border-collapse: collapse; }
+    .repos-regles th { text-align: left; padding: 4px 10px 4px 0; font-weight: 600; }
+    .repos-regles td { padding: 4px 6px 4px 0; }
+    .repos-regles select, .repos-regles input {
+      margin: 0; width: auto; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; padding: 4px 6px;
+    }
+    .repos-regles input { width: 76px; }
+    .repos-joueurs { display: grid; gap: 4px; }
+    .repos-joueurs label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .repos-joueurs input { width: auto; margin: 0; }
+    .repos-joueurs .a-terre { color: #7a2222; font-size: .85em; }
+    .repos-boutons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .repos-boutons .repos-principal { background: #8b5e3c; color: #fefae0; font-weight: 600; }
+    .repos-resultat { margin-top: 8px; }
+    .repos-resultat ul { margin: 4px 0 0; padding-left: 18px; }
 
     /* V1.8.1 — Gestion rapide directement dans les cartes joueurs */
     #joueurs-list {
@@ -467,6 +524,32 @@
          (joueurs, puis mobs), l'administration ensuite. -->
     <section class="card" id="players-management">
       <h2>Liste des joueurs</h2>
+      <!-- Repos : rend PV, mana et protection au groupe selon des règles
+           choisies par le MJ, enregistrées dans la partie. -->
+      <div class="repos-actions">
+        <button type="button" data-repos="court">☕ Repos court</button>
+        <button type="button" data-repos="long">🛏️ Repos long</button>
+      </div>
+      <div id="repos-panneau" class="repos-panneau" hidden>
+        <h3 id="repos-titre">Repos</h3>
+        <div class="repos-colonnes">
+          <div>
+            <h4>Ce que rend le repos</h4>
+            <table class="repos-regles">
+              <tbody id="repos-regles"></tbody>
+            </table>
+          </div>
+          <div>
+            <h4>Personnages</h4>
+            <div id="repos-joueurs" class="repos-joueurs"></div>
+          </div>
+        </div>
+        <div class="repos-boutons">
+          <button type="button" id="repos-appliquer" class="repos-principal">Appliquer le repos</button>
+          <button type="button" id="repos-annuler">Fermer</button>
+        </div>
+        <div id="repos-resultat" class="repos-resultat" aria-live="polite"></div>
+      </div>
       <div id="joueurs-list"></div>
     </section>
 
@@ -541,14 +624,19 @@
     <section class="card" id="initiative-management">
       <h2>⚔️ Initiative</h2>
       <div id="initiative-preparation">
-        <p class="initiative-aide">Cochez les combattants et saisissez leur initiative, puis lancez le combat.
+        <p class="initiative-aide">Cochez les combattants et saisissez leur initiative, puis lancez le combat : ils seront
+          classés par initiative. Pour imposer un autre ordre, saisissez l'encoche ⠿ d'une ligne et déplacez-la.
           Une créature « cachée » n'apparaît pas sur l'Écran.</p>
         <div class="initiative-table-wrap">
           <table class="initiative-table">
-            <thead><tr><th>Participe</th><th>Combattant</th><th>Initiative</th><th>Cachée</th></tr></thead>
+            <thead><tr><th aria-label="Déplacer"></th><th>Participe</th><th>Combattant</th><th>Initiative</th><th>Cachée</th></tr></thead>
             <tbody id="initiative-preparation-liste"></tbody>
           </table>
         </div>
+        <p id="initiative-ordre-manuel" class="initiative-ordre-manuel" hidden>
+          ✋ Ordre manuel : le combat suivra l'ordre de la liste, sans tri par initiative.
+          <button type="button" id="initiative-trier">↕ Trier par initiative</button>
+        </p>
         <div class="initiative-actions">
           <button type="button" id="initiative-recharger">↻ Actualiser la liste</button>
           <button type="button" id="initiative-demarrer" class="initiative-principal">⚔️ Lancer le combat</button>
@@ -556,6 +644,7 @@
       </div>
       <div id="initiative-combat" hidden>
         <p class="initiative-round">Round <strong id="initiative-round">1</strong></p>
+        <p class="initiative-aide">Pour changer l'ordre, saisissez l'encoche ⠿ d'un combattant et déplacez-le, ou utilisez ▲ ▼.</p>
         <ol id="initiative-ordre" class="initiative-ordre"></ol>
         <div class="initiative-actions">
           <button type="button" id="initiative-precedent">◀ Précédent</button>
@@ -985,6 +1074,100 @@
     });
 
     // ---------------------------------------------------------------
+    // Repos court / long : règles modifiables, personnages au choix.
+    // Les règles sont enregistrées dans la partie à chaque application.
+    // ---------------------------------------------------------------
+    const REPOS_RESSOURCES = [['hp', 'PV'], ['mana', 'Mana'], ['protection', 'Protection']];
+    const REPOS_MODES = [['aucun', 'Rien'], ['max', 'Tout'], ['pourcent', '% du max'], ['valeur', 'Points']];
+    let reposType = null;
+
+    async function ouvrirRepos(type) {
+      const panneau = document.getElementById('repos-panneau');
+      if (reposType === type && !panneau.hidden) return fermerRepos();
+      reposType = type;
+      document.querySelectorAll('[data-repos]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.repos === type)));
+      document.getElementById('repos-titre').textContent = type === 'court' ? '☕ Repos court' : '🛏️ Repos long';
+      document.getElementById('repos-resultat').textContent = '';
+      panneau.hidden = false;
+      try {
+        const [{ regles }, joueurs] = await Promise.all([
+          fetch('/api/session/repos').then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))),
+          fetch('/api/session/players').then(r => r.json())
+        ]);
+        afficherReglesRepos(regles[type]);
+        // Un personnage à terre (0 PV) n'est pas coché d'office.
+        document.getElementById('repos-joueurs').innerHTML = joueurs.length ? joueurs.map(j => {
+          const aTerre = (Number(j.hp?.current) || 0) <= 0;
+          return `<label><input type="checkbox" value="${escapeHtml(j.id)}" ${aTerre ? '' : 'checked'}>
+            ${escapeHtml(j.nom)} <small>PV ${j.hp?.current ?? 0}/${j.hp?.max ?? 0} · Mana ${j.mana?.current ?? 0}/${j.mana?.max ?? 0}</small>
+            ${aTerre ? '<span class="a-terre">à terre</span>' : ''}</label>`;
+        }).join('') : '<p>Aucun personnage dans la partie.</p>';
+      } catch (error) {
+        document.getElementById('repos-resultat').textContent = `Impossible de préparer le repos : ${error.message}`;
+      }
+    }
+
+    function afficherReglesRepos(regle) {
+      document.getElementById('repos-regles').innerHTML = REPOS_RESSOURCES.map(([cle, libelle]) => `
+        <tr data-ressource="${cle}">
+          <th>${libelle}</th>
+          <td><select data-a="mode">${REPOS_MODES.map(([mode, texte]) =>
+            `<option value="${mode}" ${regle[cle].mode === mode ? 'selected' : ''}>${texte}</option>`).join('')}</select></td>
+          <td><input type="number" data-a="valeur" min="0" value="${regle[cle].valeur}"></td>
+        </tr>`).join('');
+      document.querySelectorAll('#repos-regles tr').forEach(ligne => {
+        const majValeur = () => {
+          const mode = ligne.querySelector('[data-a="mode"]').value;
+          ligne.querySelector('[data-a="valeur"]').hidden = mode === 'aucun' || mode === 'max';
+          ligne.querySelector('[data-a="valeur"]').max = mode === 'pourcent' ? 100 : 9999;
+        };
+        ligne.querySelector('[data-a="mode"]').addEventListener('change', majValeur);
+        majValeur();
+      });
+    }
+
+    function fermerRepos() {
+      reposType = null;
+      document.getElementById('repos-panneau').hidden = true;
+      document.querySelectorAll('[data-repos]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    }
+
+    async function appliquerRepos() {
+      const resultat = document.getElementById('repos-resultat');
+      const regle = {};
+      document.querySelectorAll('#repos-regles tr').forEach(ligne => {
+        regle[ligne.dataset.ressource] = {
+          mode: ligne.querySelector('[data-a="mode"]').value,
+          valeur: Number(ligne.querySelector('[data-a="valeur"]').value) || 0
+        };
+      });
+      const joueurs = [...document.querySelectorAll('#repos-joueurs input:checked')].map(c => c.value);
+      if (!joueurs.length) { resultat.textContent = 'Cochez au moins un personnage.'; return; }
+      try {
+        const response = await fetch(`/api/session/repos/${reposType}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ regles: { [reposType]: regle }, joueurs })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `Erreur HTTP ${response.status}`);
+        const libelles = { hp: 'PV', mana: 'Mana', protection: 'Protection' };
+        resultat.innerHTML = data.resultats.length
+          ? `<strong>Repos appliqué.</strong><ul>${data.resultats.map(r => `<li>${escapeHtml(r.nom)} : ${
+              Object.keys(libelles).filter(c => r.avant[c] !== r.apres[c])
+                .map(c => `${libelles[c]} ${r.avant[c]} → ${r.apres[c]}`).join(', ')}</li>`).join('')}</ul>`
+          : 'Repos appliqué : tout le monde était déjà au maximum.';
+      } catch (error) {
+        resultat.textContent = `Repos impossible : ${error.message}`;
+      }
+    }
+
+    document.querySelectorAll('[data-repos]').forEach(bouton =>
+      bouton.addEventListener('click', () => ouvrirRepos(bouton.dataset.repos)));
+    document.getElementById('repos-appliquer').addEventListener('click', appliquerRepos);
+    document.getElementById('repos-annuler').addEventListener('click', fermerRepos);
+
+    // ---------------------------------------------------------------
     // Initiative : préparation (liste des combattants), puis combat.
     // ---------------------------------------------------------------
     const initiativeStatut = message => { document.getElementById('initiative-statut').textContent = message || ''; };
@@ -1010,15 +1193,93 @@
         ...joueurs.map(j => ({ kind: 'player', entityId: j.id, nom: j.nom })),
         ...mobs.filter(m => (Number(m.hp?.current) || 0) > 0).map(m => ({ kind: 'mob', entityId: m.id, nom: m.nom }))
       ];
+      definirOrdreManuel(false);
       document.getElementById('initiative-preparation-liste').innerHTML = lignes.length
         ? lignes.map(l => `<tr data-kind="${l.kind}" data-entity="${escapeHtml(l.entityId)}" data-nom="${escapeHtml(l.nom)}">
+            <td class="cellule-poignee"><span class="poignee" title="Saisir pour déplacer" aria-hidden="true">⠿</span></td>
             <td><input type="checkbox" data-a="participe" checked aria-label="${escapeHtml(l.nom)} participe"></td>
             <td class="${l.kind === 'mob' ? 'initiative-mob' : ''}">${l.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(l.nom)}</td>
             <td><input type="number" data-a="valeur" min="-99" max="999" step="1" placeholder="0" aria-label="Initiative de ${escapeHtml(l.nom)}"></td>
             <td>${l.kind === 'mob' ? `<input type="checkbox" data-a="cache" aria-label="Cacher ${escapeHtml(l.nom)}">` : ''}</td>
           </tr>`).join('')
-        : '<tr><td colspan="4">Aucun combattant disponible.</td></tr>';
+        : '<tr><td colspan="5">Aucun combattant disponible.</td></tr>';
     }
+
+    // Ordre manuel de la préparation : dès que le MJ déplace une ligne, le
+    // combat suit l'ordre de la liste au lieu de trier par initiative.
+    let ordreManuel = false;
+    function definirOrdreManuel(actif) {
+      ordreManuel = actif;
+      document.getElementById('initiative-ordre-manuel').hidden = !actif;
+    }
+
+    /**
+     * Réordonner une liste à la souris ou au doigt : on saisit l'encoche ⠿
+     * d'une ligne et on la pose entre deux autres (un trait montre l'endroit).
+     * `deposer(ligne, position)` reçoit la ligne et sa nouvelle place (0 = en tête).
+     */
+    function rendreReordonnable(conteneur, selecteurLignes, deposer) {
+      let glisse = null;
+      const effacerRepere = () => conteneur.querySelectorAll('.drop-avant, .drop-apres')
+        .forEach(l => l.classList.remove('drop-avant', 'drop-apres'));
+
+      conteneur.addEventListener('pointerdown', event => {
+        const poignee = event.target.closest('.poignee');
+        const ligne = poignee?.closest(selecteurLignes);
+        if (!ligne || event.button > 0) return;
+        event.preventDefault();
+        poignee.setPointerCapture?.(event.pointerId);
+        // Pas de sélection de texte pendant le geste.
+        window.getSelection()?.removeAllRanges();
+        document.body.classList.add('reordonnement');
+        const lignes = [...conteneur.querySelectorAll(selecteurLignes)];
+        glisse = { ligne, lignes, depart: lignes.indexOf(ligne), insertion: lignes.indexOf(ligne) };
+        ligne.classList.add('glisse');
+      });
+
+      conteneur.addEventListener('pointermove', event => {
+        if (!glisse) return;
+        // Insertion avant la première ligne dont le milieu est sous le pointeur.
+        const { lignes } = glisse;
+        let insertion = lignes.findIndex(l => { const r = l.getBoundingClientRect(); return event.clientY < r.top + r.height / 2; });
+        if (insertion === -1) insertion = lignes.length;
+        glisse.insertion = insertion;
+        effacerRepere();
+        if (insertion < lignes.length) lignes[insertion].classList.add('drop-avant');
+        else lignes[lignes.length - 1].classList.add('drop-apres');
+      });
+
+      const terminer = annule => {
+        if (!glisse) return;
+        const { ligne, depart, insertion } = glisse;
+        glisse = null;
+        effacerRepere();
+        ligne.classList.remove('glisse');
+        document.body.classList.remove('reordonnement');
+        window.getSelection()?.removeAllRanges();
+        const position = insertion > depart ? insertion - 1 : insertion;
+        if (!annule && position !== depart) deposer(ligne, position);
+      };
+      conteneur.addEventListener('pointerup', () => terminer(false));
+      conteneur.addEventListener('pointercancel', () => terminer(true));
+    }
+
+    rendreReordonnable(document.getElementById('initiative-preparation-liste'), 'tr[data-kind]', (ligne, position) => {
+      const corps = ligne.parentElement;
+      const autres = [...corps.querySelectorAll('tr[data-kind]')].filter(l => l !== ligne);
+      corps.insertBefore(ligne, autres[position] || null);
+      definirOrdreManuel(true);
+    });
+
+    document.getElementById('initiative-trier').addEventListener('click', () => {
+      const corps = document.getElementById('initiative-preparation-liste');
+      const valeur = l => Number(l.querySelector('[data-a="valeur"]').value) || 0;
+      [...corps.querySelectorAll('tr[data-kind]')]
+        .map((ligne, rang) => ({ ligne, rang }))
+        .sort((a, b) => valeur(b.ligne) - valeur(a.ligne) || a.rang - b.rang)
+        .forEach(({ ligne }) => corps.appendChild(ligne));
+      definirOrdreManuel(false);
+    });
 
     function afficherInitiative(etat) {
       const enCombat = etat?.actif === true;
@@ -1026,8 +1287,15 @@
       document.getElementById('initiative-combat').hidden = !enCombat;
       if (!enCombat) return;
       document.getElementById('initiative-round').textContent = etat.round;
+      // Ordre modifiable à la main : glisser une ligne, ou ▲ ▼.
+      const dernier = etat.entrees.length - 1;
       document.getElementById('initiative-ordre').innerHTML = etat.entrees.map((e, i) => `
-        <li class="${i === etat.tour ? 'courant' : ''}" data-id="${escapeHtml(e.id)}">
+        <li class="${i === etat.tour ? 'courant' : ''}" data-id="${escapeHtml(e.id)}" data-index="${i}">
+          <span class="poignee" title="Saisir pour déplacer" aria-hidden="true">⠿</span>
+          <span class="deplacer">
+            <button type="button" data-a="monter" title="Monter" aria-label="Monter ${escapeHtml(e.nom)}" ${i === 0 ? 'disabled' : ''}>▲</button>
+            <button type="button" data-a="descendre" title="Descendre" aria-label="Descendre ${escapeHtml(e.nom)}" ${i === dernier ? 'disabled' : ''}>▼</button>
+          </span>
           <span class="valeur">${e.valeur}</span>
           <span class="nom">${e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
           ${e.kind === 'mob' ? `<button type="button" data-a="cacher" title="${e.cache ? 'Montrer sur l’Écran' : 'Cacher de l’Écran'}">${e.cache ? '👁 Montrer' : '🙈 Cacher'}</button>` : ''}
@@ -1057,7 +1325,7 @@
           cache: ligne.querySelector('[data-a="cache"]')?.checked === true
         }));
       try {
-        afficherInitiative(await appelInitiative('demarrer', { entrees }));
+        afficherInitiative(await appelInitiative('demarrer', { entrees, ordreManuel }));
         initiativeStatut('Combat lancé.');
       } catch (error) { initiativeStatut(error.message); }
     });
@@ -1072,15 +1340,30 @@
       try { await appelInitiative('terminer'); await chargerInitiative(); initiativeStatut('Combat terminé.'); }
       catch (error) { initiativeStatut(error.message); }
     });
-    document.getElementById('initiative-ordre').addEventListener('click', async event => {
+    async function deplacerCombattant(id, position) {
+      try {
+        afficherInitiative(await appelInitiative('deplacer', { id, position }));
+        initiativeStatut('');
+      } catch (error) { initiativeStatut(error.message); }
+    }
+
+    const ordreInitiative = document.getElementById('initiative-ordre');
+    ordreInitiative.addEventListener('click', async event => {
       const bouton = event.target.closest('button[data-a]');
       if (!bouton) return;
-      const id = bouton.closest('li').dataset.id;
+      const ligne = bouton.closest('li');
+      const id = ligne.dataset.id;
+      const index = Number(ligne.dataset.index);
+      if (bouton.dataset.a === 'monter') return deplacerCombattant(id, index - 1);
+      if (bouton.dataset.a === 'descendre') return deplacerCombattant(id, index + 1);
       try {
         afficherInitiative(await appelInitiative(bouton.dataset.a === 'cacher' ? 'cacher' : 'retirer', { id }));
         initiativeStatut('');
       } catch (error) { initiativeStatut(error.message); }
     });
+
+    // Pendant le combat : l'encoche ⠿ déplace le combattant (enregistré).
+    rendreReordonnable(ordreInitiative, 'li[data-id]', (ligne, position) => deplacerCombattant(ligne.dataset.id, position));
 
     socket.on('initiativeUpdated', () => chargerInitiative());
     chargerInitiative();

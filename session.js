@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
 const initiativeModele = require('./initiative');
+const reposModele = require('./repos');
 
 const cheminFichier = cheminDonnees('session.json');
 
@@ -295,7 +296,9 @@ let session = {
   // Vue affichée par l'Écran partagé, choisie par le MJ.
   ecranVue: 'carte',
   // Ordre d'initiative du combat en cours (voir initiative.js).
-  initiative: null
+  initiative: null,
+  // Règles des repos court / long, choisies par le MJ (voir repos.js).
+  repos: reposModele.normaliserRegles(null)
 };
 
 const VUES_ECRAN = ['carte', 'tableau'];
@@ -345,7 +348,8 @@ function lireSession() {
         ? donnees.activeMapId
         : null,
       ecranVue: normaliserVueEcran(donnees.ecranVue),
-      initiative: initiativeModele.normaliserEtat(donnees.initiative)
+      initiative: initiativeModele.normaliserEtat(donnees.initiative),
+      repos: reposModele.normaliserRegles(donnees.repos)
     };
   } catch (err) {
     console.error("Erreur lors de la lecture de session.json:", err);
@@ -522,7 +526,8 @@ function importerSession(nouvelleSession) {
       ? nouvelleSession.activeMapId
       : null,
     ecranVue: normaliserVueEcran(nouvelleSession.ecranVue),
-    initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative)
+    initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative),
+    repos: reposModele.normaliserRegles(nouvelleSession.repos)
   };
 
   if (!ecrireSession(sessionNormalisee)) {
@@ -966,6 +971,43 @@ function supprimerMobSession(id) {
 
 lireSession();
 
+function getReglesRepos() {
+  return reposModele.normaliserRegles(session.repos);
+}
+
+function setReglesRepos(regles) {
+  const repos = reposModele.normaliserRegles({ ...getReglesRepos(), ...(regles || {}) });
+  const nouvelleSession = { ...session, repos, lastSaved: new Date().toISOString() };
+  if (!ecrireSession(nouvelleSession)) {
+    return { success: false, message: 'Impossible de sauvegarder les règles de repos.' };
+  }
+  session = nouvelleSession;
+  return { success: true, repos };
+}
+
+/**
+ * Applique un repos aux personnages demandés (tous si `ids` est absent).
+ * Renvoie la liste des personnages modifiés avec leurs valeurs avant / après.
+ */
+function appliquerRepos(type, ids) {
+  if (!reposModele.TYPES.includes(type)) return { success: false, message: 'Type de repos inconnu.' };
+  const regle = getReglesRepos()[type];
+  const cibles = Array.isArray(ids) ? ids : Object.keys(session.players);
+  const resultats = [];
+
+  for (const id of cibles) {
+    const joueur = session.players[id];
+    if (!joueur) continue;
+    const { avant, apres, modifications } = reposModele.calculerRepos(joueur, regle);
+    if (!modifications) continue;
+    if (!sauvegarderEtatSession(id, modifications)) {
+      return { success: false, message: `Repos interrompu : ${joueur.nom || id} n'a pas pu être enregistré.`, resultats };
+    }
+    resultats.push({ id, nom: joueur.nom || '', avant, apres });
+  }
+  return { success: true, type, resultats };
+}
+
 module.exports = {
   getSession,
   getSessionPlayerById,
@@ -996,6 +1038,9 @@ module.exports = {
   setEcranVue,
   getInitiative,
   setInitiative,
+  getReglesRepos,
+  setReglesRepos,
+  appliquerRepos,
   getSessionMobs,
   getSessionMobById,
   sauvegarderMobSession,

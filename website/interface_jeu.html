@@ -62,9 +62,101 @@
     .stat-chip span { font-size: 14px; }
     .stat-chip strong { font-size: 18px; }
     @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    /* En jeu : PV et mana en jauges, avec de grands boutons enregistrés
+       aussitôt (pensé pour le téléphone). */
+    .jeu-rapide {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+      gap: 14px 22px; margin-top: 22px;
+    }
+    .ressource-tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .ressource-tete span { font-weight: 700; }
+    .ressource-jauge {
+      position: relative; height: 26px; border: 2px solid #8b5e3c; border-radius: 13px;
+      background: #e9e2d2; overflow: hidden; box-shadow: inset 0 2px 4px rgba(139, 94, 60, .2);
+    }
+    .ressource-remplie { position: absolute; inset: 0 auto 0 0; width: 0; transition: width .3s ease; }
+    [data-ressource="hp"] .ressource-remplie { background: linear-gradient(to right, #8b3e3c, #bc5854); }
+    [data-ressource="mana"] .ressource-remplie { background: linear-gradient(to right, #3c5e8b, #5485bc); }
+    .ressource-texte {
+      position: absolute; inset: 0; text-align: center; line-height: 22px; color: #fefae0; font-weight: 700;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    }
+    .ressource-commandes {
+      display: grid; grid-template-columns: 52px minmax(56px, 1fr) auto minmax(48px, 70px) 52px auto;
+      align-items: center; gap: 6px; margin-top: 8px;
+    }
+    .ressource-commandes button {
+      height: 46px; margin: 0; padding: 0 12px; border-radius: 8px; cursor: pointer;
+      font-size: 22px; font-weight: 700; line-height: 1; touch-action: manipulation;
+    }
+    .ressource-commandes [data-delta="-1"] { background: #f3dcd8; border: 1px solid #8b3e3c; color: #7a2222; }
+    .ressource-commandes [data-delta="1"] { background: #dcebd9; border: 1px solid #3f7d4a; color: #2e5e36; }
+    .ressource-commandes [data-max] { background: #fff4d6; border: 1px solid #8b5e3c; color: #5c3b21; font-size: 15px; }
+    .ressource-commandes input { height: 46px; margin: 0; text-align: center; font-size: 20px; font-weight: 700; }
+    .ressource-commandes .divider-span { margin: 0; height: auto; padding: 0; }
+    .etat-enregistrement { grid-column: 1 / -1; margin: -4px 0 0; min-height: 1.2em; font-size: 13px; color: #2e7d32; text-align: right; }
+    .etat-enregistrement.erreur { color: #a52a2a; }
+
+    /* Jets de survie : cases assez grandes pour le doigt. */
+    .survie-ligne { display: flex; align-items: center; }
+    .survie-ligne .divider-span { min-width: 70px; font-size: 20px; }
+    .survie-cases { display: flex; gap: 18px; }
+    .survie-cases input[type="checkbox"] { width: 26px; height: 26px; margin: 0; accent-color: #8b5e3c; cursor: pointer; }
+
+    /* Sorts et attaques : nom, dégâts et niveau d'un coup d'œil ; le
+       détail (durée, action, description) se déplie. */
+    #sorts-contenu { margin-top: 16px; }
+    .sorts-groupe + .sorts-groupe { margin-top: 14px; }
+    .sorts-groupe h3 { margin: 0 0 8px; font-size: 17px; }
+    .sorts-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; }
+    .sort { border: 1px solid #c9b28c; border-radius: 8px; background: #fffdf6; }
+    .sort summary {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 9px 10px;
+      cursor: pointer; list-style: none;
+    }
+    .sort summary::-webkit-details-marker { display: none; }
+    .sort summary::after { content: '▾'; margin-left: auto; opacity: .6; }
+    .sort[open] summary::after { content: '▴'; }
+    .sort-nom { font-weight: 700; margin-right: 2px; }
+    .sort-badge { padding: 1px 8px; border-radius: 10px; background: #efe4cd; font-size: 13px; white-space: nowrap; }
+    .sort-badge.degats { background: #f3dcd8; color: #7a2222; font-weight: 700; }
+    .sort-detail { padding: 0 10px 10px; font-size: 14px; }
+    .sort-detail p { margin: 4px 0 0; }
+    .sort-meta { color: #6b5135; font-size: 13px; }
+    .sorts-vide { margin: 0; opacity: .8; }
+
+    /* Notification : changement fait par le MJ (ou repos). */
+    .notification-jeu {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
+      width: min(440px, calc(100vw - 24px)); box-sizing: border-box; padding: 12px 40px 12px 14px;
+      background: #fffdf6; border: 2px solid #8b5e3c; border-left-width: 8px; border-radius: 10px;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, .3); cursor: pointer; animation: notification-entree .25s ease-out;
+    }
+    .notification-jeu[hidden] { display: none; }
+    .notification-jeu.perte { border-left-color: #a52a2a; }
+    .notification-jeu.gain { border-left-color: #2e7d32; }
+    .notification-jeu strong { display: block; margin-bottom: 4px; }
+    .notification-jeu ul { margin: 0; padding-left: 18px; }
+    .notification-jeu .fermer { position: absolute; top: 6px; right: 10px; font-size: 20px; opacity: .6; }
+    @keyframes notification-entree { from { opacity: 0; transform: translate(-50%, -12px); } }
+
+    @media (max-width: 600px) {
+      .legende-champs { text-align: left; margin: 0 0 12px; }
+      /* Le titre de la page porte déjà le nom : seuls classe et race restent. */
+      .identite { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+      .identite .field:first-child { display: none; }
+      .section .section { padding-left: 10px !important; padding-right: 10px !important; }
+      .section .grid { gap: 14px; }
+      .ressource-commandes { grid-template-columns: 50px minmax(52px, 1fr) auto minmax(44px, 60px) 50px auto; gap: 5px; }
+      .ressource-commandes [data-max] { padding: 0 8px; }
+    }
   </style>
+  <link rel="stylesheet" href="joueur-mobile.css"/>
 </head>
 <body>
+
+  <div id="notification-jeu" class="notification-jeu" role="status" aria-live="polite" hidden></div>
 
   <h1>Interface de Jeu</h1>
 
@@ -75,56 +167,70 @@
       <span class="legende-modifiable">Modifiable</span>
       <span class="legende-lecture">Lecture seule</span>
     </p>
-    <div class="grid">
+    <div class="grid identite">
       <div class="field"><label>Nom</label><input id="player_name" type="text" readonly></div>
       <div class="field"><label>Classe</label><input id="player_class" type="text" readonly></div>
       <div class="field"><label>Race</label><input id="player_race" type="text" readonly></div>
+    </div>
+
+    <!-- PV et mana : chaque bouton enregistre aussitôt dans la partie. -->
+    <div class="jeu-rapide">
+      <div class="ressource" data-ressource="hp">
+        <div class="ressource-tete"><span>❤️ Points de Vie</span></div>
+        <div class="ressource-jauge"><div class="ressource-remplie"></div><span class="ressource-texte">0 / 0</span></div>
+        <div class="ressource-commandes">
+          <button type="button" data-delta="-1" aria-label="Retirer 1 PV">−</button>
+          <input type="number" id="player_hp_current" min="0" inputmode="numeric" aria-label="PV actuels">
+          <span class="divider-span">/</span>
+          <input type="number" id="player_hp" readonly aria-label="PV maximum">
+          <button type="button" data-delta="1" aria-label="Ajouter 1 PV">+</button>
+          <button type="button" data-max>Max</button>
+        </div>
+      </div>
+      <div class="ressource" data-ressource="mana">
+        <div class="ressource-tete"><span>🔷 Mana</span></div>
+        <div class="ressource-jauge"><div class="ressource-remplie"></div><span class="ressource-texte">0 / 0</span></div>
+        <div class="ressource-commandes">
+          <button type="button" data-delta="-1" aria-label="Retirer 1 point de mana">−</button>
+          <input type="number" id="player_mana_current" min="0" inputmode="numeric" aria-label="Mana actuel">
+          <span class="divider-span">/</span>
+          <input type="number" id="player_mana" readonly aria-label="Mana maximum">
+          <button type="button" data-delta="1" aria-label="Ajouter 1 point de mana">+</button>
+          <button type="button" data-max>Max</button>
+        </div>
+      </div>
+      <p id="etat-enregistrement" class="etat-enregistrement" aria-live="polite"></p>
+    </div>
+
+    <div class="grid">
       <div class="field">
         <label>Jets de survie</label>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <!-- Ligne des "Réussi" -->
-          <div style="display: flex; align-items: center;">
+          <div class="survie-ligne">
             <span class="divider-span">Réussi</span>
-            <div style="display: flex; gap: 20px;">
-              <input type="checkbox" name="survie1" value="reussi">
-              <input type="checkbox" name="survie2" value="reussi">
-              <input type="checkbox" name="survie3" value="reussi">
+            <div class="survie-cases">
+              <input type="checkbox" name="survie1" value="reussi" aria-label="Réussi 1">
+              <input type="checkbox" name="survie2" value="reussi" aria-label="Réussi 2">
+              <input type="checkbox" name="survie3" value="reussi" aria-label="Réussi 3">
             </div>
           </div>
           <!-- Ligne des "Echec" -->
-          <div style="display: flex; align-items: center;">
+          <div class="survie-ligne">
             <span class="divider-span">Échec</span>
-            <div style="display: flex; gap: 20px;">
-              <input type="checkbox" name="survie1" value="echec">
-              <input type="checkbox" name="survie2" value="echec">
-              <input type="checkbox" name="survie3" value="echec">
+            <div class="survie-cases">
+              <input type="checkbox" name="survie1" value="echec" aria-label="Échec 1">
+              <input type="checkbox" name="survie2" value="echec" aria-label="Échec 2">
+              <input type="checkbox" name="survie3" value="echec" aria-label="Échec 3">
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Vie <small>actuelle / max</small></label>
-        <div class="dual-input">
-          <input type="number" id="player_hp_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_hp" readonly>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Mana <small>actuel / max</small></label>
-        <div class="dual-input">
-          <input type="number" id="player_mana_current" min="0" placeholder="Min">
-          <span class="divider-span">/</span>
-          <input type="number" id="player_mana" readonly>
         </div>
       </div>
 
       <div class="field">
         <label>Durabilité <small>actuelle / max</small></label>
         <div class="dual-input">
-          <input type="number" id="player_dura_current" min="0" placeholder="0">
+          <input type="number" id="player_dura_current" min="0" placeholder="0" inputmode="numeric">
           <span class="divider-span">/</span>
           <input type="number" id="player_dura_max" placeholder="Max" readonly>
         </div>
@@ -139,7 +245,7 @@
       <div class="field">
         <label>Protection <small>actuelle / max</small></label>
         <div class="dual-input">
-          <input type="number" id="player_protection_current" min="0" placeholder="0">
+          <input type="number" id="player_protection_current" min="0" placeholder="0" inputmode="numeric">
           <span class="divider-span">/</span>
           <input type="number" id="player_protection_max" placeholder="Max" readonly>
         </div>
@@ -148,15 +254,23 @@
       <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column;">
           <label>Vie bonus</label>
-          <input type="number" id="player_vie_bonus" min="0" placeholder="0">
+          <input type="number" id="player_vie_bonus" min="0" placeholder="0" inputmode="numeric">
         </div>
         <div style="display: flex; flex-direction: column;">
           <label>Intox.</label>
-          <input type="number" id="player_intox" placeholder="0" min="0" max="100">
+          <input type="number" id="player_intox" placeholder="0" min="0" max="100" inputmode="numeric">
         </div>
       </div>
 
     </div><!-- fin du grid -->
+
+    <!-- Sorts et attaques du personnage : choisis sur la fiche, détaillés
+         d'après les Données de jeu. -->
+    <section class="section notes-panel" id="sorts-panel">
+      <h2>✨ Sorts et attaques</h2>
+      <div id="sorts-contenu"><p class="sorts-vide">Chargement...</p></div>
+    </section>
+
     <!-- Caractéristiques de référence du personnage (lecture seule). Les
          statuts (poison, agonie...) restent gérés par le MJ, sans affichage
          côté joueur. -->
@@ -195,6 +309,7 @@
   <script>
     let params;
     let etatServeur = null;   // dernier état officiel reçu du serveur
+    let reference = null;     // Données de jeu (descriptions des sorts)
 
 
     function escapeNotesHtml(value) {
@@ -219,6 +334,95 @@
       document.getElementById('player-stats').innerHTML = STATISTIQUES
         .map(([cle, libelle]) => `<div class="stat-chip"><span>${libelle}</span><strong>${escapeNotesHtml(stats?.[cle] ?? 0)}</strong></div>`)
         .join('');
+    }
+
+    // -----------------------------------------------------------------
+    // Sorts et attaques : la fiche donne la liste, les Données de jeu le
+    // détail (retrouvé par le nom).
+    // -----------------------------------------------------------------
+    const normaliserNom = nom => String(nom || '').trim().toLowerCase();
+
+    async function chargerReference() {
+      try { reference = await (await fetch('/api/reference')).json(); }
+      catch (_) { reference = null; }
+    }
+
+    function detailReference(nom, liste) {
+      return (liste || []).find(entree => normaliserNom(entree.nom) === normaliserNom(nom)) || null;
+    }
+
+    function renderSorts(joueur) {
+      const sorts = reference?.sorts || [];
+      const attaques = reference?.attaques_speciales?.liste || [];
+      const groupes = [
+        { titre: 'Sorts', liste: joueur.spells, ref: sorts, niveau: true },
+        { titre: 'Sorts mineurs', liste: joueur.sorts_mineurs, ref: sorts, niveau: false },
+        { titre: 'Attaques spéciales', liste: joueur.attaques_speciales, ref: attaques, niveau: true }
+      ].map(g => ({ ...g, liste: (Array.isArray(g.liste) ? g.liste : []).filter(e => e && String(e.nom || '').trim()) }))
+        .filter(g => g.liste.length);
+
+      const conteneur = document.getElementById('sorts-contenu');
+      if (!groupes.length) {
+        conteneur.innerHTML = '<p class="sorts-vide">Aucun sort ni attaque spéciale : ils se choisissent sur la fiche.</p>';
+        return;
+      }
+
+      conteneur.innerHTML = groupes.map(groupe => `
+        <div class="sorts-groupe">
+          <h3>${groupe.titre}</h3>
+          <div class="sorts-liste">${groupe.liste.map(entree => {
+            const detail = detailReference(entree.nom, groupe.ref);
+            const degats = entree.degats || detail?.degats;
+            const meta = [detail?.type_action && `Action : ${detail.type_action}`, detail?.duree && `Durée : ${detail.duree}`,
+              detail?.element && `Élément : ${detail.element}`, detail?.armes && `Armes : ${detail.armes}`].filter(Boolean);
+            return `
+              <details class="sort">
+                <summary>
+                  <span class="sort-nom">${escapeNotesHtml(entree.nom)}</span>
+                  ${degats ? `<span class="sort-badge degats">🎲 ${escapeNotesHtml(degats)}</span>` : ''}
+                  ${groupe.niveau && entree.niveau ? `<span class="sort-badge">Niv. ${escapeNotesHtml(entree.niveau)}</span>` : ''}
+                </summary>
+                <div class="sort-detail">
+                  ${meta.length ? `<p class="sort-meta">${meta.map(escapeNotesHtml).join(' · ')}</p>` : ''}
+                  <p>${detail?.description ? escapeNotesHtml(detail.description) : 'Pas de description dans les Données de jeu.'}</p>
+                </div>
+              </details>`;
+          }).join('')}</div>
+        </div>`).join('');
+    }
+
+    // -----------------------------------------------------------------
+    // Notification : le MJ (ou un repos) a modifié le personnage.
+    // -----------------------------------------------------------------
+    const SUIVIS = [
+      ['PV', j => j?.hp?.current], ['PV max', j => j?.hp?.max],
+      ['Mana', j => j?.mana?.current], ['Mana max', j => j?.mana?.max],
+      ['Durabilité', j => j?.armure?.durabilite?.current], ['Protection', j => j?.armure?.protection?.current],
+      ['Vie bonus', j => j?.bonus_vie], ['Intox.', j => j?.intox]
+    ];
+    let minuterieNotification = null;
+
+    function notifierChangement(avant, apres, event) {
+      if (!avant || !apres) return;
+      const changements = SUIVIS.map(([libelle, lire]) => {
+        const a = Number(lire(avant)) || 0;
+        const b = Number(lire(apres)) || 0;
+        return a === b ? null : { libelle, a, b };
+      }).filter(Boolean);
+      if (!changements.length) return;
+
+      const titre = event.source === 'repos'
+        ? (event.repos === 'long' ? '🛏️ Repos long' : '☕ Repos court')
+        : '🎲 Le MJ a modifié votre personnage';
+      const pv = changements.find(c => c.libelle === 'PV');
+      const boite = document.getElementById('notification-jeu');
+      boite.className = `notification-jeu${pv ? (pv.b < pv.a ? ' perte' : ' gain') : ''}`;
+      boite.innerHTML = `<span class="fermer" aria-hidden="true">×</span><strong>${titre}</strong><ul>${
+        changements.map(c => `<li>${c.libelle} : ${c.a} → ${c.b} (${c.b > c.a ? '+' : '−'}${Math.abs(c.b - c.a)})</li>`).join('')}</ul>`;
+      boite.hidden = false;
+      try { navigator.vibrate?.(pv && pv.b < pv.a ? [90, 60, 90] : 60); } catch (_) { /* non pris en charge */ }
+      clearTimeout(minuterieNotification);
+      minuterieNotification = setTimeout(() => { boite.hidden = true; }, 7000);
     }
 
     function renderPublicNotes(notes) {
@@ -272,7 +476,9 @@
       initializeFields();
       setupValidators();
       setupSurvie();
+      setupEnregistrementImmediat();
       updateArmorState();
+      document.getElementById('notification-jeu').addEventListener('click', event => { event.currentTarget.hidden = true; });
 
       // Pour afficher le nom du joueur dans le titre
       const nom = params.get("Nom");
@@ -287,6 +493,7 @@
 
       // Les paramètres de l'URL servent uniquement à l'initialisation.
       // L'état officiel est ensuite récupéré depuis le serveur.
+      await chargerReference();
       await refreshSessionFromServer();
 
       document.getElementById('personal-notes-save')?.addEventListener('click', savePersonalNotes);
@@ -341,10 +548,18 @@
         if (!event || event.playerId !== params.get("PlayerId")) return;
 
         if (event.session) {
+          // Un changement fait par le MJ ou par un repos est signalé ; les
+          // modifications du joueur lui-même ne le sont pas.
+          if (event.source === 'mj' || event.source === 'repos') notifierChangement(etatServeur, event.session, event);
           applySessionState(event.session);
         } else {
           await refreshSessionFromServer();
         }
+      });
+
+      socket.on('referenceUpdated', async () => {
+        await chargerReference();
+        if (etatServeur) renderSorts(etatServeur);
       });
 
       socket.on('personalNotesUpdated', async (event) => {
@@ -428,23 +643,28 @@
     }
 
     function applySessionState(joueur) {
+      // Un champ en cours de saisie (ou pas encore confirmé par le serveur)
+      // n'est pas écrasé par une mise à jour venue d'ailleurs.
+      const remplir = (id, valeur) => { if (!saisiesEnAttente.has(id)) document.getElementById(id).value = valeur; };
+
       document.getElementById('player_name').value = joueur.nom || '';
       document.getElementById('player_class').value = joueur.classe || '';
       document.getElementById('player_race').value = joueur.race || '';
 
       document.getElementById('player_hp').value = joueur.hp?.max ?? 0;
-      document.getElementById('player_hp_current').value = joueur.hp?.current ?? 0;
+      remplir('player_hp_current', joueur.hp?.current ?? 0);
       document.getElementById('player_mana').value = joueur.mana?.max ?? 0;
-      document.getElementById('player_mana_current').value = joueur.mana?.current ?? 0;
+      remplir('player_mana_current', joueur.mana?.current ?? 0);
 
       document.getElementById('player_dura_max').value = joueur.armure?.durabilite?.max ?? 0;
-      document.getElementById('player_dura_current').value = joueur.armure?.durabilite?.current ?? 0;
+      remplir('player_dura_current', joueur.armure?.durabilite?.current ?? 0);
       document.getElementById('player_protection_max').value = joueur.armure?.protection?.max ?? 0;
-      document.getElementById('player_protection_current').value = joueur.armure?.protection?.current ?? 0;
+      remplir('player_protection_current', joueur.armure?.protection?.current ?? 0);
 
-      document.getElementById('player_vie_bonus').value = joueur.bonus_vie ?? 0;
-      document.getElementById('player_intox').value = joueur.intox ?? 0;
+      remplir('player_vie_bonus', joueur.bonus_vie ?? 0);
+      remplir('player_intox', joueur.intox ?? 0);
       if (joueur.stats) renderStats(joueur.stats);
+      renderSorts(joueur);
 
       // Jets de survie : état de la partie.
       for (let i = 0; i < 3; i++) {
@@ -465,6 +685,7 @@
 
       bornerRessources();
       updateArmorState();
+      majJauges();
       console.log('État serveur synchronisé pour :', joueur.nom);
     }
 
@@ -497,6 +718,96 @@
             console.error('Jets de survie non enregistrés :', erreur);
           }
         });
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // Enregistrement immédiat de l'état de jeu : les boutons PV / mana et
+    // chaque champ modifié (à la validation) partent aussitôt dans la
+    // partie, sans attendre « Sauvegarder ».
+    //
+    // saisiesEnAttente : champ -> numéro de sa dernière saisie non encore
+    // confirmée. Une réponse ne libère un champ que si aucune saisie plus
+    // récente n'a eu lieu entre-temps.
+    // -----------------------------------------------------------------
+    const saisiesEnAttente = new Map();
+    let numeroSaisie = 0;
+    const marquerSaisie = id => saisiesEnAttente.set(id, ++numeroSaisie);
+    const entier = id => parseInt(document.getElementById(id).value) || 0;
+
+    // Champ -> données envoyées à la partie.
+    const ENVOIS = {
+      player_hp_current: () => ({ hp: { current: entier('player_hp_current') } }),
+      player_mana_current: () => ({ mana: { current: entier('player_mana_current') } }),
+      player_dura_current: () => ({ armure: { durabilite: { current: entier('player_dura_current') } } }),
+      player_protection_current: () => ({ armure: { protection: { current: entier('player_protection_current') } } }),
+      player_vie_bonus: () => ({ bonus_vie: entier('player_vie_bonus') }),
+      player_intox: () => ({ intox: document.getElementById('player_intox').value || '0' })
+    };
+
+    function afficherEnregistrement(texte, erreur = false) {
+      const etat = document.getElementById('etat-enregistrement');
+      etat.textContent = texte;
+      etat.classList.toggle('erreur', erreur);
+    }
+
+    async function enregistrerChamp(id) {
+      const playerId = params.get('PlayerId');
+      if (!playerId || !etatServeur) return;
+      const numero = saisiesEnAttente.get(id);
+      afficherEnregistrement('Enregistrement…');
+      try {
+        const reponse = await fetch('/api/session/player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: playerId, nouvellesDonnees: ENVOIS[id]() })
+        });
+        if (!reponse.ok) throw new Error(`Erreur HTTP ${reponse.status}`);
+        if (saisiesEnAttente.get(id) === numero) saisiesEnAttente.delete(id);
+        afficherEnregistrement('✓ Enregistré');
+      } catch (erreur) {
+        saisiesEnAttente.delete(id);
+        afficherEnregistrement(`⚠️ Non enregistré : ${erreur.message}`, true);
+        await refreshSessionFromServer();
+      }
+    }
+
+    function majJauges() {
+      document.querySelectorAll('.ressource').forEach(bloc => {
+        const cle = bloc.dataset.ressource;
+        const max = entier(`player_${cle}`);
+        const actuel = Math.min(max, entier(`player_${cle}_current`));
+        bloc.querySelector('.ressource-remplie').style.width = `${max > 0 ? actuel / max * 100 : 0}%`;
+        bloc.querySelector('.ressource-texte').textContent = `${actuel} / ${max}`;
+      });
+    }
+
+    function setupEnregistrementImmediat() {
+      const minuteries = {};
+      // Plusieurs appuis rapprochés partent en un seul envoi.
+      const planifier = (id, delai) => {
+        clearTimeout(minuteries[id]);
+        minuteries[id] = setTimeout(() => enregistrerChamp(id), delai);
+      };
+
+      document.querySelectorAll('.ressource').forEach(bloc => {
+        const cle = bloc.dataset.ressource;
+        const champ = document.getElementById(`player_${cle}_current`);
+        const changer = valeur => {
+          champ.value = Math.max(0, Math.min(entier(`player_${cle}`), valeur));
+          marquerSaisie(champ.id);
+          majJauges();
+          planifier(champ.id, 450);
+        };
+        bloc.querySelectorAll('[data-delta]').forEach(bouton =>
+          bouton.addEventListener('click', () => changer(entier(champ.id) + Number(bouton.dataset.delta))));
+        bloc.querySelector('[data-max]').addEventListener('click', () => changer(entier(`player_${cle}`)));
+      });
+
+      Object.keys(ENVOIS).forEach(id => {
+        const champ = document.getElementById(id);
+        champ.addEventListener('input', () => { marquerSaisie(id); majJauges(); });
+        champ.addEventListener('change', () => { bornerRessources(); planifier(id, 0); });
       });
     }
 
@@ -535,11 +846,11 @@
       const duraCurrent = parseInt(document.getElementById('player_dura_current').value) || 0;
       const armorStateInput = document.getElementById('player_armor');
       const armorStateEffect = document.getElementById('armor_effect');
-      
+
       let etat = '';
       let couleur = '';
       let effect = '';
-      
+
       if (duraCurrent === 0) {
         etat = "Absence d'armure";
         couleur = '#000000';
@@ -561,7 +872,7 @@
         couleurs = '#000000';
         effect = 'Résultat du jet réduite de moitié';
       }
-      
+
       armorStateInput.value = etat;
       armorStateInput.style.color = couleur;
       armorStateEffect.textContent = effect;
@@ -613,6 +924,7 @@
           }
 
           await response.json();
+          saisiesEnAttente.clear();
           alert('État de session sauvegardé avec succès !');
         } catch (error) {
           console.error('Erreur détaillée:', error);

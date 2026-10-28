@@ -2,7 +2,7 @@
 // de survie sont enregistrés, les liens ne transportent que l'identifiant.
 module.exports = {
   nom: 'Données de partie (fiche, jeu, survie)',
-  async executer({ page, verifier, session, joueur, api }) {
+  async executer({ page, verifier, session, joueur, api, lireJson }) {
     const PLAYER = joueur.id;
     await api('GET', `/api/session/player/${PLAYER}`);
     const max = session(PLAYER).hp.max;
@@ -26,10 +26,17 @@ module.exports = {
 
     // Enregistrer la fiche ne remet pas les PV de partie à zéro.
     // La sauvegarde affiche une alerte puis recharge la fiche.
+    await page.attendre("document.querySelectorAll('.competences-table .comp_name').length > 0", 20);
+    const competencesAffichees = await page.evaluer(`[...document.querySelectorAll('.competences-table tbody tr')]
+      .map(l => l.querySelector('.comp_name').value + ' = ' + l.querySelector('.comp_effet').value)`);
     verifier(await page.naviguerPar("setTimeout(() => document.getElementById('save-data-btn').click(), 0)",
       "document.getElementById('player_name').value !== ''"), 'fiche : rechargée après enregistrement');
     verifier(await page.evaluer('location.search') === `?PlayerId=${PLAYER}`, 'fiche : URL courte après enregistrement');
     verifier(session(PLAYER).hp.current === max - 6, 'fiche : PV de partie conservés après enregistrement');
+    const competencesEnregistrees = (lireJson('data.json').find(j => j.id === PLAYER).competences || [])
+      .map(c => `${c.nom} = ${c.effet}`);
+    verifier(competencesAffichees.length > 0 && JSON.stringify(competencesEnregistrees) === JSON.stringify(competencesAffichees),
+      `fiche : compétences enregistrées avec leur effet (${competencesEnregistrees.length})`);
 
     // PV saisis sur la fiche : la saisie n'est pas écrasée par le direct,
     // et l'enregistrement met la partie à jour.

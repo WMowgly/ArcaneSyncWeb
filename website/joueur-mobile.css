@@ -1,0 +1,96 @@
+/* joueur-mobile.css
+   ---------------------------------------------------------------------------
+   Pages des joueurs sur téléphone : choix du personnage, Interface de Jeu,
+   Fiche et Création. Seules ces pages servent sur téléphone ; les pages du
+   MJ et l'Écran restent pensées pour un grand écran.
+
+   Chargée en DERNIER : elle reprend, sous 600 px seulement, les règles des
+   feuilles de chaque page. Rien ne change au-dessus de 600 px, et
+   l'organisation des sections (équipement compris) reste celle de la page.
+   --------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+  body { padding: 8px 8px 24px !important; }
+  h1 { font-size: 1.45rem; margin: 8px 0 14px; }
+
+  /* Sections : marges serrées ; le titre reste un « cartouche » posé en
+     haut, mais dans le flux : un titre long passe à la ligne sans
+     recouvrir le contenu. */
+  .section {
+    padding: 14px 12px 14px !important;
+    margin-bottom: 18px !important;
+    border-width: 3px;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px #3b2f1e55;
+  }
+  .section h2 {
+    position: static !important;
+    display: table;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: -2px 0 12px !important;
+    padding: 2px 10px;
+    font-size: 17px !important;
+    line-height: 1.25;
+    text-align: left;
+  }
+  .section .grid, .section .grid-3 { gap: 12px !important; margin-top: 0; }
+  .section h3 { font-size: 16px; margin: 12px 0 8px; }
+
+  /* Champs : 16 px évite le zoom automatique du navigateur au toucher. */
+  input, select, textarea { font-size: 16px; }
+  input:not([type="checkbox"]):not([type="radio"]), select { min-height: 42px; }
+
+  /* Fiche et création : deux colonnes pour les champs courts
+     (caractéristiques, classe, race) ; le nom sur toute la largeur. */
+  .page-fiche .section .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .page-fiche .section .grid > .field:has(#player_name) { grid-column: 1 / -1; }
+
+  /* Sorts et attaques (fiche, création) : le nom sur toute la largeur,
+     puis dégâts, niveau et suppression. */
+  .sort-entetes { display: none !important; }
+  .sort-row, #sorts-mineurs-container .sort-row {
+    grid-template-columns: minmax(0, 1fr) 70px auto !important;
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+  #sorts-mineurs-container .sort-row { grid-template-columns: minmax(0, 1fr) auto !important; }
+  .sort-row > div:first-child { grid-column: 1 / -1; min-width: 0; }
+  .sort-row > div:first-child select { flex: 1 1 auto; min-width: 0; }
+  .sort-row .description-btn { min-width: 36px; min-height: 36px; font-size: 16px; }
+  .sort-row .delete-btn { min-width: 42px; min-height: 42px; font-size: 18px; }
+  .filtre-type-ligne { justify-content: flex-start !important; margin: 0 0 8px !important; }
+
+  /* Compétences : une fiche par compétence (nom et niveau, puis l'effet
+     en entier) au lieu d'un tableau tronqué. */
+  .competences-table thead { display: none; }
+  .competences-table, .competences-table tbody { display: block; }
+  .competences-table tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 6px;
+    padding: 8px 0; border-bottom: 1px solid #c9b28c;
+  }
+  .competences-table td { display: block; border: 0 !important; padding: 0 !important; }
+  .competences-table td:nth-child(2) { grid-column: 1 / -1; order: 3; }
+  .competences-table .comp_name { font-weight: 700; }
+  .competences-table textarea.comp_effet { height: auto !important; min-height: 0; resize: none; }
+
+  /* Inventaire : le tableau garde sa forme et défile de côté. */
+  #inventory-editor { -webkit-overflow-scrolling: touch; }
+  #inventory-editor::before {
+    content: '↔ Faites glisser le tableau pour voir toutes les colonnes';
+    display: block; margin-bottom: 6px; font-size: 13px; opacity: .75;
+  }
+
+  .competences-table td:first-child { font-weight: 700; }
+
+  /* Boutons d'action : pleine largeur, faciles à toucher. */
+  .game-button, .add-btn { min-height: 46px; }
+  .add-btn { width: 100%; }
+
+  /* Fiche et création : « Sauvegarder » flotte en bas à droite, à portée
+     de pouce, sans remonter la page. */
+  .page-fiche { padding-bottom: 90px !important; }
+  #save-data-btn, #save_player_creation {
+    position: fixed; right: 12px; bottom: 12px; z-index: 20; margin: 0 !important; width: auto !important;
+    padding: 12px 22px !important; border-radius: 26px !important; box-shadow: 0 4px 14px #3b2f1e88 !important;
+  }
+}

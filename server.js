@@ -4,7 +4,8 @@
 //
 // Les routes HTTP sont regroupées par domaine dans serveur/ :
 //   routes-mj (code MJ), routes-joueurs, routes-session, routes-mobs,
-//   routes-reference (données de jeu), routes-cartes, routes-initiative ;
+//   routes-reference (données de jeu), routes-cartes, routes-initiative,
+//   routes-reseau (adresses pour rejoindre la partie) ;
 //   acces.js (rôle MJ d'une requête), diffusion-carte.js (carte active).
 // ---------------------------------------------------------------------------
 const express = require('express');
@@ -78,6 +79,7 @@ app.use(require('./serveur/routes-mobs')(io));
 app.use(require('./serveur/routes-reference')(io));
 app.use(require('./serveur/routes-cartes')(io));
 app.use(require('./serveur/routes-initiative')(io));
+app.use(require('./serveur/routes-reseau')(io));
 
 // ------------------------------------------------------------------
 // V1.12 — Reconnexion & resynchronisation de l'état autoritaire

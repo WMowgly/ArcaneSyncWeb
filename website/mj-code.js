@@ -236,6 +236,8 @@
 
   window.ArcaneMJ = {
     assurer,
+    // Vrai si ce navigateur a mémorisé un code MJ (appareil du MJ).
+    aUnCode: () => Boolean(lire()),
     changerCode: () => demanderCode({ mode: 'changement' }),
     oublier: () => ecrire('')
   };

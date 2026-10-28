@@ -54,9 +54,12 @@ function normaliserEtat(etat) {
   };
 }
 
-/** Début du combat : tri par valeur décroissante (à égalité, l'ordre saisi). */
-function demarrer(entrees) {
-  const liste = normaliserEntrees(entrees)
+/**
+ * Début du combat : tri par valeur décroissante (à égalité, l'ordre saisi).
+ * `ordreManuel` : le MJ a rangé les combattants lui-même ; son ordre est gardé.
+ */
+function demarrer(entrees, { ordreManuel = false } = {}) {
+  const liste = ordreManuel ? normaliserEntrees(entrees) : normaliserEntrees(entrees)
     .map((entree, rang) => ({ entree, rang }))
     .sort((a, b) => b.entree.valeur - a.entree.valeur || a.rang - b.rang)
     .map(({ entree }) => entree);
@@ -87,6 +90,23 @@ function retirer(etat, id) {
   if (index < tour) tour -= 1;
   if (tour >= entrees.length) { tour = 0; round += 1; }
   return { success: true, etat: { ...etat, entrees, tour, round } };
+}
+
+/**
+ * Ordre choisi à la main par le MJ : le combattant `id` passe à la place
+ * `position` (0 = premier). Celui qui joue garde la main.
+ */
+function deplacer(etat, id, position) {
+  const index = etat.entrees.findIndex(entree => entree.id === id);
+  if (index === -1) return { success: false, message: 'Combattant introuvable.' };
+  const cible = entier(position, index, 0, etat.entrees.length - 1);
+  if (cible === index) return { success: true, etat };
+  const courant = etat.entrees[etat.tour]?.id;
+  const entrees = etat.entrees.slice();
+  const [entree] = entrees.splice(index, 1);
+  entrees.splice(cible, 0, entree);
+  const tour = Math.max(0, entrees.findIndex(e => e.id === courant));
+  return { success: true, etat: { ...etat, entrees, tour } };
 }
 
 /** Cache ou révèle une créature à la table. */
@@ -122,6 +142,7 @@ module.exports = {
   suivant,
   precedent,
   retirer,
+  deplacer,
   basculerCache,
   projectionTable
 };

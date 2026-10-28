@@ -48,6 +48,22 @@ etat = initiative.retirer(etat, 'player:p1').etat;                 // celui qui 
 verifier(etat.entrees[etat.tour].nom === 'Elarion', 'Retirer celui qui joue passe la main au suivant.');
 verifier(!initiative.retirer(etat, 'mob:inconnu').success, 'Retirer un inconnu doit échouer.');
 
+// Ordre manuel de la préparation : gardé tel quel, sans tri.
+verifier(initiative.demarrer(entrees, { ordreManuel: true }).etat.entrees.map(e => e.nom).join(',') === 'Jayce,Gobelin,Elarion,Assassin',
+  'Ordre manuel : le combat doit suivre l\'ordre donné.');
+
+// Ordre changé à la main : celui qui joue garde la main.
+{
+  let combat = initiative.demarrer(entrees).etat;                     // Assassin, Gobelin, Jayce, Elarion
+  combat = initiative.suivant(combat).etat;                          // tour du Gobelin
+  combat = initiative.deplacer(combat, 'player:p2', 0).etat;         // Elarion en tête
+  verifier(combat.entrees.map(e => e.nom).join(',') === 'Elarion,Assassin,Gobelin,Jayce', 'Déplacer en tête : ordre inattendu.');
+  verifier(combat.entrees[combat.tour].nom === 'Gobelin', 'Déplacer un combattant ne doit pas changer qui joue.');
+  combat = initiative.deplacer(combat, 'mob:m1', 99).etat;           // position bornée : dernier
+  verifier(combat.entrees[3].nom === 'Gobelin' && combat.entrees[combat.tour].nom === 'Gobelin', 'Celui qui joue, déplacé, garde la main.');
+  verifier(!initiative.deplacer(combat, 'mob:inconnu', 0).success, 'Déplacer un inconnu doit échouer.');
+}
+
 // Projection pour la table.
 const table = initiative.projectionTable(initiative.demarrer(entrees).etat);
 verifier(!table.entrees.some(e => e.nom === 'Assassin'), 'Une créature cachée ne doit pas apparaître à la table.');
@@ -104,6 +120,12 @@ async function appel(methode, route, corps, entetes = {}) {
     verifier(r.donnees.tour === 1, 'Tour suivant non appliqué.');
     const fichier = JSON.parse(fs.readFileSync(bacDonnees.chemin('session.json'), 'utf8'));
     verifier(fichier.initiative?.tour === 1 && fichier.initiative.actif === true, 'L\'initiative doit être enregistrée dans la partie.');
+
+    verifier((await appel('POST', '/api/initiative/deplacer', { id: 'player:p2', position: 0 })).statut === 403,
+      'Changer l\'ordre sans code MJ doit être refusé.');
+    r = await appel('POST', '/api/initiative/deplacer', { id: 'player:p2', position: 0 }, MJ);
+    verifier(r.statut === 200 && r.donnees.entrees[0].nom === 'Elarion' && r.donnees.entrees[r.donnees.tour].nom === 'Gobelin',
+      'Le MJ doit pouvoir changer l\'ordre sans changer qui joue.');
 
     r = await appel('POST', '/api/initiative/terminer', {}, MJ);
     verifier(r.donnees.actif === false && r.donnees.entrees.length === 0, 'Terminer doit effacer le combat.');

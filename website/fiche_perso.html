@@ -7,7 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="police-lisible.css"/>
-  <script src="/socket.io/socket.io.js"></script> 
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="filtre-groupes.js"></script> 
   <style>
     body {
       font-family: 'Uncial Antiqua', cursive;
@@ -136,6 +137,10 @@
 
     .competences-table th {
       background-color: rgba(139, 94, 60, 0.2);
+    }
+    .competences-table textarea.comp_effet {
+      height: auto; min-height: 0; resize: none; overflow: hidden;
+      field-sizing: content; line-height: 1.35;
     }
 
     .spells-grid {
@@ -415,8 +420,9 @@
       opacity: 0.8;
     }
 </style>
+  <link rel="stylesheet" href="joueur-mobile.css"/>
 </head>
-<body>
+<body class="page-fiche">
   <div id="navbar-placeholder"></div>
   <h1>Fiche de Personnage</h1>
   <div class="fiche-nav">
@@ -787,11 +793,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       
       // Ajouter les compétences de classe
       const competencesClasse = gameData.competences_classes[selectedClass] || [];
+      // L'effet s'affiche en entier (zone de texte à sa hauteur) : un champ
+      // d'une ligne le tronquait, surtout sur téléphone.
+      const texteEffet = effet => String(effet ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
       competencesClasse.forEach(comp => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
-          <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
+          <td><textarea class="comp_effet" rows="1" readonly>${texteEffet(comp.effet)}</textarea></td>
           <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
         `;
         classeTableBody.appendChild(row);
@@ -803,7 +812,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><input type="text" value="${comp.nom}" class="comp_name" readonly></td>
-          <td><input type="text" value="${comp.effet}" class="comp_effet" readonly></td>
+          <td><textarea class="comp_effet" rows="1" readonly>${texteEffet(comp.effet)}</textarea></td>
           <td><input type="number" value="${comp.niveau}" class="comp_niveau" readonly></td>
         `;
         racialesTableBody.appendChild(row);
@@ -1190,33 +1199,21 @@ function getSpecialAttacks() {
 
 function getCompetences() {
   const competences = [];
-  
-  // Récupérer les compétences de classe
-  document.querySelectorAll('#competences-classe-table tbody tr').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    if (inputs[0].value) {
+  // Champs lus par leur classe : l'effet est une zone de texte, pas un input.
+  const lire = (selecteur, type) => document.querySelectorAll(`${selecteur} tbody tr`).forEach(row => {
+    const nom = row.querySelector('.comp_name')?.value;
+    if (nom) {
       competences.push({
-        nom: inputs[0].value,
-        effet: inputs[1].value || '',
-        niveau: parseInt(inputs[2].value) || 1,
-        type: 'classe'
+        nom,
+        effet: row.querySelector('.comp_effet')?.value || '',
+        niveau: parseInt(row.querySelector('.comp_niveau')?.value) || 1,
+        type
       });
     }
   });
-  
-  // Récupérer les compétences raciales
-  document.querySelectorAll('#competences-raciales-table tbody tr').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    if (inputs[0].value) {
-      competences.push({
-        nom: inputs[0].value,
-        effet: inputs[1].value || '',
-        niveau: parseInt(inputs[2].value) || 1,
-        type: 'racial'
-      });
-    }
-  });
-  
+
+  lire('#competences-classe-table', 'classe');
+  lire('#competences-raciales-table', 'racial');
   return competences;
 }
 
@@ -1719,12 +1716,7 @@ async function createAttackElement(attack) {
     function appliquer(filtre) {
       const type = filtre.value;
       const conteneur = document.getElementById(filtre.dataset.conteneur);
-      conteneur.querySelectorAll('select').forEach(select => {
-        const choisi = select.selectedOptions[0];
-        select.querySelectorAll('optgroup').forEach(groupe => {
-          groupe.hidden = Boolean(type) && groupe.label !== type && !groupe.contains(choisi);
-        });
-      });
+      conteneur.querySelectorAll('select').forEach(select => window.ArcaneFiltre.filtrerGroupes(select, type));
     }
 
     filtres.forEach(filtre => {

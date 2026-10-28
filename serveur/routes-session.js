@@ -1,6 +1,7 @@
 // serveur/routes-session.js
 // ---------------------------------------------------------------------------
-// Partie active (session.json) : état des personnages, notes, Écran, scène, export / import.
+// Partie active (session.json) : état des personnages, notes, Écran, scène,
+// repos, export / import.
 //
 // Routes déplacées telles quelles depuis server.js (V1.16). Le routeur est
 // nommé `app` pour que chaque route garde exactement son écriture d'origine.
@@ -28,7 +29,10 @@ const {
   resetScenePositions,
   setMobSceneVisibility,
   getEcranVue,
-  setEcranVue
+  setEcranVue,
+  getReglesRepos,
+  setReglesRepos,
+  appliquerRepos
 } = require('../session');
 const { roleDepuisRequete, refuserSiPasMj } = require('./acces');
 const { emitMapState } = require('./diffusion-carte');
@@ -505,11 +509,14 @@ app.post('/api/session/player', (req, res) => {
 
   // Événement spécifique à la session : la fiche de personnage
   // n'écoute volontairement PAS cet événement.
+  // `source` : l'Interface de Jeu prévient le joueur quand le MJ modifie
+  // son personnage (pas quand il le modifie lui-même).
   io.emit('sessionPlayerUpdate', {
     type: 'update',
     player: joueur.nom,
     playerId: id,
-    session: joueurSession
+    session: joueurSession,
+    source: roleDepuisRequete(req) === 'mj' ? 'mj' : 'joueur'
   });
 
   io.emit('sessionUpdated', {
@@ -531,6 +538,51 @@ app.post('/api/session/player', (req, res) => {
     playerId: id,
     session: joueurSession
   });
+});
+
+// ------------------------------------------------------------------
+// Repos court / long (MJ) : règles enregistrées dans la partie, puis
+// appliquées aux personnages choisis. Voir repos.js.
+// ------------------------------------------------------------------
+
+app.get('/api/session/repos', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  res.json({ regles: getReglesRepos() });
+});
+
+app.put('/api/session/repos', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  const result = setReglesRepos(req.body?.regles);
+  if (!result.success) return res.status(500).json({ message: result.message });
+  res.json({ regles: result.repos });
+});
+
+app.post('/api/session/repos/:type', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  const { regles, joueurs } = req.body || {};
+  if (regles) {
+    const enregistrement = setReglesRepos(regles);
+    if (!enregistrement.success) return res.status(500).json({ message: enregistrement.message });
+  }
+
+  const result = appliquerRepos(req.params.type, Array.isArray(joueurs) ? joueurs : undefined);
+  if (!result.success && !result.resultats) return res.status(400).json({ message: result.message });
+
+  for (const { id, nom } of result.resultats) {
+    const joueurSession = getSessionPlayerById(id);
+    io.emit('sessionPlayerUpdate', {
+      type: 'update', player: nom, playerId: id, session: joueurSession,
+      source: 'repos', repos: req.params.type
+    });
+    io.emit('gmPlayerUpdated', { type: 'fullPlayerUpdate', playerId: id, session: joueurSession });
+  }
+  if (result.resultats.length) {
+    io.emit('sessionUpdated', { type: 'repos', playerIds: result.resultats.map(r => r.id) });
+    emitMapState();
+  }
+
+  if (!result.success) return res.status(500).json({ message: result.message, resultats: result.resultats });
+  res.json({ type: result.type, resultats: result.resultats, regles: getReglesRepos() });
 });
 
 module.exports = instanceIo => {

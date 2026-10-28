@@ -20,6 +20,24 @@
             .page-index .choix-icone { font-size: 32px; display: block; margin-bottom: 6px; }
             .page-index .lien-code-mj { margin-top: 24px; text-align: center; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
             .page-index .lien-code-mj a { color: inherit; opacity: .8; }
+
+            /* Rejoindre la partie : adresse du serveur et QR code. */
+            .rejoindre {
+                display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px;
+                max-width: min(640px, calc(100vw - 32px)); box-sizing: border-box;
+                margin-top: 10px; padding: 14px 18px; border: 2px solid #8b5e3c; border-radius: 12px;
+                background: #fffdf6; font-family: 'Segoe UI', system-ui, sans-serif;
+            }
+            .rejoindre[hidden] { display: none; }
+            .rejoindre-qr { line-height: 0; border-radius: 6px; overflow: hidden; }
+            .rejoindre-qr svg { width: 180px; height: 180px; }
+            .rejoindre-texte { flex: 1 1 240px; min-width: 0; }
+            .rejoindre h2 { margin: 0 0 6px; font-family: 'Uncial Antiqua', cursive; font-size: 20px; font-weight: 400; }
+            .rejoindre p { margin: 0 0 8px; font-size: 14px; }
+            .rejoindre-adresse { font-size: 22px !important; font-weight: 700; overflow-wrap: anywhere; }
+            .rejoindre-adresse a { color: #5c3b21; }
+            .rejoindre select { font: inherit; font-size: 14px; padding: 3px 6px; max-width: 100%; }
+            .rejoindre small { display: block; opacity: .75; }
         </style>
     </head>
     <body class="page-index">
@@ -45,8 +63,57 @@
                 </button>
             </a>
         </div>
+        <section class="rejoindre" id="rejoindre" hidden>
+            <div class="rejoindre-qr" id="rejoindre-qr" role="img" aria-label="QR code de l'adresse de la partie"></div>
+            <div class="rejoindre-texte">
+                <h2>📱 Rejoindre la partie</h2>
+                <p>Scannez le code avec un téléphone connecté au même réseau (Wi-Fi), ou tapez cette adresse dans le navigateur :</p>
+                <p class="rejoindre-adresse"><a id="rejoindre-lien" href="#"></a></p>
+                <p id="rejoindre-choix-ligne" hidden>
+                    <label>Réseau : <select id="rejoindre-choix"></select></label>
+                    <small>Plusieurs cartes réseau : choisissez celle du Wi-Fi de la table.</small>
+                </p>
+            </div>
+        </section>
         <p class="lien-code-mj"><a href="#" id="changer-code-mj">Changer le code MJ</a></p>
         <script src="mj-code.js"></script>
+        <script src="qrcode.js"></script>
+        <script>
+            // Rejoindre : l'adresse réseau du serveur mène directement au
+            // choix du personnage. Ouvert depuis le poste du MJ (localhost),
+            // l'adresse vient du serveur ; sinon, la page connaît déjà la bonne.
+            (async function () {
+                const LOCALES = ['localhost', '127.0.0.1', '::1', '[::1]'];
+                let reseau;
+                try { reseau = await (await fetch('/api/reseau')).json(); } catch (_) { return; }
+                const adresses = (reseau.adresses || []).map(a => ({ ...a, hote: `${a.adresse}:${reseau.port}` }));
+                if (!LOCALES.includes(location.hostname)) {
+                    const actuelle = adresses.findIndex(a => a.hote === location.host);
+                    if (actuelle > 0) adresses.unshift(...adresses.splice(actuelle, 1));
+                    if (actuelle === -1) adresses.unshift({ adresse: location.hostname, interface: 'adresse actuelle', hote: location.host });
+                }
+                if (!adresses.length) return;
+
+                const choix = document.getElementById('rejoindre-choix');
+                choix.innerHTML = adresses.map((a, i) =>
+                    `<option value="${i}">${a.adresse} (${a.interface.replace(/[<>&"]/g, '')})</option>`).join('');
+                document.getElementById('rejoindre-choix-ligne').hidden = adresses.length < 2;
+
+                // Le QR code mène au choix du personnage ; l'adresse affichée,
+                // à taper à la main, reste courte (elle ouvre l'accueil).
+                function afficher(index) {
+                    const url = `http://${adresses[index].hote}/selecte_player.html`;
+                    const lien = document.getElementById('rejoindre-lien');
+                    lien.href = url;
+                    lien.textContent = adresses[index].hote;
+                    document.getElementById('rejoindre-qr').innerHTML = window.ArcaneQR.svg(url, { taille: 180, couleur: '#3b2f1e' });
+                    document.getElementById('rejoindre-qr').dataset.url = url;
+                }
+                choix.addEventListener('change', () => afficher(Number(choix.value)));
+                afficher(0);
+                document.getElementById('rejoindre').hidden = false;
+            })();
+        </script>
         <script>
             // Le choix d'interface règle la barre de navigation des pages
             // partagées (création de personnage, tableau blanc).

@@ -191,8 +191,9 @@
       .sort-entetes { display: none; }
     }
   </style>
+  <link rel="stylesheet" href="joueur-mobile.css"/>
 </head>
-<body>
+<body class="page-fiche">
   <h1>Création de Personnage</h1>
 
   <div class="section">
@@ -326,6 +327,7 @@
   </div>
 
   <script src="navbar.js"></script>
+  <script src="filtre-groupes.js"></script>
   <script>
     // Base de jeu (classes, races, armures, compétences, sorts de sorts.json),
     // chargée une seule fois pour toute la page.
@@ -504,12 +506,7 @@
         const conteneur = document.getElementById(filtre.dataset.conteneur);
         remplirListe(filtre, [...new Set(types[filtre.dataset.conteneur] || [])]);
         const appliquer = () => {
-          conteneur.querySelectorAll('select').forEach(select => {
-            const choisi = select.selectedOptions[0];
-            select.querySelectorAll('optgroup').forEach(groupe => {
-              groupe.hidden = Boolean(filtre.value) && groupe.label !== filtre.value && !groupe.contains(choisi);
-            });
-          });
+          conteneur.querySelectorAll('select').forEach(select => window.ArcaneFiltre.filtrerGroupes(select, filtre.value));
         };
         filtre.addEventListener('change', appliquer);
         // Les lignes ajoutées ensuite suivent le filtre en cours.

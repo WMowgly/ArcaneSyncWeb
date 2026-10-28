@@ -5301,3 +5301,86 @@ VALIDATION
 ======================================================================
 FIN VERSION V1.17
 ======================================================================
+
+======================================================================
+VERSION V2.1 — REPOS, JEU SUR TÉLÉPHONE, REJOINDRE LA PARTIE
+Date : 28 octobre 2026
+======================================================================
+
+REPOS COURT / LONG
+    - repos.js (modèle pur) : règles par ressource (PV, mana, protection) :
+      rien, tout, % du maximum ou nombre de points ; calcul borné au max.
+    - session.js : règles enregistrées dans la partie (champ repos) ;
+      appliquerRepos passe par sauvegarderEtatSession.
+    - serveur/routes-session.js : GET / PUT /api/session/repos et
+      POST /api/session/repos/:type (MJ) ; personnages choisis par le MJ.
+    - Interface MJ : boutons « Repos court » / « Repos long » ; panneau des
+      règles (modifiables) et des personnages (ceux à 0 PV décochés).
+
+NOTIFICATION AU JOUEUR
+    - sessionPlayerUpdate porte son origine (source : mj, joueur, repos).
+    - Interface de Jeu : message en haut de l'écran quand le MJ ou un repos
+      modifie le personnage (valeurs avant → après), vibration sur
+      téléphone, fermeture d'un appui ou au bout de 7 s. Les changements
+      faits par le joueur lui-même ne sont pas signalés.
+
+INTERFACE DE JEU SUR TÉLÉPHONE
+    - Jauges PV / mana avec grands boutons −, +, Max : enregistrement
+      immédiat (appuis rapprochés regroupés en un envoi).
+    - Chaque champ d'état de jeu s'enregistre à la validation ; une saisie
+      en cours n'est pas écrasée par une mise à jour en direct.
+    - Section « Sorts et attaques » : dégâts et niveau visibles, détail
+      (action, durée, description) d'après les Données de jeu.
+    - Jets de survie en grandes cases ; identité compacte sur téléphone.
+
+REJOINDRE LA PARTIE
+    - website/qrcode.js : générateur de QR code sans dépendance (mode
+      octet, correction M, versions 1 à 9) ; décodage vérifié avec un
+      lecteur indépendant (jsQR) pour toutes les versions et tous les
+      masques.
+    - serveur/routes-reseau.js : GET /api/reseau (adresses IPv4 du
+      serveur, cartes virtuelles en dernier, port de l'instance).
+    - Accueil : encart « Rejoindre la partie » : QR code vers le choix du
+      personnage, adresse courte à taper, choix de la carte réseau.
+
+INITIATIVE : ORDRE MANUEL
+    - initiative.js : deplacer(etat, id, position) ; celui qui joue garde
+      la main. Route POST /api/initiative/deplacer (MJ). demarrer accepte
+      ordreManuel : l'ordre donné est gardé, sans tri.
+    - Interface MJ : encoche ⠿ à gauche de chaque ligne, dans la
+      préparation comme pendant le combat ; on la saisit à la souris ou au
+      doigt (événements pointeur, pas le glisser-déposer natif, inopérant
+      au toucher) et un trait montre où la ligne va se poser.
+    - Préparation : déplacer une ligne passe en « ordre manuel » (signalé ;
+      bouton « Trier par initiative » pour revenir au classement).
+    - Combat : encoche ou boutons ▲ ▼, enregistré ; l'Écran suit.
+    - Cases à cocher de la préparation à leur taille (le style général
+      des champs les étirait en barres).
+
+FILTRE « TYPE » DES SORTS SUR TÉLÉPHONE
+    - website/filtre-groupes.js : les écoles hors filtre sont retirées de
+      la liste (et remises au changement de filtre) au lieu d'être
+      masquées : la liste native d'Android affichait les groupes masqués.
+      Utilisé par la Fiche et la Création.
+
+PAGES JOUEUR SUR TÉLÉPHONE
+    - website/joueur-mobile.css (sous 600 px, pages joueur seulement :
+      choix du personnage, Interface de Jeu, Fiche, Création) : marges
+      serrées, titres de section dans le flux (plus de chevauchement),
+      champs de 16 px, caractéristiques et classe / race sur deux colonnes,
+      sorts sur deux lignes, compétences en fiches, « Sauvegarder »
+      flottant, indication de défilement du tableau d'inventaire.
+      L'organisation des sections (équipement compris) est inchangée.
+    - Fiche : effet des compétences en zone de texte à sa hauteur (texte
+      complet) ; getCompetences lit les champs par leur classe.
+    - Choix du personnage : carte = lien vers l'Interface de Jeu (même
+      onglet), classe · race, bouton « Jouer » ; « Supprimer » affiché
+      seulement sur l'appareil du MJ (ArcaneMJ.aUnCode).
+    - Interface de Jeu : nom masqué sur téléphone (déjà dans le titre).
+
+VALIDATION
+- npm test : 17 fichiers / 33 suites                          : PASS
+- npm run test:e2e : 9 scénarios / 128 contrôles               : PASS
+======================================================================
+FIN VERSION V2.1
+======================================================================

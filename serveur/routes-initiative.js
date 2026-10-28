@@ -37,11 +37,13 @@ function appliquer(req, res, operation) {
 }
 
 app.post('/api/initiative/demarrer', (req, res) =>
-  appliquer(req, res, () => initiative.demarrer(req.body?.entrees)));
+  appliquer(req, res, () => initiative.demarrer(req.body?.entrees, { ordreManuel: req.body?.ordreManuel === true })));
 app.post('/api/initiative/suivant', (req, res) => appliquer(req, res, initiative.suivant));
 app.post('/api/initiative/precedent', (req, res) => appliquer(req, res, initiative.precedent));
 app.post('/api/initiative/retirer', (req, res) =>
   appliquer(req, res, etat => initiative.retirer(etat, req.body?.id)));
+app.post('/api/initiative/deplacer', (req, res) =>
+  appliquer(req, res, etat => initiative.deplacer(etat, req.body?.id, req.body?.position)));
 app.post('/api/initiative/cacher', (req, res) =>
   appliquer(req, res, etat => initiative.basculerCache(etat, req.body?.id)));
 app.post('/api/initiative/terminer', (req, res) =>

@@ -1,6 +1,6 @@
 ArcaneSync
-Version: V1.17
-Name: Initiative, Image de Fond et Fiche Allégée
+Version: V2.1
+Name: Repos, Jeu sur Téléphone et Rejoindre la Partie
 
 Objectif :
 Organiser l'application autour de trois interfaces choisies depuis
@@ -16,8 +16,12 @@ viennent de la référence database/sorts.json, modifiable par le MJ.
 Le serveur reste autoritaire : chaque client reçoit la projection de son
 rôle, et une information réservée au MJ n'est jamais envoyée à un joueur.
 
-V1.17 ajoute le suivi d'initiative (MJ et Écran), une image de fond pour
-les cartes, et une fiche remplie uniquement par le serveur.
+V2.1 ajoute les repos court et long (règles choisies par le MJ), une
+Interface de Jeu pensée pour le téléphone (grands boutons PV et mana,
+sorts d'un coup d'œil), une notification au joueur quand le MJ modifie
+son personnage, l'adresse du serveur avec un QR code sur l'accueil,
+l'ordre d'initiative modifiable à la main, et des pages joueur (choix du
+personnage, jeu, fiche, création) adaptées au téléphone.
 
 Version précédente :
-V1.16 — Trois Interfaces, Code MJ et Données de Partie Fiables
+V2.0 — Initiative, Image de Fond, Fiche Allégée et Carte MJ

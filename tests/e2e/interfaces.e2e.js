@@ -90,10 +90,18 @@ module.exports = {
     await page.attendre("document.querySelectorAll('#sorts-container .sort-row').length === 1");
     const ecole = await page.evaluer("[...document.querySelectorAll('.filtre-type')[0].options].map(o => o.value).filter(Boolean)[0]");
     await page.evaluer(`(() => { const f = document.querySelectorAll('.filtre-type')[0]; f.value = ${JSON.stringify(ecole)}; f.dispatchEvent(new Event('change')); })()`);
-    verifier(await page.evaluer(`[...document.querySelectorAll('#sorts-container .sort-row select optgroup')].every(g => g.hidden === (g.label !== ${JSON.stringify(ecole)}))`),
-      'création : le filtre « Type » ne montre que l\'école choisie');
+    // Les autres écoles sont retirées de la liste (un groupe seulement masqué
+    // reste visible dans la liste native des téléphones).
+    verifier(await page.evaluer(`(() => { const g = [...document.querySelectorAll('#sorts-container .sort-row select optgroup')];
+      return g.length === 1 && g[0].label === ${JSON.stringify(ecole)}; })()`),
+      'création : le filtre « Type » ne garde dans la liste que l\'école choisie');
     const sortChoisi = await page.evaluer(`(() => { const s = document.querySelector('#sorts-container .sort-row select');
-      const o = [...s.querySelectorAll('optgroup')].find(g => !g.hidden).querySelector('option'); s.value = o.value; s.dispatchEvent(new Event('change')); return o.value; })()`);
+      const o = s.querySelector('optgroup option'); s.value = o.value; s.dispatchEvent(new Event('change')); return o.value; })()`);
+    await page.evaluer(`(() => { const f = document.querySelectorAll('.filtre-type')[0]; f.value = ''; f.dispatchEvent(new Event('change')); })()`);
+    const apresTous = await page.evaluer(`(() => { const s = document.querySelector('#sorts-container .sort-row select');
+      return { groupes: s.querySelectorAll('optgroup').length, valeur: s.value }; })()`);
+    verifier(apresTous.groupes > 1 && apresTous.valeur === sortChoisi,
+      'création : « Tous les types » remet toutes les écoles, le sort choisi est conservé');
     await page.evaluer(`(() => { const v = (id, x) => { const e = document.getElementById(id); e.value = x; e.dispatchEvent(new Event('input')); };
       v('player_name', 'Testeur Création'); v('player_hp', '30'); v('player_mana', '12'); v('eq_durabilite', '9'); v('def_protection_max', '4'); })()`);
     await page.capture('interfaces-creation.png', '.duo');

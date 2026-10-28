@@ -64,7 +64,13 @@ module.exports = {
     await page.attendre('false', 5);
     verifier(session(PLAYER).survie?.echec?.[2] === true, 'joueur sans code : jets de survie enregistrés');
 
-    // Suppression d'un personnage : code demandé ; annuler ne supprime rien.
+    // Suppression d'un personnage : pas de bouton chez un joueur ; sur
+    // l'appareil du MJ (code mémorisé, ici périmé), le code est redemandé et
+    // annuler ne supprime rien.
+    await page.ouvrir('selecte_player.html');
+    await page.attendre("document.querySelectorAll('#joueurs-list .card').length > 0");
+    verifier(await page.evaluer("!document.querySelector('.delete-btn')"), 'sélection : aucun bouton Supprimer sur l\'appareil d\'un joueur');
+    await page.evaluer("localStorage.setItem('arcanesync-code-mj', 'perime')");
     await page.ouvrir('selecte_player.html');
     await page.attendre("!!document.querySelector('.delete-btn')");
     await page.evaluer("document.querySelector('.delete-btn').click()");
