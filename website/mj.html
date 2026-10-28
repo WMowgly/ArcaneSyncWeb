@@ -323,6 +323,35 @@
     }
 
 
+    /* Initiative */
+    #initiative-management { text-align: left; }
+    .initiative-aide { margin: 0 0 8px; opacity: .85; }
+    .initiative-table-wrap { overflow-x: auto; }
+    .initiative-table { width: 100%; border-collapse: collapse; }
+    .initiative-table th, .initiative-table td { border-bottom: 1px solid #e0cfa9; padding: 5px 8px; text-align: left; }
+    .initiative-table th { font-size: .85em; color: #6b5135; }
+    .initiative-table input[type="number"] { width: 80px; margin: 0; }
+    .initiative-table .initiative-mob { color: #7a2222; }
+    .initiative-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .initiative-actions button, .initiative-ordre button {
+      margin: 0; padding: 7px 14px; border: 1px solid #8b5e3c; border-radius: 6px;
+      background: #fff4d6; color: #5c3b21; font: inherit; cursor: pointer; width: auto; height: auto;
+    }
+    .initiative-actions .initiative-principal { background: #8b5e3c; color: #fefae0; font-weight: 600; }
+    .initiative-actions .initiative-danger { border-color: #8b3e3c; color: #7a2222; background: #f7e2e2; }
+    .initiative-round { margin: 0 0 6px; font-size: 1.1em; }
+    .initiative-ordre { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 5px; }
+    .initiative-ordre li {
+      display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+      border: 1px solid #e0cfa9; border-radius: 7px; background: #fffdf6;
+    }
+    .initiative-ordre li.courant { border: 2px solid #8b5e3c; background: #f3e3c8; font-weight: 600; }
+    .initiative-ordre .valeur { min-width: 34px; text-align: center; font-weight: 700; color: #5c3b21; }
+    .initiative-ordre .nom { flex: 1; }
+    .initiative-ordre .cache { font-size: .8em; color: #7a2222; }
+    .initiative-ordre button { padding: 3px 8px; font-size: .85em; }
+    .initiative-statut { min-height: 1.2em; margin: 8px 0 0; }
+
     /* V1.8.1 — Gestion rapide directement dans les cartes joueurs */
     #joueurs-list {
       display: grid;
@@ -439,6 +468,36 @@
     <section class="card" id="players-management">
       <h2>Liste des joueurs</h2>
       <div id="joueurs-list"></div>
+    </section>
+
+    <!-- Ordre de tour du combat : le MJ le prépare et le fait avancer ;
+         l'Écran affiche le round et le combattant qui joue. -->
+    <section class="card" id="initiative-management">
+      <h2>⚔️ Initiative</h2>
+      <div id="initiative-preparation">
+        <p class="initiative-aide">Cochez les combattants et saisissez leur initiative, puis lancez le combat.
+          Une créature « cachée » n'apparaît pas sur l'Écran.</p>
+        <div class="initiative-table-wrap">
+          <table class="initiative-table">
+            <thead><tr><th>Participe</th><th>Combattant</th><th>Initiative</th><th>Cachée</th></tr></thead>
+            <tbody id="initiative-preparation-liste"></tbody>
+          </table>
+        </div>
+        <div class="initiative-actions">
+          <button type="button" id="initiative-recharger">↻ Actualiser la liste</button>
+          <button type="button" id="initiative-demarrer" class="initiative-principal">⚔️ Lancer le combat</button>
+        </div>
+      </div>
+      <div id="initiative-combat" hidden>
+        <p class="initiative-round">Round <strong id="initiative-round">1</strong></p>
+        <ol id="initiative-ordre" class="initiative-ordre"></ol>
+        <div class="initiative-actions">
+          <button type="button" id="initiative-precedent">◀ Précédent</button>
+          <button type="button" id="initiative-suivant" class="initiative-principal">Suivant ▶</button>
+          <button type="button" id="initiative-terminer" class="initiative-danger">Terminer le combat</button>
+        </div>
+      </div>
+      <p id="initiative-statut" class="initiative-statut"></p>
     </section>
 
   <section class="card mob-manager" id="mob-management">
@@ -924,6 +983,107 @@
         }
       });
     });
+
+    // ---------------------------------------------------------------
+    // Initiative : préparation (liste des combattants), puis combat.
+    // ---------------------------------------------------------------
+    const initiativeStatut = message => { document.getElementById('initiative-statut').textContent = message || ''; };
+
+    async function appelInitiative(action, corps = {}) {
+      const response = await fetch(`/api/initiative/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corps)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || `Erreur HTTP ${response.status}`);
+      return result;
+    }
+
+    // Combattants proposés : les personnages, puis les créatures vivantes.
+    async function preparerInitiative() {
+      const [joueurs, mobs] = await Promise.all([
+        fetch('/api/session/players').then(r => r.json()),
+        fetch('/api/mobs').then(r => (r.ok ? r.json() : []))
+      ]);
+      const lignes = [
+        ...joueurs.map(j => ({ kind: 'player', entityId: j.id, nom: j.nom })),
+        ...mobs.filter(m => (Number(m.hp?.current) || 0) > 0).map(m => ({ kind: 'mob', entityId: m.id, nom: m.nom }))
+      ];
+      document.getElementById('initiative-preparation-liste').innerHTML = lignes.length
+        ? lignes.map(l => `<tr data-kind="${l.kind}" data-entity="${escapeHtml(l.entityId)}" data-nom="${escapeHtml(l.nom)}">
+            <td><input type="checkbox" data-a="participe" checked aria-label="${escapeHtml(l.nom)} participe"></td>
+            <td class="${l.kind === 'mob' ? 'initiative-mob' : ''}">${l.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(l.nom)}</td>
+            <td><input type="number" data-a="valeur" min="-99" max="999" step="1" placeholder="0" aria-label="Initiative de ${escapeHtml(l.nom)}"></td>
+            <td>${l.kind === 'mob' ? `<input type="checkbox" data-a="cache" aria-label="Cacher ${escapeHtml(l.nom)}">` : ''}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="4">Aucun combattant disponible.</td></tr>';
+    }
+
+    function afficherInitiative(etat) {
+      const enCombat = etat?.actif === true;
+      document.getElementById('initiative-preparation').hidden = enCombat;
+      document.getElementById('initiative-combat').hidden = !enCombat;
+      if (!enCombat) return;
+      document.getElementById('initiative-round').textContent = etat.round;
+      document.getElementById('initiative-ordre').innerHTML = etat.entrees.map((e, i) => `
+        <li class="${i === etat.tour ? 'courant' : ''}" data-id="${escapeHtml(e.id)}">
+          <span class="valeur">${e.valeur}</span>
+          <span class="nom">${e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
+          ${e.kind === 'mob' ? `<button type="button" data-a="cacher" title="${e.cache ? 'Montrer sur l’Écran' : 'Cacher de l’Écran'}">${e.cache ? '👁 Montrer' : '🙈 Cacher'}</button>` : ''}
+          <button type="button" data-a="retirer" title="Retirer du combat">✖</button>
+        </li>`).join('');
+    }
+
+    async function chargerInitiative() {
+      try {
+        const etat = await fetch('/api/initiative').then(r => r.json());
+        afficherInitiative(etat);
+        if (!etat.actif) await preparerInitiative();
+      } catch (error) {
+        initiativeStatut(`Initiative indisponible : ${error.message}`);
+      }
+    }
+
+    document.getElementById('initiative-recharger').addEventListener('click', () => preparerInitiative());
+    document.getElementById('initiative-demarrer').addEventListener('click', async () => {
+      const entrees = [...document.querySelectorAll('#initiative-preparation-liste tr[data-kind]')]
+        .filter(ligne => ligne.querySelector('[data-a="participe"]').checked)
+        .map(ligne => ({
+          kind: ligne.dataset.kind,
+          entityId: ligne.dataset.entity,
+          nom: ligne.dataset.nom,
+          valeur: Number(ligne.querySelector('[data-a="valeur"]').value) || 0,
+          cache: ligne.querySelector('[data-a="cache"]')?.checked === true
+        }));
+      try {
+        afficherInitiative(await appelInitiative('demarrer', { entrees }));
+        initiativeStatut('Combat lancé.');
+      } catch (error) { initiativeStatut(error.message); }
+    });
+    for (const [bouton, action] of [['initiative-suivant', 'suivant'], ['initiative-precedent', 'precedent']]) {
+      document.getElementById(bouton).addEventListener('click', async () => {
+        try { afficherInitiative(await appelInitiative(action)); initiativeStatut(''); }
+        catch (error) { initiativeStatut(error.message); }
+      });
+    }
+    document.getElementById('initiative-terminer').addEventListener('click', async () => {
+      if (!confirm('Terminer le combat ? L’ordre d’initiative sera effacé.')) return;
+      try { await appelInitiative('terminer'); await chargerInitiative(); initiativeStatut('Combat terminé.'); }
+      catch (error) { initiativeStatut(error.message); }
+    });
+    document.getElementById('initiative-ordre').addEventListener('click', async event => {
+      const bouton = event.target.closest('button[data-a]');
+      if (!bouton) return;
+      const id = bouton.closest('li').dataset.id;
+      try {
+        afficherInitiative(await appelInitiative(bouton.dataset.a === 'cacher' ? 'cacher' : 'retirer', { id }));
+        initiativeStatut('');
+      } catch (error) { initiativeStatut(error.message); }
+    });
+
+    socket.on('initiativeUpdated', () => chargerInitiative());
+    chargerInitiative();
 
     document.getElementById('public-note-save')?.addEventListener('click', savePublicNoteMJ);
     document.getElementById('public-note-cancel')?.addEventListener('click', resetPublicNoteEditor);

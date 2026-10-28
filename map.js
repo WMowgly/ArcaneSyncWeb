@@ -50,7 +50,10 @@ const MODES_BROUILLARD = Object.freeze(['none', 'vision', 'manual']);
 // côté que l'ancien 24×16 (cases de 48 px), pour la même surface.
 const DEFAULT_GRID = Object.freeze({ cols: 48, rows: 32, cellSize: 24, showGrid: true, resolution: 2 });
 const MAX_RESOLUTION = 4;
-const DEFAULT_BACKGROUND = Object.freeze({ color: '#fffdf7' });
+const DEFAULT_BACKGROUND = Object.freeze({ color: '#fffdf7', image: null, imageOpacite: 1 });
+// Image de fond : toujours une adresse servie par ce serveur (le fichier
+// est déposé par la route MJ PUT /api/maps/:mapId/fond), jamais une URL libre.
+const IMAGE_FOND = /^\/api\/maps\/[\w-]+\/fond\?v=\d+$/;
 const DEFAULT_VISION_RANGE = 6;
 
 // 160 : une carte de 40 cases de base reste possible en résolution 4.
@@ -90,6 +93,26 @@ function texte(valeur, defaut = '', maxLength = 2000) {
 
 function couleur(valeur, defaut) {
   return /^#[0-9a-fA-F]{6}$/.test(valeur) ? valeur : defaut;
+}
+
+/**
+ * Fond de carte. Un champ absent garde sa valeur précédente : la couleur
+ * peut changer sans toucher à l'image, et inversement. `image: null` retire
+ * l'image.
+ */
+function normaliserFond(fond = {}, precedent = DEFAULT_BACKGROUND) {
+  const source = fond && typeof fond === 'object' ? fond : {};
+  let image = precedent.image ?? null;
+  if (source.image === null) image = null;
+  else if (typeof source.image === 'string' && IMAGE_FOND.test(source.image)) image = source.image;
+  const opacite = Number(source.imageOpacite);
+  return {
+    color: couleur(source.color, precedent.color ?? DEFAULT_BACKGROUND.color),
+    image,
+    imageOpacite: Number.isFinite(opacite)
+      ? Math.max(0.1, Math.min(1, opacite))
+      : (precedent.imageOpacite ?? 1)
+  };
 }
 
 /** Comme entier(), mais conserve les décimales (coordonnées de tracé). */
@@ -323,7 +346,7 @@ function normaliserMap(input = {}, options = {}) {
     // mapgen.js qui détient le catalogue, map.js n'en dépend pas.
     type: texte(input.type, '', 40),
     grid,
-    background: { color: couleur(input.background?.color, DEFAULT_BACKGROUND.color) },
+    background: normaliserFond(input.background),
     tokens,
     elements,
     annotations,
@@ -571,7 +594,7 @@ function updateMap(id, donnees = {}) {
       brouillon.type = texte(donnees.type, '', 40);
     }
     if (donnees.background !== undefined) {
-      brouillon.background = { color: couleur(donnees.background?.color, brouillon.background.color) };
+      brouillon.background = normaliserFond(donnees.background, brouillon.background);
     }
 
     if (donnees.grid !== undefined) {

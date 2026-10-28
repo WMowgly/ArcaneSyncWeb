@@ -345,6 +345,16 @@
               <div><label for="map-bg">Fond</label><input id="map-bg" class="full" type="color"></div>
             </div>
             <button id="btn-save-grid" class="full primary" style="margin-top:7px">💾 Enregistrer</button>
+            <div class="sep"></div>
+            <!-- Image de fond : plan dessiné ou scanné, étiré sur toute la
+                 grille. Enregistrée dès qu'elle est choisie. -->
+            <label for="map-fond-image">Image de fond <span class="hint" style="display:inline">(PNG, JPEG, WebP, GIF — 15 Mo max)</span></label>
+            <input id="map-fond-image" class="full" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <div class="row">
+              <div><label for="map-fond-opacite">Opacité <span id="map-fond-opacite-valeur">100 %</span></label>
+                <input id="map-fond-opacite" class="full" type="range" min="10" max="100" step="5" value="100"></div>
+              <div><label>&nbsp;</label><button id="btn-fond-retirer" class="full danger" type="button">Retirer l'image</button></div>
+            </div>
           </div>
         </details>
       </aside>
@@ -1855,7 +1865,62 @@
       document.getElementById('map-name').value = m.nom;
       document.getElementById('annot-players').checked = m.drawing?.playersAllowed === true;
       document.getElementById('opt-resolution').value = String(m.grid.resolution || 1);
+      const opacite = Math.round((m.background?.imageOpacite ?? 1) * 100);
+      document.getElementById('map-fond-opacite').value = String(opacite);
+      document.getElementById('map-fond-opacite-valeur').textContent = `${opacite} %`;
+      document.getElementById('map-fond-opacite').disabled = !m.background?.image;
+      document.getElementById('btn-fond-retirer').disabled = !m.background?.image;
     }
+
+    // --- Image de fond ------------------------------------------------------
+    const TAILLE_MAX_FOND = 15 * 1024 * 1024;
+
+    document.getElementById('map-fond-image').addEventListener('change', async event => {
+      const fichier = event.target.files?.[0];
+      event.target.value = '';
+      if (!fichier || !map()?.id || refuserSiLectureSeule()) return;
+      if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(fichier.type)) {
+        setStatus('Image PNG, JPEG, WebP ou GIF attendue.', true);
+        return;
+      }
+      if (fichier.size > TAILLE_MAX_FOND) {
+        setStatus('Image trop lourde (15 Mo maximum).', true);
+        return;
+      }
+      try {
+        setStatus('Envoi de l\'image…');
+        // Envoi brut du fichier : le rôle MJ et le code voyagent en en-tête.
+        const reponse = await fetch(`/api/maps/${encodeURIComponent(map().id)}/fond`, {
+          method: 'PUT',
+          headers: { 'Content-Type': fichier.type },
+          body: fichier
+        });
+        const data = await reponse.json().catch(() => ({}));
+        if (!reponse.ok) throw new Error(data.message || `Erreur HTTP ${reponse.status}`);
+        setStatus(data.message);
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('map-fond-opacite').addEventListener('input', event => {
+      document.getElementById('map-fond-opacite-valeur').textContent = `${event.target.value} %`;
+    });
+    document.getElementById('map-fond-opacite').addEventListener('change', async event => {
+      if (!map()?.id || refuserSiLectureSeule()) return;
+      try {
+        await api('PUT', `/api/maps/${encodeURIComponent(map().id)}`,
+          { background: { imageOpacite: Number(event.target.value) / 100 } });
+        setStatus('Opacité de l\'image enregistrée.');
+      } catch (error) { setStatus(error.message, true); }
+    });
+
+    document.getElementById('btn-fond-retirer').addEventListener('click', async () => {
+      if (!map()?.id || refuserSiLectureSeule()) return;
+      if (!confirm('Retirer l\'image de fond de cette carte ?')) return;
+      try {
+        const data = await api('DELETE', `/api/maps/${encodeURIComponent(map().id)}/fond`);
+        setStatus(data.message);
+      } catch (error) { setStatus(error.message, true); }
+    });
 
     // Résolution du quadrillage : la carte est convertie côté serveur, le
     // décor, les jetons et les tracés restent au même endroit.

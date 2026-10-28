@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
+const initiativeModele = require('./initiative');
 
 const cheminFichier = cheminDonnees('session.json');
 
@@ -292,7 +293,9 @@ let session = {
   // la carte en cours d'utilisation appartient à la partie.
   activeMapId: null,
   // Vue affichée par l'Écran partagé, choisie par le MJ.
-  ecranVue: 'carte'
+  ecranVue: 'carte',
+  // Ordre d'initiative du combat en cours (voir initiative.js).
+  initiative: null
 };
 
 const VUES_ECRAN = ['carte', 'tableau'];
@@ -341,7 +344,8 @@ function lireSession() {
       activeMapId: typeof donnees.activeMapId === 'string' && donnees.activeMapId
         ? donnees.activeMapId
         : null,
-      ecranVue: normaliserVueEcran(donnees.ecranVue)
+      ecranVue: normaliserVueEcran(donnees.ecranVue),
+      initiative: initiativeModele.normaliserEtat(donnees.initiative)
     };
   } catch (err) {
     console.error("Erreur lors de la lecture de session.json:", err);
@@ -517,7 +521,8 @@ function importerSession(nouvelleSession) {
     activeMapId: typeof nouvelleSession.activeMapId === 'string' && nouvelleSession.activeMapId
       ? nouvelleSession.activeMapId
       : null,
-    ecranVue: normaliserVueEcran(nouvelleSession.ecranVue)
+    ecranVue: normaliserVueEcran(nouvelleSession.ecranVue),
+    initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative)
   };
 
   if (!ecrireSession(sessionNormalisee)) {
@@ -899,6 +904,20 @@ function setEcranVue(vue) {
   return { success: true, vue, modifie: true };
 }
 
+function getInitiative() {
+  return initiativeModele.normaliserEtat(session.initiative);
+}
+
+function setInitiative(etat) {
+  const initiative = initiativeModele.normaliserEtat(etat);
+  const nouvelleSession = { ...session, initiative, lastSaved: new Date().toISOString() };
+  if (!ecrireSession(nouvelleSession)) {
+    return { success: false, message: "Impossible de sauvegarder l'initiative." };
+  }
+  session = nouvelleSession;
+  return { success: true, initiative };
+}
+
 function getSessionMobs() {
   return session.mobs || {};
 }
@@ -975,6 +994,8 @@ module.exports = {
   setActiveMapId,
   getEcranVue,
   setEcranVue,
+  getInitiative,
+  setInitiative,
   getSessionMobs,
   getSessionMobById,
   sauvegarderMobSession,

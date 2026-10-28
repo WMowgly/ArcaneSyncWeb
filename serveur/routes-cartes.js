@@ -6,7 +6,10 @@
 // nommé `app` pour que chaque route garde exactement son écriture d'origine.
 // ---------------------------------------------------------------------------
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const mapStore = require('../map');
+const { cheminDonnees } = require('../storage');
 const mapGen = require('../mapgen');
 const {
   getJoueurById
@@ -27,6 +30,29 @@ const { getActiveMapForViewer, emitMapState } = require('./diffusion-carte');
 
 const app = express.Router();
 let io = null;
+
+// ------------------------------------------------------------------
+// Image de fond : un fichier par carte dans cartes_fonds/ (dossier de
+// données), nommé d'après l'identifiant de la carte.
+// ------------------------------------------------------------------
+const TYPES_FOND = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+const TAILLE_MAX_FOND = '15mb';
+const dossierFonds = () => cheminDonnees('cartes_fonds');
+const identifiantSur = id => typeof id === 'string' && /^[\w-]+$/.test(id);
+
+function fichierFond(mapId) {
+  if (!identifiantSur(mapId) || !fs.existsSync(dossierFonds())) return null;
+  const nom = fs.readdirSync(dossierFonds()).find(f => f.startsWith(`${mapId}.`));
+  return nom ? path.join(dossierFonds(), nom) : null;
+}
+
+function supprimerFichierFond(mapId) {
+  const fichier = fichierFond(mapId);
+  if (fichier) fs.unlinkSync(fichier);
+}
+
+/** Adresse versionnée : une nouvelle image n'est jamais masquée par le cache. */
+const adresseFond = mapId => `/api/maps/${mapId}/fond?v=${Date.now()}`;
 
 // ------------------------------------------------------------------
 // V1.13 — SYSTÈME DE CARTES (MAPS)
@@ -109,6 +135,9 @@ app.delete('/api/maps/:mapId', (req, res) => {
   const result = mapStore.deleteMap(req.params.mapId);
   if (!result.success) return res.status(404).json({ message: result.message });
 
+  try { supprimerFichierFond(req.params.mapId); } catch (error) {
+    console.error('Image de fond non supprimée :', error);
+  }
   if (getActiveMapId() === req.params.mapId) setActiveMapId(null);
 
   io.emit('mapLibraryUpdated');
@@ -122,8 +151,20 @@ app.post('/api/maps/:mapId/duplicate', (req, res) => {
   const result = mapStore.duplicateMap(req.params.mapId, req.body?.nom);
   if (!result.success) return res.status(404).json({ message: result.message });
 
+  let map = result.map;
+  const source = fichierFond(req.params.mapId);
+  if (source) {
+    try {
+      fs.copyFileSync(source, path.join(dossierFonds(), `${map.id}${path.extname(source)}`));
+      map = mapStore.updateMap(map.id, { background: { image: adresseFond(map.id) } }).map || map;
+    } catch (error) {
+      console.error('Image de fond non copiée :', error);
+      map = mapStore.updateMap(map.id, { background: { image: null } }).map || map;
+    }
+  }
+
   io.emit('mapLibraryUpdated');
-  res.status(201).json({ message: 'Carte dupliquée.', map: result.map });
+  res.status(201).json({ message: 'Carte dupliquée.', map });
 });
 
 // ------------------------------------------------------------------
@@ -197,6 +238,57 @@ app.get('/api/map/active', (req, res) => {
     console.error('Erreur lors du chargement de la carte active:', error);
     res.status(500).json({ message: 'Impossible de charger la carte active.' });
   }
+});
+
+// --- Image de fond ------------------------------------------------------
+
+app.put('/api/maps/:mapId/fond',
+  express.raw({ type: Object.keys(TYPES_FOND), limit: TAILLE_MAX_FOND }),
+  (req, res) => {
+    if (refuserSiPasMj(req, res)) return;
+    const mapId = req.params.mapId;
+    if (!identifiantSur(mapId) || !mapStore.getMapById(mapId)) {
+      return res.status(404).json({ message: 'Carte introuvable.' });
+    }
+    const extension = TYPES_FOND[String(req.get('Content-Type') || '').split(';')[0].trim()];
+    if (!extension || !Buffer.isBuffer(req.body) || !req.body.length) {
+      return res.status(400).json({ message: 'Image PNG, JPEG, WebP ou GIF attendue.' });
+    }
+
+    try {
+      fs.mkdirSync(dossierFonds(), { recursive: true });
+      supprimerFichierFond(mapId);
+      fs.writeFileSync(path.join(dossierFonds(), `${mapId}.${extension}`), req.body);
+    } catch (error) {
+      console.error('Image de fond non enregistrée :', error);
+      return res.status(500).json({ message: "Impossible d'enregistrer l'image de fond." });
+    }
+
+    const result = mapStore.updateMap(mapId, { background: { image: adresseFond(mapId) } });
+    if (!result.success) return res.status(500).json({ message: result.message });
+    io.emit('mapLibraryUpdated');
+    emitMapState();
+    res.json({ message: 'Image de fond enregistrée.', map: result.map });
+  });
+
+// Lecture libre : l'Écran affiche la carte du groupe, image comprise.
+app.get('/api/maps/:mapId/fond', (req, res) => {
+  const fichier = fichierFond(req.params.mapId);
+  if (!fichier) return res.status(404).json({ message: 'Aucune image de fond.' });
+  res.sendFile(fichier);
+});
+
+app.delete('/api/maps/:mapId/fond', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  if (!mapStore.getMapById(req.params.mapId)) return res.status(404).json({ message: 'Carte introuvable.' });
+  try { supprimerFichierFond(req.params.mapId); } catch (error) {
+    console.error('Image de fond non supprimée :', error);
+  }
+  const result = mapStore.updateMap(req.params.mapId, { background: { image: null } });
+  if (!result.success) return res.status(500).json({ message: result.message });
+  io.emit('mapLibraryUpdated');
+  emitMapState();
+  res.json({ message: 'Image de fond retirée.', map: result.map });
 });
 
 // --- Palette de décors -------------------------------------------------

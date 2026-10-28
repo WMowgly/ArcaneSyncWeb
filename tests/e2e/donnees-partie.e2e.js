@@ -46,6 +46,13 @@ module.exports = {
     verifier(await page.attendre(`document.querySelector('input[name="survie1"][value="reussi"]').checked && document.querySelector('input[name="survie2"][value="echec"]').checked`, 30),
       'jeu : jets de survie relus après rechargement');
 
+    // Ancien lien par le nom : la fiche retrouve le personnage.
+    await page.ouvrir(`fiche_perso.html?Nom=${encodeURIComponent(joueur.nom)}`);
+    verifier(await page.attendre(`document.getElementById('player_name').value === ${JSON.stringify(joueur.nom)} && document.getElementById('player_hp_current').value === '${max - 6}'`, 40),
+      'fiche : un ancien lien ?Nom= ouvre toujours le bon personnage');
+    await page.ouvrir(`interface_jeu.html?PlayerId=${PLAYER}`);
+    await page.attendre("document.getElementById('player_hp').value !== ''");
+
     await page.evaluer("document.getElementById('save-btn').click()");
     await page.attendre('false', 6);
     verifier(JSON.stringify(session(PLAYER).inventaire || []) === inventaireAvant, 'jeu : inventaire de partie intact après enregistrement');

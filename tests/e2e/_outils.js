@@ -191,6 +191,15 @@ async function lancerNavigateur() {
     page,
     async fermer() {
       try { ws.close(); } catch (_) { /* déjà fermé */ }
+      // Fermeture par DevTools : tuer le processus lancé ne suffit pas sous
+      // Windows (le navigateur continue sous un autre processus).
+      try {
+        const version = await (await fetch(`http://localhost:${PORT_DEBUG}/json/version`)).json();
+        const navigateurWs = new WebSocket(version.webSocketDebuggerUrl);
+        await new Promise((ok, ko) => { navigateurWs.once('open', ok); navigateurWs.once('error', ko); });
+        navigateurWs.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
+        await pause(800);
+      } catch (_) { /* déjà fermé */ }
       processus.kill();
       await pause(500);
       try { fs.rmSync(profil, { recursive: true, force: true }); } catch (_) { /* fichiers encore verrouillés */ }

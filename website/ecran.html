@@ -50,6 +50,21 @@
     }
     #carte-vide[hidden] { display: none; }
     #vue-tableau iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+    /* Initiative : panneau posé sur la vue, visible pendant un combat. */
+    #initiative {
+      position: fixed; top: 52px; right: 12px; z-index: 5;
+      width: min(260px, calc(100vw - 24px)); max-height: calc(100vh - 70px); overflow: auto;
+      background: var(--parchemin); border: 2px solid var(--bord); border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .25); padding: 10px 12px;
+    }
+    #initiative[hidden] { display: none; }
+    #initiative h2 { margin: 0 0 6px; font-family: 'Uncial Antiqua', cursive; font-size: 17px; font-weight: 400; }
+    #initiative ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    #initiative li { padding: 5px 8px; border-radius: 6px; border: 1px solid #e0cfa9; background: #fffdf6; font-size: 15px; }
+    #initiative li.courant { border: 2px solid var(--bord); background: #f3e3c8; font-weight: 700; }
+    #initiative li.courant::before { content: '▶ '; }
+    #initiative-cache { margin: 6px 0 0; font-size: 13px; font-style: italic; opacity: .8; }
   </style>
 </head>
 <body>
@@ -71,6 +86,12 @@
   <section id="vue-tableau" class="vue" hidden>
     <!-- Chargé à la première ouverture : le tableau blanc en spectateur. -->
   </section>
+
+  <aside id="initiative" hidden aria-live="polite">
+    <h2>⚔️ Round <span id="initiative-round">1</span></h2>
+    <ol id="initiative-ordre"></ol>
+    <p id="initiative-cache" hidden>Un adversaire agit…</p>
+  </aside>
 
   <script src="map-core.js"></script>
   <script>
@@ -122,6 +143,26 @@
 
     // Le serveur envoie la vue à la connexion, puis à chaque choix du MJ.
     socket.on('ecranVue', ({ vue } = {}) => afficher(vue === 'tableau' ? 'tableau' : 'carte'));
+
+    // --- Initiative : affichée pendant un combat, par-dessus la vue ---------
+    // Projection « table » : les créatures cachées par le MJ n'y figurent pas.
+    const echapper = valeur => String(valeur ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    async function chargerInitiative() {
+      let etat;
+      try { etat = await (await fetch('/api/initiative')).json(); } catch (_) { return; }
+      const panneau = document.getElementById('initiative');
+      panneau.hidden = !etat.actif || !etat.entrees.length;
+      if (panneau.hidden) return;
+      document.getElementById('initiative-round').textContent = etat.round;
+      document.getElementById('initiative-ordre').innerHTML = etat.entrees.map(e =>
+        `<li class="${e.id === etat.courant ? 'courant' : ''}">${e.kind === 'mob' ? '👹' : '👤'} ${echapper(e.nom)}</li>`).join('');
+      document.getElementById('initiative-cache').hidden = etat.courant !== null;
+    }
+
+    socket.on('initiativeUpdated', chargerInitiative);
+    socket.on('connect', chargerInitiative);
 
     document.getElementById('btn-plein-ecran').addEventListener('click', () => {
       if (document.fullscreenElement) document.exitFullscreen?.();

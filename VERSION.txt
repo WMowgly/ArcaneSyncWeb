@@ -1,6 +1,6 @@
 ArcaneSync
-Version: V1.16
-Name: Trois Interfaces, Code MJ et Données de Partie Fiables
+Version: V1.17
+Name: Initiative, Image de Fond et Fiche Allégée
 
 Objectif :
 Organiser l'application autour de trois interfaces choisies depuis
@@ -16,7 +16,8 @@ viennent de la référence database/sorts.json, modifiable par le MJ.
 Le serveur reste autoritaire : chaque client reçoit la projection de son
 rôle, et une information réservée au MJ n'est jamais envoyée à un joueur.
 
+V1.17 ajoute le suivi d'initiative (MJ et Écran), une image de fond pour
+les cartes, et une fiche remplie uniquement par le serveur.
+
 Version précédente :
-V1.13.12 — Portes côté Joueur et Aura Utilisable
-Carte de jeu partagée, éditée en temps réel par le MJ, avec une vision
-propre à chaque personnage.
+V1.16 — Trois Interfaces, Code MJ et Données de Partie Fiables

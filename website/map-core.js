@@ -284,12 +284,36 @@ window.ArcaneMap = (function () {
       return GUTTER + coord * grid().cellSize;
     }
 
+    // Images de fond déjà chargées, par adresse. Une image qui arrive après
+    // le premier rendu relance le rendu.
+    const imagesFond = new Map();
+    function imageFond(adresse) {
+      if (!adresse) return null;
+      let image = imagesFond.get(adresse);
+      if (!image) {
+        image = new Image();
+        image.onload = () => render();
+        image.src = adresse;
+        imagesFond.set(adresse, image);
+      }
+      return image.complete && image.naturalWidth ? image : null;
+    }
+
     function dessinerFond() {
       const g = grid();
       ctx.fillStyle = '#e8dcc3';
       ctx.fillRect(0, 0, logicalWidth(), logicalHeight());
       ctx.fillStyle = state.map.background?.color || '#fffdf7';
       ctx.fillRect(GUTTER, GUTTER, g.cols * g.cellSize, g.rows * g.cellSize);
+
+      // Image de fond (plan dessiné, scan…) : étirée sur toute la grille.
+      const image = imageFond(state.map.background?.image);
+      if (image) {
+        ctx.save();
+        ctx.globalAlpha = state.map.background.imageOpacite ?? 1;
+        ctx.drawImage(image, GUTTER, GUTTER, g.cols * g.cellSize, g.rows * g.cellSize);
+        ctx.restore();
+      }
     }
 
     function dessinerGrille() {

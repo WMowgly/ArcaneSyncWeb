@@ -4,3 +4,5 @@ sauvegardes/
 mj.json
 # Dessins du tableau blanc : état de la partie en cours
 tableau_dessins.json
+# Images de fond des cartes : données de la partie
+cartes_fonds/

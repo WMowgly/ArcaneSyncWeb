@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-10-28T17:27:18.528Z",
+  "lastSaved": "2026-10-28T18:47:15.473Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -587,5 +587,11 @@
     }
   },
   "activeMapId": "map_97a4b44fe820c8b5",
-  "ecranVue": "tableau"
+  "ecranVue": "carte",
+  "initiative": {
+    "actif": false,
+    "round": 1,
+    "tour": 0,
+    "entrees": []
+  }
 }

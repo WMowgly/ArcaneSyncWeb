@@ -5241,3 +5241,45 @@ VALIDATION
 ======================================================================
 FIN VERSION V1.16
 ======================================================================
+
+
+======================================================================
+VERSION V1.17 — INITIATIVE, IMAGE DE FOND, FICHE ALLÉGÉE
+Date : 28 octobre 2026
+======================================================================
+
+SUIVI D'INITIATIVE
+    - initiative.js (modèle pur) : tri par valeur décroissante (égalité :
+      ordre saisi), tours et rounds, retrait d'un combattant sans perdre
+      le fil, créatures « cachées » à la table.
+    - session.js : l'initiative fait partie de la partie (export compris).
+    - serveur/routes-initiative.js : lecture libre (projection sans les
+      créatures cachées ni les valeurs pour la table) ; démarrer, suivant,
+      précédent, retirer, cacher, terminer réservés au MJ.
+    - Interface MJ : section « ⚔️ Initiative » (préparation, combat).
+    - Écran : panneau « Round N » avec le combattant qui joue ; « Un
+      adversaire agit… » pendant le tour d'une créature cachée.
+    - Note : « cachée » ne concerne que l'initiative ; la visibilité d'un
+      pion sur la carte ou le tableau reste réglée à part.
+
+IMAGE DE FOND DE CARTE
+    - map.js : fond = couleur + image + opacité ; seule une adresse servie
+      par le serveur est acceptée comme image.
+    - serveur/routes-cartes.js : PUT (MJ, PNG/JPEG/WebP/GIF, 15 Mo max),
+      GET (libre, pour l'Écran), DELETE (MJ) /api/maps/:mapId/fond ;
+      fichiers dans cartes_fonds/ ; copiés à la duplication d'une carte,
+      supprimés avec elle.
+    - map-core.js : image étirée sur la grille, sous le décor.
+    - map.html : choix de l'image, opacité, retrait (« Grille et fond »).
+
+FICHE ALLÉGÉE
+    - fiche_perso.html : retrait du remplissage par paramètres d'URL
+      (~130 lignes) ; la fiche est remplie par le serveur. Les anciens
+      liens ?Nom= retrouvent le personnage par son nom.
+
+VALIDATION
+- npm test : 15 fichiers / 29 suites                          : PASS
+- npm run test:e2e : 6 scénarios / 69 contrôles                : PASS
+======================================================================
+FIN VERSION V1.17
+======================================================================

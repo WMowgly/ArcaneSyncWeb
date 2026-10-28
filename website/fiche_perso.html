@@ -684,7 +684,7 @@
   </div>
 
   <div style="text-align: center;">
-<button id="save-data-btn" type="button" onclick="console.log('Clic direct')">Sauvegarder</button>
+<button id="save-data-btn" type="button">Sauvegarder</button>
     <button type="button" class="retour-jeu-btn" id="retour-jeu-btn-bas">← Retour à l'interface de jeu</button>
   </div>
 
@@ -754,62 +754,22 @@
         }
       }
 
-window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé async ici
+window.addEventListener('DOMContentLoaded', async () => {
+  // Seul l'identifiant voyage dans l'URL : tout le reste est lu sur le
+  // serveur (loadAuthoritativePlayerState, plus bas).
   const params = new URLSearchParams(window.location.search);
-  const playerId = params.get('PlayerId') || '';
-  window.arcanePlayerId = playerId;
-  
-  // Fonction utilitaire pour récupérer les valeurs des paramètres
-  function getParamValue(key, defaultValue = '') {
-    const value = params.get(key);
-    if (!value || value === 'null' || value === 'undefined') return defaultValue;
+  let playerId = params.get('PlayerId') || '';
+
+  // Anciens liens (?Nom=...) : on retrouve l'identifiant par le nom.
+  if (!playerId && params.get('Nom')) {
     try {
-      return decodeURIComponent(value);
-    } catch {
-      return defaultValue;
+      const joueurs = await fetch('/api/joueurs').then(r => r.json());
+      playerId = joueurs.find(j => j.nom === params.get('Nom'))?.id || '';
+    } catch (error) {
+      console.error('Personnage introuvable pour ce lien :', error);
     }
   }
-
-  // Remplir les champs avec les valeurs de l'URL
-  fillField('player_name', getParamValue('Nom'));
-  fillField('player_class', getParamValue('Classe'));
-  fillField('player_race', getParamValue('Race'));
-  fillField('player_level', getParamValue('Niveau', '1'));
-  
-  // Stats vitales
-  fillField('player_hp', getParamValue('VieMax', '0'));
-  fillField('player_hp_current', getParamValue('VieCurrent', '0'));
-  fillField('player_mana', getParamValue('ManaMax', '0'));
-  fillField('player_mana_current', getParamValue('ManaCurrent', '0'));
-  
-  // Protection et armure
-  fillField('def_protection_max', getParamValue('Valeur protection max', '0'));
-  fillField('def_protection', getParamValue('Valeur protection', '0'));
-  fillField('player_dura_max', getParamValue('DuraMax', '0'));
-  fillField('player_dura_current', getParamValue('DuraCurrent', '0'));
-  fillField('eq_armure', getParamValue("Type d'armure", ''));
-  fillField('eq_resistance', getParamValue('Résistance', ''));
-  fillField('player_vie_bonus', getParamValue('Vie bonus', '0'));
-  fillField('player_intox', getParamValue('Intox.', '0'));
-
-  // Stats de base
-  fillField('stat_force', getParamValue('Force', '0'));
-  fillField('stat_dexterite', getParamValue('Dexterite', '0'));
-  fillField('stat_magie', getParamValue('Magie', '0'));
-  fillField('stat_constitution', getParamValue('Constitution', '0'));
-  fillField('stat_charisme', getParamValue('Charisme', '0'));
-  fillField('stat_perception', getParamValue('Perception', '0'));
-  fillField('stat_chance', getParamValue('Chance', '0'));
-  fillField('stat_intelligence', getParamValue('Intelligence', '0'));
-
-  // Inventaire
-  fillField('eq_sac', getParamValue('Sac', ''));
-  fillField('eq_ceinture', getParamValue('Ceinture / Dos', ''));
-
-  // Remplir les champs supplémentaires
-  fillField('bio', getParamValue('Biographie', ''));
-  fillField('skills_speciales', getParamValue('Skills speciales', ''));
-  fillField('levelup', getParamValue('Choix de level up', ''));
+  window.arcanePlayerId = playerId;
 
   // Gestion des compétences de classe et passifs
   async function updateCompetences() {
@@ -860,75 +820,13 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
 
   await updateCompetences();
 
-  // Gestion des sorts majeurs
-  try {
-    if (params.get('Sorts')) {
-      const sortsContainer = document.getElementById('sorts-container');
-      sortsContainer.innerHTML = ''; // Nettoie le conteneur
-      const sorts = JSON.parse(getParamValue('Sorts', '[]'));
-      sorts.forEach(sort => {
-        createSortElement(sort, sortsContainer, false);
-      });
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des sorts:', error);
-  }
-
-  // Gestion des attaques spéciales
-  try {
-    if (params.get('Attaques speciales')) {
-      const attacksContainer = document.getElementById('attack-special-container');
-      attacksContainer.innerHTML = ''; // Nettoie le conteneur
-      const attacks = JSON.parse(getParamValue('Attaques speciales', '[]'));
-      console.log('Chargement des attaques spéciales:', attacks); // Debug
-      for (const attack of attacks) {
-        const attackRow = await createAttackElement(attack);
-        if (attackRow) {
-          attacksContainer.appendChild(attackRow);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des attaques spéciales:', error);
-  }
-
-  // Gestion des sorts mineurs
-  try {
-    if (params.get('Sorts mineurs')) {
-      const sortsMineursContainer = document.getElementById('sorts-mineurs-container');
-      sortsMineursContainer.innerHTML = ''; // Nettoie le conteneur
-      const sortsMineurs = JSON.parse(getParamValue('Sorts mineurs', '[]'));
-      sortsMineurs.forEach(sort => {
-        createSortElement(sort, sortsMineursContainer, true);
-      });
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des sorts mineurs:', error);
-  }
-
-  // Gestion des armes (déjà présent mais modifié pour plus de robustesse)
-  try {
-    if (params.get('Armes')) {
-      const armes = JSON.parse(getParamValue('Armes', '[]'));
-      armes.forEach((arme, index) => {
-        if (index < 5) {
-          fillField(`weapon_type_${index + 1}`, arme.type || '');
-          fillField(`weapon_dmg_${index + 1}`, arme.degats || '');
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des armes:', error);
-  }
-
   // -------------------------------------------------------------------
-  // Source de vérité : après l'initialisation historique par URL, si un
-  // PlayerId est disponible, on recharge l'état officiel depuis le serveur.
-  // Cela évite qu'une URL ancienne puisse réécrire des données plus récentes.
+  // Source de vérité : la fiche est entièrement remplie depuis le serveur
+  // (définition du personnage), puis l'état de jeu depuis la partie.
   // -------------------------------------------------------------------
   async function loadAuthoritativePlayerState() {
     if (!playerId) {
-      console.warn('Aucun PlayerId disponible : utilisation des paramètres historiques de l\'URL.');
+      console.warn('Aucun personnage indiqué dans le lien : fiche vide.');
       return;
     }
 
@@ -1065,18 +963,10 @@ window.addEventListener('DOMContentLoaded', async () => {  // Ajout du mot-clé 
     document.getElementById('inventory-body')?.appendChild(createInventoryRow());
   });
 
-  let initialInventory = [];
-  try { initialInventory = params.get('Inventaire') ? JSON.parse(params.get('Inventaire')) : []; } catch { initialInventory = []; }
-  renderInventory(initialInventory);
+  renderInventory([]);
 
   await loadAuthoritativePlayerState();
 
-  // Ajout des logs pour le débogage
-  console.log('Chargement des données terminé');
-  console.log('Compétences spéciales:', getParamValue('Skills speciales'));
-  console.log('Biographie:', getParamValue('Biographie'));
-  console.log('Level up:', getParamValue('Choix de level up'));
-  
   // Gestionnaire de sauvegarde
   document.getElementById('save-data-btn').addEventListener('click', async () => {
     
@@ -1714,18 +1604,6 @@ async function createAttackElement(attack) {
   }
 }
 
-/*// Ajouter les écouteurs d'événements pour la durabilité
-document.getElementById('player_dura_current').addEventListener('input', updateArmorState);
-document.getElementById('player_dura_max').addEventListener('input', updateArmorState);
-
-// Appeler updateArmorState après le remplissage initial des champs
-window.addEventListener('DOMContentLoaded', () => {
-  // ...code existant...
-
-  // Appeler updateArmorState après le remplissage des champs
-  updateArmorState();
-});*/
-
   </script>
 
 <script>
@@ -1769,8 +1647,8 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 <script>
   // Valeur actuelle / maximum : la saisie reste entre 0 et le maximum, et
-  // la borne est réappliquée juste avant l'enregistrement (au cas où la
-  // fiche aurait été remplie par le serveur ou par l'URL).
+  // la borne est réappliquée juste avant l'enregistrement (au cas où un
+  // maximum aurait été baissé sous la valeur actuelle).
   (function () {
     const paires = [
       ['player_hp_current', 'player_hp'],
