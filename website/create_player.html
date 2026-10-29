@@ -227,7 +227,7 @@
         <div class="field"><label for="player_hp">Vie (max)</label><input id="player_hp" type="number" min="0"></div>
         <div class="field"><label for="player_mana">Mana (max)</label><input id="player_mana" type="number" min="0"></div>
         <div class="field"><label for="def_bonus_vie">Vie bonus</label><input id="def_bonus_vie" type="number" min="0"></div>
-        <div class="field"><label for="def_intox">Intox.</label><input id="def_intox" type="number" min="0" max="100"></div>
+        <div class="field"><label for="def_intox">Intox.</label><input id="def_intox" type="number" min="0"></div>
       </div>
     </div>
   </div>
@@ -542,6 +542,14 @@
     ajouter('add-attack-spe-btn', 'attack-special-container', 'special');
 
     // --- Enregistrement -------------------------------------------------------------
+    // Intoxication : au plus la Constitution (le serveur applique la même borne).
+    document.getElementById('stat_constitution').addEventListener('input', () => {
+      const constitution = parseInt(document.getElementById('stat_constitution').value) || 0;
+      const intox = document.getElementById('def_intox');
+      if (constitution > 0) intox.max = constitution;
+      else intox.removeAttribute('max');
+    });
+
     document.getElementById('save_player_creation').addEventListener('click', async event => {
       const valeur = id => document.getElementById(id).value;
       const nombre = id => Math.max(0, parseInt(valeur(id)) || 0);
@@ -587,7 +595,7 @@
         hp: { max: hp, current: hp },
         mana: { max: mana, current: mana },
         bonus_vie: nombre('def_bonus_vie'),
-        intox: String(nombre('def_intox')),
+        intox: nombre('def_intox'),
         spells: lireLignes('sorts-container', true),
         sorts_mineurs: lireLignes('sorts-mineurs-container', false),
         competences: getCompetences(),

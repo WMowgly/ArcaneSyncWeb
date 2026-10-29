@@ -1431,7 +1431,7 @@
           <p><strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.entity?.nom || token.entityId)}</strong>
              <span class="badge">${token.kind === 'mob' ? 'Créature' : 'Personnage'}</span></p>
           <p style="font-size:11.5px">Position : ${token.x} , ${token.y}
-             — PV ${token.entity?.hp?.current ?? '?'} / ${token.entity?.hp?.max ?? '?'}</p>
+             — PV ${escapeHtml(token.entity?.hp?.current ?? '?')} / ${escapeHtml(token.entity?.hp?.max ?? '?')}</p>
           <button id="ins-stats" class="full primary" style="margin-bottom:7px">⚙️ Modifier PV / PM…</button>
           <label for="ins-label">Étiquette affichée</label>
           <input id="ins-label" class="full" value="${escapeHtml(token.label || '')}" placeholder="${escapeHtml(token.entity?.nom || '')}">
@@ -1903,7 +1903,7 @@
           <div class="entity-item">
             <strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.label || token.entity?.nom || token.entityId)}</strong>
             <span class="badge">${token.x},${token.y}</span>
-            <span class="badge">PV ${token.entity?.hp?.current ?? '?'}/${token.entity?.hp?.max ?? '?'}</span>
+            <span class="badge">PV ${escapeHtml(token.entity?.hp?.current ?? '?')}/${escapeHtml(token.entity?.hp?.max ?? '?')}</span>
             ${token.visibleToPlayers ? '' : '<span class="badge hidden-badge">caché</span>'}
             <div class="row">
               <button data-act="stats" data-id="${escapeHtml(token.id)}" title="PV / PM">⚙️</button>

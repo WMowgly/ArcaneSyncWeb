@@ -14,13 +14,27 @@ const {
   sauvegardeData
 } = require('../joueur');
 const {
-  synchroniserSessionDepuisPersonnage
+  synchroniserSessionDepuisPersonnage,
+  supprimerJoueurSession
 } = require('../session');
-const { refuserSiPasMj } = require('./acces');
+const { refuserSiPasMj, sansDonneesPrivees } = require('./acces');
 const { emitMapState } = require('./diffusion-carte');
 
 const app = express.Router();
 let io = null;
+
+/**
+ * Après la suppression d'une fiche : retire aussi son état de partie et sa
+ * place dans l'initiative, puis prévient les écrans (scène, carte, combat).
+ */
+function nettoyerApresSuppression(joueur) {
+  if (!supprimerJoueurSession(joueur.id)) {
+    console.error(`Fiche de ${joueur.nom} supprimée, mais son état de partie n'a pas pu être retiré.`);
+  }
+  io.emit('sceneUpdated');
+  io.emit('initiativeUpdated');
+  emitMapState();
+}
 
 // API pour ajouter un joueur
 app.post('/api/joueurs', (req, res) => {
@@ -49,7 +63,7 @@ app.post('/api/joueurs', (req, res) => {
 
 // API pour récupérer les joueurs
 app.get('/api/joueurs', (req, res) => {
-  res.json(getJoueurs());
+  res.json(getJoueurs().map(sansDonneesPrivees));
 });
 
 // API pour récupérer un joueur par son identifiant stable
@@ -60,7 +74,7 @@ app.get('/api/joueurs/:id', (req, res) => {
     return res.status(404).json({ message: 'Joueur non trouvé.' });
   }
 
-  res.json(joueur);
+  res.json(sansDonneesPrivees(joueur));
 });
 
 // API pour supprimer un joueur par son identifiant stable.
@@ -79,6 +93,7 @@ app.delete('/api/joueurs/delete/:id', (req, res) => {
   const success = supprimerJoueur({ id });
 
   if (success) {
+    nettoyerApresSuppression(joueur);
     io.emit('playerUpdate', {
       type: 'delete',
       player: joueur.nom,
@@ -109,6 +124,7 @@ app.delete('/api/joueurs/delete-by-name/:nom', (req, res) => {
   const success = supprimerJoueur({ id: joueur.id });
 
   if (success) {
+    nettoyerApresSuppression(joueur);
     io.emit('playerUpdate', {
       type: 'delete',
       player: joueur.nom,

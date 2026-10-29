@@ -866,6 +866,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       fillField('stat_dexterite', joueur.stats?.dexterite ?? 0);
       fillField('stat_magie', joueur.stats?.magie ?? 0);
       fillField('stat_constitution', joueur.stats?.constitution ?? 0);
+      majMaxIntox();
       fillField('stat_charisme', joueur.stats?.charisme ?? 0);
       fillField('stat_perception', joueur.stats?.perception ?? 0);
       fillField('stat_chance', joueur.stats?.chance ?? 0);
@@ -945,6 +946,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   // à la partie (voir etatPartieModifie).
   // -------------------------------------------------------------------
   const estModifie = id => document.getElementById(id)?.dataset.modifie === '1';
+
+  // Intoxication : au plus la Constitution (le serveur applique la même borne).
+  function majMaxIntox() {
+    const constitution = parseInt(document.getElementById('stat_constitution').value) || 0;
+    const intox = document.getElementById('player_intox');
+    if (constitution > 0) intox.max = constitution;
+    else intox.removeAttribute('max');
+  }
+  document.getElementById('stat_constitution').addEventListener('input', majMaxIntox);
   document.querySelectorAll('input.etat-partie').forEach(champ =>
     champ.addEventListener('input', () => { champ.dataset.modifie = '1'; }));
 
@@ -972,7 +982,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (estModifie('def_protection')) armure.protection = { current: entier('def_protection') };
     if (Object.keys(armure).length) etat.armure = armure;
     if (estModifie('player_vie_bonus')) etat.bonus_vie = entier('player_vie_bonus');
-    if (estModifie('player_intox')) etat.intox = document.getElementById('player_intox').value || '0';
+    if (estModifie('player_intox')) etat.intox = entier('player_intox');
     return Object.keys(etat).length ? etat : null;
   }
 
@@ -1085,7 +1095,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           current: parseInt(document.getElementById('player_mana_current').value) || 0
       },
       bonus_vie: parseInt(document.getElementById('player_vie_bonus').value) || 0,
-      intox: document.getElementById('player_intox').value || '0',
+      intox: parseInt(document.getElementById('player_intox').value) || 0,
       spells: getSpells(),
       sorts_mineurs: getSortsMineurs(),
       competences: getCompetences(),

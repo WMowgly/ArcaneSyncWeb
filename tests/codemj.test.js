@@ -89,6 +89,14 @@ async function main() {
     verifier(r.statut === 403, 'Création de mob sans code : doit être refusée.');
     r = await appel('GET', '/api/session/export', { corps: undefined, role: 'mj' });
     verifier(r.statut === 403, 'Export de la partie sans code : doit être refusé.');
+    // Export réussi avec le code, puis réimport du fichier obtenu (aller-retour).
+    r = await appel('GET', '/api/session/export', { role: 'mj', code: 'dragon' });
+    verifier(r.statut === 200, `Export de la partie avec le code : doit réussir (${r.statut}).`);
+    verifier(r.donnees?.format === 'ArcaneSyncSession' && r.donnees.formatVersion === 1
+      && r.donnees.session?.players?.[joueur.id], "L'export doit contenir la partie et ses personnages.");
+    const exportPartie = r.donnees;
+    r = await appel('POST', '/api/session/import', { corps: exportPartie, role: 'mj', code: 'dragon' });
+    verifier(r.statut === 200, `Le fichier exporté doit pouvoir être réimporté (${r.statut} ${JSON.stringify(r.donnees)}).`);
     r = await appel('POST', '/api/session/scene/reset', { corps: { role: 'mj' } });
     verifier(r.statut === 403, 'Rôle MJ dans le corps sans code : doit être refusé.');
     r = await appel('DELETE', `/api/joueurs/delete/${joueur.id}`, { corps: { role: 'mj' } });

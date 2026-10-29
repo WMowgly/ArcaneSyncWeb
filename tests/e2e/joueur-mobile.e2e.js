@@ -42,6 +42,39 @@ module.exports = {
     await page.capture('joueur-mobile-haut.png');
     await page.capture('joueur-mobile-sorts.png', '#sorts-panel');
 
+    // Statistiques : sous les sorts sur téléphone, en colonne à droite sur PC.
+    const dispositionStats = `(() => {
+      const stats = document.querySelector('.player-stats-section').getBoundingClientRect();
+      const sorts = document.getElementById('sorts-panel').getBoundingClientRect();
+      const identite = document.querySelector('.identite').getBoundingClientRect();
+      const puces = [...document.querySelectorAll('#player-stats .stat-chip')].map(p => p.getBoundingClientRect());
+      return {
+        sousLesSorts: stats.top >= sorts.bottom,
+        aDroite: stats.left >= sorts.right && stats.left >= identite.right,
+        enHautDeLaCarte: Math.abs(stats.top - document.querySelector('.legende-champs').getBoundingClientRect().top) < 20,
+        colonnes: new Set(puces.map(p => Math.round(p.left))).size,
+        puces: puces.length
+      };
+    })()`;
+    // Intoxication : « x / Constitution », comme la durabilité.
+    const constitution = Number(session(PLAYER).stats?.constitution) || 0;
+    verifier(await page.evaluer(`(() => { const max = document.getElementById('player_intox_max');
+        return max.readOnly && max.value === '${constitution > 0 ? constitution : ''}'
+          && !document.getElementById('player_intox').readOnly
+          && max.closest('.dual-input') === document.getElementById('player_intox').closest('.dual-input'); })()`),
+      `jeu : intoxication affichée « x / Constitution » (${constitution})`);
+    let dispo = await page.evaluer(dispositionStats);
+    verifier(dispo.puces === 8 && dispo.sousLesSorts && !dispo.aDroite && dispo.colonnes === 2,
+      `téléphone : statistiques sous les sorts, sur deux colonnes (${JSON.stringify(dispo)})`);
+    await page.largeur(1500);
+    await page.evaluer('window.scrollTo(0, 0)');
+    dispo = await page.evaluer(dispositionStats);
+    verifier(dispo.aDroite && dispo.enHautDeLaCarte && dispo.colonnes === 1,
+      `PC : statistiques en colonne à droite, en haut de la carte (${JSON.stringify(dispo)})`);
+    verifier(await page.evaluer('document.documentElement.scrollWidth <= window.innerWidth'), 'PC : aucun défilement horizontal');
+    await page.capture('joueur-pc.png');
+    await page.largeur(390);
+
     // --- Fiche et choix du personnage à 390 px --------------------------------------------------
     await page.ouvrir(`fiche_perso.html?PlayerId=${PLAYER}`);
     await page.attendre("document.getElementById('player_name').value !== '' && document.querySelectorAll('.competences-table tbody tr').length > 0", 40);

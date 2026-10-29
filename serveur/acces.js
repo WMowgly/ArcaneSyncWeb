@@ -32,4 +32,17 @@ function refuserSiPasMj(req, res) {
   return false;
 }
 
-module.exports = { roleDepuisRequete, playerIdDepuisRequete, refuserSiPasMj };
+// Champs d'un personnage réservés au joueur concerné et au MJ. Ils ont leur
+// propre route, contrôlée (notes personnelles) ; les listes et diffusions
+// générales, reçues par toute la table, ne doivent jamais les contenir.
+// Les anciens messages privés restent dans les fichiers mais ne sont plus servis.
+const CHAMPS_PRIVES = ['personalNotes', 'privateMessages'];
+
+function sansDonneesPrivees(personnage) {
+  if (!personnage || typeof personnage !== 'object') return personnage;
+  const copie = { ...personnage };
+  CHAMPS_PRIVES.forEach(champ => { delete copie[champ]; });
+  return copie;
+}
+
+module.exports = { roleDepuisRequete, playerIdDepuisRequete, refuserSiPasMj, sansDonneesPrivees, CHAMPS_PRIVES };

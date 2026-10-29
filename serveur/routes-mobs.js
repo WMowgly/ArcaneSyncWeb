@@ -131,6 +131,8 @@ app.delete('/api/mobs/:id', (req, res) => {
     }
     io.emit('mobUpdated', { type: 'deleted', mobId: req.params.id });
     io.emit('sceneUpdated');
+    // Le mob a aussi quitté l'ordre d'initiative (session.supprimerMobSession).
+    io.emit('initiativeUpdated');
     emitMapState();
     res.json({ message: 'Mob retiré de la partie active.' });
   } catch (error) {

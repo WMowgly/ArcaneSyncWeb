@@ -140,14 +140,14 @@
                   <label>Points de Vie</label>
                   <div class="stat-bar">
                     <div class="stat-bar-fill hp-bar" style="width: ${hpPercentage}%"></div>
-                    <div class="stat-bar-text">${joueur.hp?.current || 0} / ${joueur.hp?.max || 0}</div>
+                    <div class="stat-bar-text">${echapper(joueur.hp?.current || 0)} / ${echapper(joueur.hp?.max || 0)}</div>
                   </div>
                 </div>
                 <div class="stat-bar-container">
                   <label>Points de Mana</label>
                   <div class="stat-bar">
                     <div class="stat-bar-fill mana-bar" style="width: ${manaPercentage}%"></div>
-                    <div class="stat-bar-text">${joueur.mana?.current || 0} / ${joueur.mana?.max || 0}</div>
+                    <div class="stat-bar-text">${echapper(joueur.mana?.current || 0)} / ${echapper(joueur.mana?.max || 0)}</div>
                   </div>
                 </div>
                 <p class="intox">Intox : ${echapper(joueur.intox ?? 0)} / ${echapper(joueur?.stats?.constitution ?? 0)}</p>

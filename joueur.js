@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
+const { bornerRessource, normaliserValeursPersonnage } = require('./etat-personnage');
 
 const cheminFichier = cheminDonnees('data.json');
 let joueurs = [];
@@ -84,11 +85,11 @@ function ecrireJoueurs(joueursAEnregistrer) {
 }
 
 function ajouterJoueur(joueur) {
-  const joueurAvecId = {
+  const joueurAvecId = normaliserValeursPersonnage({
     ...joueur,
     id: joueur.id || genererIdJoueur(),
     inventaire: normaliserInventaire(joueur.inventaire)
-  };
+  });
 
   const nouveauxJoueurs = [...joueurs, joueurAvecId];
 
@@ -149,18 +150,8 @@ function supprimerJoueur({ id, nom }) {
   return true;
 }
 
-/**
- * Ressource {current, max} : la valeur actuelle reste entre 0 et le maximum
- * (même règle que la partie, voir session.js).
- */
-function bornerRessource(ressource) {
-  const borne = { ...ressource };
-  const max = Number(borne.max);
-  if (borne.current === undefined || !Number.isFinite(max)) return borne;
-  const actuel = Number(borne.current);
-  borne.current = Number.isFinite(actuel) ? Math.max(0, Math.min(actuel, Math.max(0, max))) : 0;
-  return borne;
-}
+// Ressources {current, max}, vie bonus, intoxication, statistiques : règles
+// communes à la fiche et à la partie, dans etat-personnage.js.
 
 function sauvegardeData({ id, nom }, nouvellesDonnees) {
   console.log(
@@ -179,7 +170,7 @@ function sauvegardeData({ id, nom }, nouvellesDonnees) {
 
   // L'ID existant est toujours conservé : le nom est une donnée modifiable,
   // l'ID est l'identité technique du personnage.
-  const joueurMisAJour = {
+  const joueurMisAJour = normaliserValeursPersonnage({
     ...joueurActuel,
     ...nouvellesDonnees,
     id: joueurActuel.id,
@@ -210,7 +201,7 @@ function sauvegardeData({ id, nom }, nouvellesDonnees) {
         ...((nouvellesDonnees.armure && nouvellesDonnees.armure.protection) || {})
       })
     }
-  };
+  });
 
   if (!joueurMisAJour.nom) {
     joueurMisAJour.nom = joueurActuel.nom;

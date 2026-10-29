@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
 const initiativeModele = require('./initiative');
 const reposModele = require('./repos');
+const { bornerRessource, normaliserValeursPersonnage } = require('./etat-personnage');
 
 const cheminFichier = cheminDonnees('session.json');
 
@@ -60,19 +61,8 @@ function normaliserNotesPubliques(notes){
     .filter(item => item.content.length > 0 || item.title.length > 0);
 }
 
-/**
- * Ressource {current, max} : la valeur actuelle ne descend pas sous 0 et ne
- * dépasse jamais le maximum (PV, mana, durabilité, protection). Les champs
- * absents sont laissés tels quels.
- */
-function bornerRessource(ressource){
-  const borne={...ressource};
-  const max=Number(borne.max);
-  if(borne.current===undefined||!Number.isFinite(max))return borne;
-  const actuel=Number(borne.current);
-  borne.current=Number.isFinite(actuel)?Math.max(0,Math.min(actuel,Math.max(0,max))):0;
-  return borne;
-}
+// Ressources {current, max} (PV, mana, durabilité, protection), vie bonus,
+// intoxication bornée par la Constitution : voir etat-personnage.js.
 
 /** Jets de survie : { reussi: [b, b, b], echec: [b, b, b] }. */
 function normaliserSurvie(survie){
@@ -370,7 +360,7 @@ function extraireEtatSessionDepuisPersonnage(joueur) {
   // La session conserve l'intégralité des paramètres du personnage.
   // Les champs normalisés ci-dessous garantissent une structure stable
   // pour les données utilisées directement pendant la partie.
-  return {
+  return normaliserValeursPersonnage({
     ...joueur,
     statuts: synchroniserAgonie({ hp: joueur.hp }),
     id: joueur.id,
@@ -416,7 +406,7 @@ function extraireEtatSessionDepuisPersonnage(joueur) {
     personalNotes: normaliserNotesPersonnelles(joueur.personalNotes),
 
     lastSaved: null
-  };
+  });
 }
 
 function validerSessionImport(donnees) {
@@ -505,7 +495,7 @@ function importerSession(nouvelleSession) {
     players: Object.fromEntries(
       Object.entries(nouvelleSession.players).map(([id, joueur]) => [
         id,
-        {...joueur, inventaire: normaliserInventaireSession(joueur.inventaire)}
+        normaliserValeursPersonnage({...joueur, inventaire: normaliserInventaireSession(joueur.inventaire)})
       ])
     ),
     mobs: nouvelleSession.mobs && typeof nouvelleSession.mobs === 'object'
@@ -636,7 +626,8 @@ function synchroniserSessionDepuisPersonnage(joueur) {
     ...session,
     players: {
       ...session.players,
-      [joueur.id]: nouvelEtat
+      // L'intoxication conservée est rebornée par la Constitution de la fiche.
+      [joueur.id]: normaliserValeursPersonnage(nouvelEtat)
     },
     lastSaved: new Date().toISOString()
   };
@@ -711,7 +702,7 @@ function sauvegarderEtatSession(id, nouvellesDonnees) {
 
   const hp = bornerRessource({ ...(joueurSession.hp || {}), ...(nouvellesDonnees.hp || {}) });
 
-  const nouvelEtat = {
+  const nouvelEtat = normaliserValeursPersonnage({
     ...joueurSession,
     ...nouvellesDonnees,
     id,
@@ -741,7 +732,7 @@ function sauvegarderEtatSession(id, nouvellesDonnees) {
       })
     },
     lastSaved: new Date().toISOString()
-  };
+  });
 
   const nouvelleSession = {
     ...session,
@@ -952,6 +943,16 @@ function sauvegarderMobSession(mob) {
   return true;
 }
 
+/**
+ * Retire un combattant de l'ordre d'initiative, s'il y figure, sans perdre
+ * le fil du tour (voir initiative.retirer). Renvoie l'état, modifié ou non.
+ */
+function initiativeSans(kind, entityId) {
+  const etat = initiativeModele.normaliserEtat(session.initiative);
+  const resultat = initiativeModele.retirer(etat, `${kind}:${entityId}`);
+  return resultat.success ? resultat.etat : etat;
+}
+
 function supprimerMobSession(id) {
   if (!session.mobs?.[id]) return false;
 
@@ -961,9 +962,32 @@ function supprimerMobSession(id) {
   const nouvelleSession = {
     ...session,
     mobs,
+    // Un mob retiré de la partie quitte aussi l'ordre d'initiative.
+    initiative: initiativeSans('mob', id),
     lastSaved: new Date().toISOString()
   };
 
+  if (!ecrireSession(nouvelleSession)) return false;
+  session = nouvelleSession;
+  return true;
+}
+
+/**
+ * Personnage supprimé (fiche) : son état de partie et sa place dans l'ordre
+ * d'initiative disparaissent avec lui. Sans cela, un export de la partie
+ * contiendrait un personnage inconnu et serait refusé à l'import.
+ * Rien à retirer : succès.
+ */
+function supprimerJoueurSession(id) {
+  const players = { ...session.players };
+  const avaitEtat = Boolean(players[id]);
+  delete players[id];
+  const initiative = initiativeSans('player', id);
+  if (!avaitEtat && JSON.stringify(initiative) === JSON.stringify(initiativeModele.normaliserEtat(session.initiative))) {
+    return true;
+  }
+
+  const nouvelleSession = { ...session, players, initiative, lastSaved: new Date().toISOString() };
   if (!ecrireSession(nouvelleSession)) return false;
   session = nouvelleSession;
   return true;
@@ -1044,5 +1068,6 @@ module.exports = {
   getSessionMobs,
   getSessionMobById,
   sauvegarderMobSession,
-  supprimerMobSession
+  supprimerMobSession,
+  supprimerJoueurSession
 };

@@ -918,8 +918,8 @@
               </div>
             </div>
 
-            <p>Bonus HP: ${joueur.bonus_vie ?? 0}</p>
-            <p>Intox: ${joueur.intox ?? 0} / ${joueur?.stats?.constitution ?? 0}</p>
+            <p>Bonus HP: ${escapeHtml(joueur.bonus_vie ?? 0)}</p>
+            <p>Intox: ${escapeHtml(joueur.intox ?? 0)} / ${escapeHtml(joueur?.stats?.constitution ?? 0)}</p>
             <p>
               <span style="color: ${armorState.couleur}">${escapeHtml(armorState.etat)}</span><br>
               <small style="color:#000; font-size:.8em;">${escapeHtml(armorState.effet)}</small>
@@ -1587,8 +1587,8 @@
       if(!list.length){mobTemplatesList.innerHTML='<p>Aucun template enregistré.</p>';return;}
       list.forEach(t=>{
         const c=document.createElement('div'); c.className='mob-template-card';
-        c.innerHTML=`<strong>${t.nom}</strong><p>${t.description||'Aucune description.'}</p>
-          <small>HP ${t.hp?.max??0} | Mana ${t.mana?.max??0}</small>
+        c.innerHTML=`<strong>${escapeHtml(t.nom)}</strong><p>${escapeHtml(t.description||'Aucune description.')}</p>
+          <small>HP ${escapeHtml(t.hp?.max??0)} | Mana ${escapeHtml(t.mana?.max??0)}</small>
           <div><button data-a="spawn">Créer dans la partie</button><button data-a="edit">Charger</button><button data-a="delete">Supprimer</button></div>`;
         c.querySelector('[data-a="spawn"]').onclick=async()=>{
           if(!confirm(`Créer "${t.nom}" dans la partie active ?`))return;

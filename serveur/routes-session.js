@@ -13,6 +13,7 @@ const {
   sauvegardeData
 } = require('../joueur');
 const {
+  getSession,
   getSessionPlayerById,
   ensureSessionPlayer,
   sauvegarderEtatSession,
@@ -34,7 +35,7 @@ const {
   setReglesRepos,
   appliquerRepos
 } = require('../session');
-const { roleDepuisRequete, refuserSiPasMj } = require('./acces');
+const { roleDepuisRequete, refuserSiPasMj, sansDonneesPrivees } = require('./acces');
 const { emitMapState } = require('./diffusion-carte');
 
 const app = express.Router();
@@ -64,7 +65,7 @@ app.get('/api/session/players', (req, res) => {
         stats: sessionPlayer.stats ?? joueur.stats
       };
     });
-    res.json(result);
+    res.json(result.map(sansDonneesPrivees));
   } catch (error) {
     console.error("Erreur lors de la récupération des joueurs de session:", error);
     res.status(500).json({ message: "Impossible de charger l'état actif des joueurs." });
@@ -82,7 +83,7 @@ app.get('/api/session/player/:id', (req, res) => {
     const joueurSession = getSessionPlayerById(req.params.id)
       || ensureSessionPlayer(joueur);
 
-    res.json(joueurSession);
+    res.json(sansDonneesPrivees(joueurSession));
   } catch (error) {
     console.error("Erreur lors de l'initialisation de la session:", error);
     res.status(500).json({
@@ -265,7 +266,7 @@ app.post('/api/session/scene/reset',(req,res)=>{
 app.get('/api/session/export', (req, res) => {
   if (refuserSiPasMj(req, res)) return;
   try {
-    const session = require('./session').getSession();
+    const session = getSession();
 
     const exportData = {
       format: 'ArcaneSyncSession',
@@ -337,7 +338,7 @@ app.post('/api/session/import', (req, res) => {
       io.emit('sessionPlayerUpdate', {
         type: 'sessionImport',
         playerId,
-        session: result.session.players[playerId]
+        session: sansDonneesPrivees(result.session.players[playerId])
       });
     }
 
@@ -396,7 +397,7 @@ app.post('/api/session/player/:id/apply-to-character', (req, res) => {
   res.status(200).json({
     message: `L'état actuel de la partie a été importé dans la Fiche de Perso de ${joueurMisAJour.nom}.`,
     playerId: id,
-    player: joueurMisAJour
+    player: sansDonneesPrivees(joueurMisAJour)
   });
 });
 
@@ -505,7 +506,7 @@ app.post('/api/session/player', (req, res) => {
      */
   }
 
-  const joueurSession = getSessionPlayerById(id);
+  const joueurSession = sansDonneesPrivees(getSessionPlayerById(id));
 
   // Événement spécifique à la session : la fiche de personnage
   // n'écoute volontairement PAS cet événement.
@@ -569,7 +570,7 @@ app.post('/api/session/repos/:type', (req, res) => {
   if (!result.success && !result.resultats) return res.status(400).json({ message: result.message });
 
   for (const { id, nom } of result.resultats) {
-    const joueurSession = getSessionPlayerById(id);
+    const joueurSession = sansDonneesPrivees(getSessionPlayerById(id));
     io.emit('sessionPlayerUpdate', {
       type: 'update', player: nom, playerId: id, session: joueurSession,
       source: 'repos', repos: req.params.type

@@ -277,7 +277,7 @@ function buildEditForm(joueur) {
           <label>Mana actuel<input name="mana_current" type="number" min="0" value="${Number(mana.current ?? 0)}"></label>
           <label>Mana maximum<input name="mana_max" type="number" min="0" value="${Number(mana.max ?? 0)}"></label>
           <label>Vie bonus<input name="bonus_vie" type="number" min="0" value="${Number(joueur.bonus_vie ?? 0)}"></label>
-          <label>Intoxication<input name="intox" type="number" min="0" value="${Number(joueur.intox ?? 0)}"></label>
+          <label>Intoxication<input name="intox" type="number" min="0"${Number(stats.constitution) > 0 ? ` max="${Number(stats.constitution)}"` : ''} value="${Number(joueur.intox ?? 0)}"></label>
         </div>
       </section>
 
@@ -462,6 +462,10 @@ export function showMJPopup(joueur) {
         }
         if (nouvellesDonnees.mana.current > nouvellesDonnees.mana.max) {
           throw new Error('Le Mana actuel ne peut pas dépasser le Mana maximum.');
+        }
+        // Règle : Intox : x / Constitution (une Constitution de 0 ne borne pas).
+        if (nouvellesDonnees.stats.constitution > 0 && nouvellesDonnees.intox > nouvellesDonnees.stats.constitution) {
+          throw new Error("L'intoxication ne peut pas dépasser la Constitution.");
         }
 
         const response = await fetch('/api/session/player', {

@@ -63,6 +63,23 @@
     .stat-chip strong { font-size: 18px; }
     @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+    /* PC : statistiques en colonne à droite, visibles pendant le défilement.
+       En dessous de 1024 px (tablette, téléphone), rien ne change : elles
+       restent sous les sorts, dans l'ordre de la page. */
+    @media (min-width: 1024px) {
+      body > .section { max-width: min(1440px, 100%); }
+      .jeu-colonnes {
+        display: grid; grid-template-columns: minmax(0, 1fr) 230px;
+        gap: 0 28px; align-items: start;
+      }
+      .jeu-colonnes > .player-stats-section {
+        position: sticky; top: 12px; margin: 22px 0 0;
+        padding-left: 24px; border-left: 2px dashed #c9b28c;
+      }
+      .jeu-colonnes .stats-grid { grid-template-columns: minmax(0, 1fr); }
+      .jeu-colonnes .stat-chip { padding: 8px 12px; }
+    }
+
     /* En jeu : PV et mana en jauges, avec de grands boutons enregistrés
        aussitôt (pensé pour le téléphone). */
     .jeu-rapide {
@@ -163,6 +180,10 @@
 
   <div class="section">
     <h2>Interface de Jeu</h2>
+    <!-- PC : contenu de jeu à gauche, statistiques à droite (voir le CSS
+         .jeu-colonnes). Téléphone : les deux blocs s'enchaînent. -->
+    <div class="jeu-colonnes">
+    <div class="jeu-principal">
     <p class="legende-champs">
       <span class="legende-modifiable">Modifiable</span>
       <span class="legende-lecture">Lecture seule</span>
@@ -251,14 +272,18 @@
         </div>
       </div>
 
-      <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div style="display: flex; flex-direction: column;">
-          <label>Vie bonus</label>
-          <input type="number" id="player_vie_bonus" min="0" placeholder="0" inputmode="numeric">
-        </div>
-        <div style="display: flex; flex-direction: column;">
-          <label>Intox.</label>
-          <input type="number" id="player_intox" placeholder="0" min="0" max="100" inputmode="numeric">
+      <div class="field">
+        <label>Vie bonus</label>
+        <input type="number" id="player_vie_bonus" min="0" placeholder="0" inputmode="numeric">
+      </div>
+
+      <!-- Intoxication : au plus la Constitution (« Intox : x / Constitution »). -->
+      <div class="field">
+        <label>Intox. <small>actuelle / Constitution</small></label>
+        <div class="dual-input">
+          <input type="number" id="player_intox" placeholder="0" min="0" inputmode="numeric">
+          <span class="divider-span">/</span>
+          <input type="number" id="player_intox_max" placeholder="—" readonly aria-label="Constitution (intoxication maximum)">
         </div>
       </div>
 
@@ -270,14 +295,16 @@
       <h2>✨ Sorts et attaques</h2>
       <div id="sorts-contenu"><p class="sorts-vide">Chargement...</p></div>
     </section>
+    </div><!-- fin de .jeu-principal -->
 
     <!-- Caractéristiques de référence du personnage (lecture seule). Les
          statuts (poison, agonie...) restent gérés par le MJ, sans affichage
          côté joueur. -->
-    <div class="player-stats-section">
+    <aside class="player-stats-section">
       <h3>Statistiques</h3>
       <div id="player-stats" class="stats-grid"></div>
-    </div>
+    </aside>
+    </div><!-- fin de .jeu-colonnes -->
 
     <section class="section notes-panel" id="personal-notes-panel">
       <h2>📝 Mes notes personnelles</h2>
@@ -663,6 +690,12 @@
 
       remplir('player_vie_bonus', joueur.bonus_vie ?? 0);
       remplir('player_intox', joueur.intox ?? 0);
+      // Intoxication : au plus la Constitution (le serveur applique la même borne).
+      const constitution = Number(joueur.stats?.constitution) || 0;
+      if (constitution > 0) document.getElementById('player_intox').max = constitution;
+      else document.getElementById('player_intox').removeAttribute('max');
+      // Constitution à 0 : pas de borne, la case reste vide (« — »).
+      document.getElementById('player_intox_max').value = constitution > 0 ? constitution : '';
       if (joueur.stats) renderStats(joueur.stats);
       renderSorts(joueur);
 
@@ -742,7 +775,7 @@
       player_dura_current: () => ({ armure: { durabilite: { current: entier('player_dura_current') } } }),
       player_protection_current: () => ({ armure: { protection: { current: entier('player_protection_current') } } }),
       player_vie_bonus: () => ({ bonus_vie: entier('player_vie_bonus') }),
-      player_intox: () => ({ intox: document.getElementById('player_intox').value || '0' })
+      player_intox: () => ({ intox: entier('player_intox') })
     };
 
     function afficherEnregistrement(texte, erreur = false) {
@@ -908,7 +941,7 @@
               protection: { max: entier('player_protection_max'), current: entier('player_protection_current') }
             },
             bonus_vie: entier('player_vie_bonus'),
-            intox: document.getElementById('player_intox').value || '0',
+            intox: entier('player_intox'),
             survie: lireSurvie()
           };
 

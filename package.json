@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js && node tests/sorts.test.js && node tests/quadrillage.test.js && node tests/codemj.test.js && node tests/interfaces.test.js && node tests/donnees.test.js && node tests/fond.test.js && node tests/initiative.test.js && node tests/repos.test.js && node tests/rejoindre.test.js",
+    "test": "node tests/storage.test.js && node tests/allegement.test.js && node tests/persistence.test.js && node tests/session.test.js && node tests/mob.test.js && node tests/map.test.js && node tests/mapgen.test.js && node tests/annotations.test.js && node tests/sorts.test.js && node tests/quadrillage.test.js && node tests/codemj.test.js && node tests/interfaces.test.js && node tests/donnees.test.js && node tests/fond.test.js && node tests/initiative.test.js && node tests/repos.test.js && node tests/rejoindre.test.js && node tests/securite.test.js",
     "start": "node server.js",
     "test:sorts": "node tests/sorts.test.js",
     "test:quadrillage": "node tests/quadrillage.test.js",
@@ -21,7 +21,8 @@
     "test:fond": "node tests/fond.test.js",
     "test:initiative": "node tests/initiative.test.js",
     "test:repos": "node tests/repos.test.js",
-    "test:rejoindre": "node tests/rejoindre.test.js"
+    "test:rejoindre": "node tests/rejoindre.test.js",
+    "test:securite": "node tests/securite.test.js"
   },
   "repository": {
     "type": "git",
