@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fiche de Personnage</title>
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="police-lisible.css"/>
   <script src="/socket.io/socket.io.js"></script>
@@ -394,9 +394,18 @@
     cursor: pointer;
   }
   .retour-jeu-btn:hover { background: #f0e2c4; }
-    /* État de la partie (session) : enregistré dans la partie en cours. */
+    /* État de la partie (session) : modifiable, enregistré dans la partie en
+       cours. V2.3 : fond bleuté et cadre plein ; le pointillé signifie
+       désormais partout « lecture seule », comme dans l'Interface de Jeu. */
     .section input.etat-partie {
-      border-style: dashed;
+      border-color: #3c5e8b;
+      background: #eef3fa;
+    }
+    .section input.lecture-seule {
+      background: transparent;
+      border: 2px dashed #c9b28c;
+      box-shadow: none;
+      color: #5c3b21;
     }
     /* Métamorphoses (druides) */
     .metamorphoses-regles { margin: 0 0 12px; font-size: .9em; white-space: pre-line; }
@@ -421,6 +430,7 @@
     }
 </style>
   <link rel="stylesheet" href="joueur-mobile.css"/>
+  <script src="outils-communs.js"></script>
 </head>
 <body class="page-fiche">
   <div id="navbar-placeholder"></div>
@@ -456,7 +466,7 @@
     </div>
     <div class="section">
       <h2>Survie et Défense</h2>
-      <p class="note-etat-partie">Les champs en pointillés sont les valeurs de la partie en cours : les modifier ici met aussi la partie à jour à l'enregistrement.</p>
+      <p class="note-etat-partie">Les champs sur fond bleuté sont les valeurs de la partie en cours : les modifier ici met aussi la partie à jour à l'enregistrement. Les champs en pointillés sont en lecture seule.</p>
       <div class="grid grid-2">
           <div class="field">
           <label>Vie</label>
@@ -481,8 +491,12 @@
             <input type="number" id="player_vie_bonus" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
           </div>
           <div style="display: flex; flex-direction: column;">
-            <label>Intox.</label>
-            <input type="number" id="player_intox" class="etat-partie" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
+            <label>Intox. <small>actuelle / Constitution</small></label>
+            <div class="dual-input">
+              <input type="number" id="player_intox" class="etat-partie" min="0" title="Valeur de la partie en cours : l'enregistrer met aussi la partie à jour.">
+              <span class="divider-span">/</span>
+              <input type="number" id="player_intox_max" class="lecture-seule" placeholder="—" readonly tabindex="-1" aria-label="Constitution (intoxication maximum)">
+            </div>
           </div>
 
       </div><!-- fin du grid -->
@@ -776,6 +790,34 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   window.arcanePlayerId = playerId;
 
+  // -------------------------------------------------------------------
+  // V2.3 — Enregistrements concurrents et modifications non enregistrées.
+  //
+  // revisionChargee : révision du personnage à l'ouverture de la fiche. Le
+  // serveur refuse l'enregistrement si elle a changé entre-temps (MJ, autre
+  // appareil) : la fiche ne peut plus effacer ces changements.
+  // ficheModifiee : une saisie n'a pas été enregistrée ; quitter la page
+  // demande alors confirmation.
+  // -------------------------------------------------------------------
+  let revisionChargee = null;
+  let ficheModifiee = false;
+  const marquerModifiee = event => {
+    if (!event.isTrusted) return;
+    const cible = event.target;
+    if (event.type === 'click') {
+      // Ajout / retrait de lignes (sorts, objets...) ; pas les boutons
+      // d'aide, d'enregistrement ou de navigation.
+      if (!cible.closest('button') || cible.closest('#save-data-btn, .retour-jeu-btn, .description-btn')) return;
+    } else if (!cible.closest('input, textarea, select') || cible.closest('.filtre-type')) return;   // le filtre n'est pas une saisie
+    ficheModifiee = true;
+  };
+  ['input', 'change', 'click'].forEach(type => document.addEventListener(type, marquerModifiee, true));
+  window.addEventListener('beforeunload', event => {
+    if (!ficheModifiee) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+
   // Gestion des compétences de classe et passifs
   async function updateCompetences() {
     try {
@@ -846,6 +888,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
 
       const joueur = await response.json();
+      revisionChargee = Number.isInteger(joueur.revision) ? joueur.revision : 0;
 
       // Identité
       fillField('player_name', joueur.nom || '');
@@ -953,6 +996,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     const intox = document.getElementById('player_intox');
     if (constitution > 0) intox.max = constitution;
     else intox.removeAttribute('max');
+    // « x / Constitution » ; Constitution à 0 : pas de borne (« — »).
+    document.getElementById('player_intox_max').value = constitution > 0 ? constitution : '';
   }
   document.getElementById('stat_constitution').addEventListener('input', majMaxIntox);
   document.querySelectorAll('input.etat-partie').forEach(champ =>
@@ -1106,7 +1151,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       attaques_speciales: getSpecialAttacks()
   };
 
-    console.log('Données à envoyer:', donnees);
 
     const response = await fetch('/api/joueur', { 
       method: 'POST',
@@ -1116,14 +1160,28 @@ window.addEventListener('DOMContentLoaded', async () => {
       body: JSON.stringify({
         id: playerId || undefined,
         nom: playerId ? undefined : donnees.nom, // compatibilité anciennes URLs
-        nouvellesDonnees: donnees
+        nouvellesDonnees: donnees,
+        revisionAttendue: revisionChargee
       })
     });
 
+    if (response.status === 409) {
+      // Rien n'a été enregistré : le personnage a changé ailleurs.
+      const conflit = await response.json().catch(() => ({}));
+      const recharger = confirm([
+        conflit.message || 'Ce personnage a été modifié ailleurs.',
+        "Rien n'a été enregistré.",
+        'OK : recharger la fiche avec les valeurs actuelles (vos saisies seront perdues).\nAnnuler : rester sur la page, par exemple pour noter vos saisies.'
+      ].join('\n\n'));
+      if (recharger) {
+        ficheModifiee = false;
+        window.location.reload();
+      }
+      return;
+    }
     if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
 
     const result = await response.json();
-    console.log('Sauvegarde réussie:', result);
 
     // Le serveur renvoie toujours l'ID officiel du personnage.
     // On le conserve dans l'URL pour les prochaines ouvertures.
@@ -1145,6 +1203,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         throw new Error(`fiche enregistrée, mais la partie n'a pas été mise à jour (HTTP ${reponsePartie.status})`);
       }
     }
+    ficheModifiee = false;
     alert('Données sauvegardées avec succès !');
 
     // Recharger la fiche : seul l'identifiant voyage dans l'URL,
@@ -1169,6 +1228,7 @@ function getSpells() {
     if (nom) {
       spells.push({
         nom: nom,
+        refId: refIdChoisi(row.querySelector('.spell_name')),
         degats: row.querySelector('.spell_dmg')?.value || '',
         niveau: parseInt(row.querySelector('.spell_lvl')?.value) || 1
       });
@@ -1184,6 +1244,7 @@ function getSortsMineurs() {
     if (nom) {
       sortsMineurs.push({
         nom: nom,
+        refId: refIdChoisi(row.querySelector('.minispell_name')),
         degats: row.querySelector('.minispell_dmg')?.value || ''
       });
     }
@@ -1198,12 +1259,12 @@ function getSpecialAttacks() {
     if (nom) {
       attacks.push({
         nom: nom,
+        refId: refIdChoisi(row.querySelector('.attack_name')),
         degats: row.querySelector('.attack_dmg')?.value || '',
         niveau: parseInt(row.querySelector('.attack_lvl')?.value) || 1
       });
     }
   });
-  console.log('Attaques spéciales récupérées:', attacks);
   return attacks;
 }
 
@@ -1370,9 +1431,24 @@ function texteDescriptionSort(sortData) {
   return [sortData.description || '', details].filter(Boolean).join('\n');
 }
 
+/**
+ * V2.3 — Option correspondant à une entrée enregistrée : par son identifiant
+ * dans les Données de jeu (refId) d'abord, sinon par son nom (anciennes
+ * fiches). Un sort renommé par le MJ reste ainsi relié à sa référence.
+ */
+function optionEnregistree(select, enregistre) {
+  const options = Array.from(select.options);
+  return (enregistre?.refId && options.find(opt => opt.dataset.refId === enregistre.refId))
+    || (enregistre?.nom && options.find(opt => opt.value === enregistre.nom))
+    || null;
+}
+
+/** refId de l'option choisie (absent pour une entrée « hors base »). */
+const refIdChoisi = select => select?.selectedOptions?.[0]?.dataset.refId || undefined;
+
 function conserverHorsBase(select, enregistre) {
   if (!enregistre?.nom) return null;
-  if (Array.from(select.options).some(opt => opt.value === enregistre.nom)) return null;
+  if (optionEnregistree(select, enregistre)) return null;
   const option = document.createElement('option');
   option.value = enregistre.nom;
   option.textContent = `${enregistre.nom} (hors base)`;
@@ -1437,6 +1513,7 @@ async function createSortElement(sort, container, isMineur = false) {
       option.dataset.degats = sortData.degats || '';
       option.dataset.niveau = sortData.niveau ?? '';
       option.dataset.description = texteDescriptionSort(sortData);
+      option.dataset.refId = sortData.id || '';
       // Sélectionner l'option si c'est le sort sauvegardé
       if (sortData.nom === sort.nom) {
         option.selected = true;
@@ -1457,7 +1534,7 @@ async function createSortElement(sort, container, isMineur = false) {
         // Sélectionner le sort si fourni
     conserverHorsBase(nomSelect, sort);
     if (sort && sort.nom) {
-      const option = Array.from(nomSelect.options).find(opt => opt.value === sort.nom);
+      const option = optionEnregistree(nomSelect, sort);
       if (option) {
         option.selected = true;
         degatsInput.value = sort.degats || '';
@@ -1516,13 +1593,11 @@ async function createSortElement(sort, container, isMineur = false) {
 // Ajouter la fonction pour créer une attaque spéciale
 async function createAttackElement(attack) {
   try {
-    console.log('Création d\'une attaque avec les données:', attack);
     
     const response = await fetch('/api/game-database');
     if (!response.ok) throw new Error('Erreur de chargement des attaques');
     const gameData = await response.json();
     
-    console.log('Données du jeu reçues:', gameData.attack_special);
     
     const attackRow = document.createElement('div');
     attackRow.className = 'sort-row';
@@ -1558,6 +1633,7 @@ async function createAttackElement(attack) {
       option.dataset.degats = attackData.degats || '';
       option.dataset.niveau = attackData.niveau ?? '';
       option.dataset.description = texteDescriptionSort(attackData);
+      option.dataset.refId = attackData.id || '';
       groupeAttaque(attackData.affinite_magique === true).appendChild(option);
     });
 
@@ -1608,7 +1684,7 @@ async function createAttackElement(attack) {
     // Sélectionner l'attaque existante si elle existe
     conserverHorsBase(nomSelect, attack);
     if (attack && attack.nom) {
-      const option = Array.from(nomSelect.options).find(opt => opt.value === attack.nom);
+      const option = optionEnregistree(nomSelect, attack);
       if (option) {
         option.selected = true;
         degatsInput.value = attack.degats || '';
@@ -1758,8 +1834,7 @@ async function createAttackElement(attack) {
   (function () {
     const section = document.getElementById('metamorphoses-section');
     const liste = document.getElementById('metamorphoses-liste');
-    const echapper = valeur => String(valeur ?? '').replace(/[&<>"']/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const echapper = ArcaneOutils.echapper;   // outils-communs.js
     let reference = null;
 
     async function majMetamorphoses() {

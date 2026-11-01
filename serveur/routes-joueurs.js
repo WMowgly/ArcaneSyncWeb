@@ -11,7 +11,8 @@ const {
   getJoueurs,
   getJoueurById,
   supprimerJoueur,
-  sauvegardeData
+  sauvegardeData,
+  revisionDe
 } = require('../joueur');
 const {
   synchroniserSessionDepuisPersonnage,
@@ -78,7 +79,6 @@ app.get('/api/joueurs/:id', (req, res) => {
 });
 
 // API pour supprimer un joueur par son identifiant stable.
-// L'ancien endpoint par nom reste disponible pour compatibilité.
 app.delete('/api/joueurs/delete/:id', (req, res) => {
   // Suppression définitive d'un personnage : réservée au MJ.
   if (refuserSiPasMj(req, res)) return;
@@ -105,40 +105,29 @@ app.delete('/api/joueurs/delete/:id', (req, res) => {
   }
 });
 
-// Compatibilité avec les anciens liens qui utilisent encore le nom.
-app.delete('/api/joueurs/delete-by-name/:nom', (req, res) => {
-  // Shim de compatibilité, sans appelant connu — mais tout aussi
-  // destructeur que la route par ID : même contrôle.
-  if (refuserSiPasMj(req, res)) return;
+// V2.3 : l'ancienne route DELETE /api/joueurs/delete-by-name/:nom, sans
+// appelant, a été retirée : la suppression se fait par identifiant.
 
-  const nom = req.params.nom;
-  const joueur = getJoueurs().find(
-    player => typeof player.nom === 'string' &&
-      player.nom.toLowerCase() === nom.toLowerCase()
-  );
-
-  if (!joueur) {
-    return res.status(404).send(`Joueur ${nom} non trouvé`);
-  }
-
-  const success = supprimerJoueur({ id: joueur.id });
-
-  if (success) {
-    nettoyerApresSuppression(joueur);
-    io.emit('playerUpdate', {
-      type: 'delete',
-      player: joueur.nom,
-      playerId: joueur.id
-    });
-    res.status(200).send(`Joueur ${nom} supprimé`);
-  } else {
-    res.status(500).send('Erreur lors de la suppression du joueur');
-  }
-});
+/**
+ * V2.3 — Enregistrement périmé ? La page indique la révision qu'elle a
+ * chargée (`revisionAttendue`). Si le personnage a changé depuis (MJ, autre
+ * appareil), on refuse (409) plutôt que d'effacer ces changements.
+ * Sans `revisionAttendue` (anciens appels), aucun contrôle.
+ */
+function refuserSiPerime(req, res, joueur) {
+  const attendue = req.body?.revisionAttendue;
+  if (attendue === undefined || attendue === null || !joueur) return false;
+  if (Number(attendue) === revisionDe(joueur)) return false;
+  res.status(409).json({
+    conflit: true,
+    revision: revisionDe(joueur),
+    message: `${joueur.nom} a été modifié ailleurs (par le MJ ou sur un autre appareil) depuis l'ouverture de cette page.`
+  });
+  return true;
+}
 
 // API pour mettre à jour un joueur
 app.post('/api/joueur', (req, res) => {
-  console.log("Mise à jour du joueur :", req.body);
   const { id, nom, nouvellesDonnees } = req.body;
 
   if ((!id && !nom) || !nouvellesDonnees) {
@@ -146,6 +135,11 @@ app.post('/api/joueur', (req, res) => {
       message: "L'identifiant du joueur et les nouvelles données sont requis."
     });
   }
+
+  const joueurAvant = id
+    ? getJoueurById(id)
+    : getJoueurs().find(j => typeof j.nom === 'string' && typeof nom === 'string' && j.nom.toLowerCase() === nom.toLowerCase());
+  if (refuserSiPerime(req, res, joueurAvant)) return;
 
   const success = sauvegardeData({ id, nom }, nouvellesDonnees);
 
@@ -178,10 +172,13 @@ app.post('/api/joueur', (req, res) => {
       player: joueurMisAJour.nom,
       playerId: joueurMisAJour.id
     });
+    // Nom et PV max des jetons : la carte suit la fiche.
+    emitMapState();
 
     res.status(200).json({
       message: `Les données du joueur ${joueurMisAJour.nom} ont été mises à jour avec succès.`,
-      playerId: joueurMisAJour.id
+      playerId: joueurMisAJour.id,
+      revision: revisionDe(joueurMisAJour)
     });
   } else {
     res.status(404).json({ message: 'Joueur non trouvé.' });

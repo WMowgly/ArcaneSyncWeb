@@ -2,7 +2,8 @@
 // ---------------------------------------------------------------------------
 // Outils des contrôles de bout en bout (navigateur réel, sans interface).
 //
-//   - bac à sable : copie des données dans un dossier temporaire ;
+//   - bac à sable : copie du jeu de données de test (tests/donnees-test/)
+//     dans un dossier temporaire ;
 //   - serveur : une instance dédiée (port 3100 par défaut), jamais celle de
 //     la partie en cours ;
 //   - navigateur : Edge ou Chrome sans interface, piloté par le protocole
@@ -15,6 +16,9 @@ const { spawn } = require('child_process');
 const WebSocket = require('ws');
 
 const RACINE = path.join(__dirname, '..', '..');
+// Jeu de données FIGÉ, propre aux tests (V2.3) : les contrôles ne dépendent
+// plus du contenu de la partie en cours.
+const DONNEES_TEST = path.join(__dirname, '..', 'donnees-test');
 const PORT = Number(process.env.ARCANESYNC_E2E_PORT) || 3100;
 const PORT_DEBUG = Number(process.env.ARCANESYNC_E2E_PORT_DEBUG) || 9290;
 const BASE = `http://localhost:${PORT}`;
@@ -23,13 +27,14 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
 // --- Bac à sable -----------------------------------------------------------------
 function creerBac() {
   const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'arcanesync-e2e-'));
-  ['data.json', 'session.json', 'maps.json', 'mob_templates.json', 'tableau.json'].forEach(nom => {
-    const source = path.join(RACINE, nom);
+  // Le tableau blanc part vide : les scénarios comptent les traits qu'ils tracent.
+  ['data.json', 'session.json', 'maps.json', 'mob_templates.json'].forEach(nom => {
+    const source = path.join(DONNEES_TEST, nom);
     if (fs.existsSync(source)) fs.copyFileSync(source, path.join(dossier, nom));
   });
   fs.mkdirSync(path.join(dossier, 'database'));
   ['game_database.json', 'sorts.json'].forEach(nom =>
-    fs.copyFileSync(path.join(RACINE, 'database', nom), path.join(dossier, 'database', nom)));
+    fs.copyFileSync(path.join(DONNEES_TEST, 'database', nom), path.join(dossier, 'database', nom)));
   return dossier;
 }
 

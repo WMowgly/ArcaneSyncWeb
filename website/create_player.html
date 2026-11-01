@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Création de Personnage</title>
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="police-lisible.css"/>
   <style>
@@ -192,6 +192,7 @@
     }
   </style>
   <link rel="stylesheet" href="joueur-mobile.css"/>
+  <script src="outils-communs.js"></script>
 </head>
 <body class="page-fiche">
   <h1>Création de Personnage</h1>
@@ -340,9 +341,7 @@
     const GROUPE_MAGIQUE = '✨ Avec affinité magique';
     const GROUPE_CLASSIQUE = 'Attaques spéciales';
 
-    function echapper(valeur) {
-      return String(valeur ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
+    function echapper(valeur) { return ArcaneOutils.echapper(valeur); }   // outils-communs.js
 
     function remplirListe(select, valeurs) {
       valeurs.filter(Boolean).forEach(valeur => select.add(new Option(valeur, valeur)));
@@ -422,6 +421,7 @@
         option.dataset.degats = entree.degats || '';
         option.dataset.niveau = entree.niveau ?? '';
         option.dataset.description = texteDescriptionSort(entree);
+        option.dataset.refId = entree.id || '';
         if (!label) { select.add(option); return; }
         if (!groupes[label]) {
           groupes[label] = document.createElement('optgroup');
@@ -481,6 +481,8 @@
         .filter(ligne => ligne.querySelector('select').value)
         .map(ligne => ({
           nom: ligne.querySelector('select').value,
+          // V2.3 : identifiant dans les Données de jeu (le nom peut changer).
+          refId: ligne.querySelector('select').selectedOptions[0]?.dataset.refId || undefined,
           degats: ligne.querySelector('.sort-degats').value || '',
           ...(avecNiveau ? { niveau: parseInt(ligne.querySelector('.sort-niveau').value) || 1 } : {})
         }));

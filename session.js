@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { creerDepot, cheminDonnees } = require('./storage');
+const { creerDepot, cheminDonnees, signalerFichierIllisible } = require('./storage');
 const initiativeModele = require('./initiative');
 const reposModele = require('./repos');
 const { bornerRessource, normaliserValeursPersonnage } = require('./etat-personnage');
@@ -285,6 +285,8 @@ let session = {
   activeMapId: null,
   // Vue affichée par l'Écran partagé, choisie par le MJ.
   ecranVue: 'carte',
+  // V2.3 : les créatures mortes n'apparaissent pas sur l'Écran (option MJ).
+  ecranMasquerMorts: true,
   // Ordre d'initiative du combat en cours (voir initiative.js).
   initiative: null,
   // Règles des repos court / long, choisies par le MJ (voir repos.js).
@@ -338,11 +340,15 @@ function lireSession() {
         ? donnees.activeMapId
         : null,
       ecranVue: normaliserVueEcran(donnees.ecranVue),
+      ecranMasquerMorts: donnees.ecranMasquerMorts !== false,
       initiative: initiativeModele.normaliserEtat(donnees.initiative),
       repos: reposModele.normaliserRegles(donnees.repos)
     };
   } catch (err) {
+    // Fichier présent mais illisible : on ne démarre pas à vide par-dessus
+    // (voir storage.js, fichiers illisibles).
     console.error("Erreur lors de la lecture de session.json:", err);
+    signalerFichierIllisible(cheminFichier, err);
   }
 }
 
@@ -516,6 +522,7 @@ function importerSession(nouvelleSession) {
       ? nouvelleSession.activeMapId
       : null,
     ecranVue: normaliserVueEcran(nouvelleSession.ecranVue),
+    ecranMasquerMorts: nouvelleSession.ecranMasquerMorts !== false,
     initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative),
     repos: reposModele.normaliserRegles(nouvelleSession.repos)
   };
@@ -641,54 +648,11 @@ function synchroniserSessionDepuisPersonnage(joueur) {
 }
 
 /**
- * Sauvegarde d'une modification provenant de l'Interface de Jeu.
- *
- * Cette fonction ne touche JAMAIS data.json.
+ * Sauvegarde d'une modification de l'ÉTAT DE JEU d'un personnage (Interface
+ * de Jeu, éditeur du MJ, repos). Ne touche jamais data.json.
+ * (V2.3 : l'ancienne recopie manuelle partie -> fiche, sans appelant, a été
+ * retirée avec sa route.)
  */
-/**
- * Prépare les données de session qui peuvent être importées manuellement
- * dans la Fiche de Perso.
- */
-function extraireDonneesPersonnageDepuisSession(etatSession) {
-  return {
-    hp: {
-      max: etatSession.hp?.max ?? 0,
-      current: etatSession.hp?.current ?? 0
-    },
-    mana: {
-      max: etatSession.mana?.max ?? 0,
-      current: etatSession.mana?.current ?? 0
-    },
-    armure: {
-      type: etatSession.armure?.type || '',
-      resistance: etatSession.armure?.resistance || '',
-      durabilite: {
-        max: etatSession.armure?.durabilite?.max ?? 0,
-        current: etatSession.armure?.durabilite?.current ?? 0
-      },
-      protection: {
-        max: etatSession.armure?.protection?.max ?? 0,
-        current: etatSession.armure?.protection?.current ?? 0
-      }
-    },
-    bonus_vie: etatSession.bonus_vie ?? 0,
-    intox: etatSession.intox ?? 0,
-
-    // Inventaire et équipement font partie de l'état du personnage.
-    // Ils sont donc inclus lorsque le MJ importe l'état de la partie
-    // dans la Fiche de Perso.
-    sac: etatSession.sac ?? '',
-    ceinture: etatSession.ceinture ?? '',
-    inventaire: normaliserInventaireSession(etatSession.inventaire),
-    armes: Array.isArray(etatSession.armes) ? etatSession.armes : []
-  };
-}
-
-function getDonneesPersonnageDepuisSession(id) {
-  const etatSession = getSessionPlayerById(id);
-  return etatSession ? extraireDonneesPersonnageDepuisSession(etatSession) : null;
-}
-
 function sauvegarderEtatSession(id, nouvellesDonnees) {
   if (!id) {
     return false;
@@ -886,6 +850,22 @@ function getEcranVue() {
   return normaliserVueEcran(session.ecranVue);
 }
 
+/** Écran partagé : masquer les créatures mortes (vrai par défaut). */
+function getEcranMasquerMorts() {
+  return session.ecranMasquerMorts !== false;
+}
+
+function setEcranMasquerMorts(masquer) {
+  const valeur = masquer !== false;
+  if (getEcranMasquerMorts() === valeur) return { success: true, masquerMorts: valeur, modifie: false };
+  const nouvelleSession = { ...session, ecranMasquerMorts: valeur, lastSaved: new Date().toISOString() };
+  if (!ecrireSession(nouvelleSession)) {
+    return { success: false, message: "Impossible de sauvegarder l'option de l'écran." };
+  }
+  session = nouvelleSession;
+  return { success: true, masquerMorts: valeur, modifie: true };
+}
+
 function setEcranVue(vue) {
   if (!VUES_ECRAN.includes(vue)) {
     return { success: false, message: "Vue d'écran inconnue." };
@@ -1038,7 +1018,6 @@ module.exports = {
   ensureSessionPlayer,
   synchroniserSessionDepuisPersonnage,
   sauvegarderEtatSession,
-  getDonneesPersonnageDepuisSession,
   importerSession,
   validerSessionImport,
   STATUTS_JOUEUR,
@@ -1059,6 +1038,8 @@ module.exports = {
   getActiveMapId,
   setActiveMapId,
   getEcranVue,
+  getEcranMasquerMorts,
+  setEcranMasquerMorts,
   setEcranVue,
   getInitiative,
   setInitiative,

@@ -18,9 +18,9 @@
 // CE QUE FAIT CE MODULE
 // ---------------------
 // Il redirige TOUTES les données vers un dossier temporaire, amorcé avec une
-// COPIE des fichiers réels. Les suites gardent donc exactement les mêmes
-// attentes qu'avant — mêmes cartes, même session — mais aucune écriture ne
-// peut plus atteindre la partie.
+// COPIE du jeu de données de test (tests/donnees-test/, V2.3). Aucune
+// écriture ne peut atteindre la partie, et les suites ne dépendent plus de
+// son contenu : une partie sans personnage ne les fait plus échouer.
 //
 // IMPÉRATIF : ce module doit être requis EN PREMIER, avant tout `require`
 // d'un module applicatif. storage.js lit ARCANESYNC_DATA_DIR au chargement
@@ -31,16 +31,14 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const racine = path.join(__dirname, '..');
+// Jeu de données FIGÉ, propre aux tests (voir tests/donnees-test/LISEZMOI.txt).
+const racine = path.join(__dirname, 'donnees-test');
 
-// tableau.json et database/ sont copiés eux aussi : server.js les lit, et une
-// suite pourrait un jour le charger.
 const FICHIERS = [
   'data.json',
   'session.json',
   'maps.json',
   'mob_templates.json',
-  'tableau.json',
   'tableau_dessins.json'
 ];
 

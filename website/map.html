@@ -6,7 +6,7 @@
   <title>Carte de jeu — MJ — ArcaneSync V1.13</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="img/icon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="mj-code.js"></script>
   <style>
@@ -173,6 +173,7 @@
     .best-icone{font-size:15px;flex:0 0 auto}
     .best-actions{display:flex;gap:3px;margin-top:5px}
     .best-actions button{flex:1 1 0;padding:3px 0;font-size:10.5px}
+    #best-gerer{display:inline-flex;align-items:center;padding:3px 8px;border:1px solid var(--bord);border-radius:5px;background:var(--actif);color:var(--encre);text-decoration:none;font-size:12px;white-space:nowrap}
 
     .entity-list{display:grid;gap:5px;max-height:44vh;overflow-y:auto}
     .entity-item{border:1px solid var(--bord-clair);border-radius:6px;padding:6px 7px;background:#fffdf6;font-size:11.5px}
@@ -211,6 +212,7 @@
       .canvas-wrap{min-height:50vh}
     }
   </style>
+  <script src="outils-communs.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -383,6 +385,7 @@
           <label title="Cercle de portée autour du jeton sélectionné"><input type="checkbox" id="opt-aura"> Aura de portée
             <input id="opt-aura-cases" type="number" min="1" max="60" value="1" title="Portée en cases" style="width:52px" disabled></label>
           <span id="opt-aura-etat" hidden style="color:#8b3e3c">sélectionnez un jeton</span>
+          <label title="Les créatures mortes n'apparaissent pas sur l'Écran partagé ; la carte MJ les montre toujours."><input type="checkbox" id="opt-ecran-morts" checked> Morts masqués sur l'Écran</label>
           <button id="btn-zoom" title="Basculer entre carte ajustée et échelle réelle">🔍 Ajustée</button>
           <button id="btn-export" title="Exporter en PNG">📥</button>
         </div>
@@ -427,34 +430,7 @@
           <div data-vue="bestiaire" hidden>
             <div class="row tight">
               <input id="best-recherche" class="grow" placeholder="Rechercher une creature...">
-              <button id="best-nouveau" class="fixed primary" type="button" title="Nouvelle creature">➕</button>
-            </div>
-
-            <div id="best-editeur" hidden>
-              <div class="sep"></div>
-              <label for="best-nom">Nom</label>
-              <input id="best-nom" class="full">
-              <div class="row">
-                <div><label for="best-categorie">Categorie</label>
-                  <select id="best-categorie" class="full"></select></div>
-                <div><label for="best-icone">Icone</label>
-                  <input id="best-icone" class="full" maxlength="4" placeholder="auto"></div>
-              </div>
-              <div class="row">
-                <div><label for="best-hp">PV max</label>
-                  <input id="best-hp" class="full" type="number" min="0" value="10"></div>
-                <div><label for="best-mana">Mana max</label>
-                  <input id="best-mana" class="full" type="number" min="0" value="0"></div>
-              </div>
-              <label for="best-description">Description</label>
-              <textarea id="best-description" class="full" rows="2"></textarea>
-              <label for="best-notes">Notes MJ</label>
-              <textarea id="best-notes" class="full" rows="2"></textarea>
-              <div class="row" style="margin-top:7px">
-                <button id="best-enregistrer" class="primary" type="button">💾 Enregistrer</button>
-                <button id="best-annuler" type="button">✖ Annuler</button>
-              </div>
-              <div class="sep"></div>
+              <a id="best-gerer" class="fixed" href="modification.html#bestiaire" target="_blank" title="Créer ou modifier les modèles : Données de jeu › Bestiaire">✏️ Gérer</a>
             </div>
 
             <div id="best-list" class="entity-list"><p class="empty">—</p></div>
@@ -1582,7 +1558,6 @@
     let bestiaire = [];
     let mobsEnJeu = [];
     let categoriesMob = [];
-    let templateEnEdition = null;
 
     function setOnglet(nom) {
       document.querySelectorAll('.onglet')
@@ -1604,9 +1579,6 @@
     async function chargerCategoriesMob() {
       try {
         categoriesMob = await (await fetch('/api/mob-categories')).json();
-        document.getElementById('best-categorie').innerHTML = categoriesMob
-          .map(c => `<option value="${escapeHtml(c.id)}">${c.icone} ${escapeHtml(c.nom)}</option>`)
-          .join('');
       } catch (error) { setStatus(error.message, true); }
     }
 
@@ -1641,7 +1613,7 @@
       if (!liste.length) {
         conteneur.innerHTML = bestiaire.length
           ? '<p class="empty">Aucune créature ne correspond à cette recherche.</p>'
-          : '<p class="empty">Bestiaire vide. Créez une créature avec ➕, ou promouvez une créature déjà en jeu depuis l\'onglet « En jeu ».</p>';
+          : '<p class="empty">Bestiaire vide. Créez des modèles dans Données de jeu (✏️ Gérer), ou ajoutez au bestiaire une créature en jeu avec 📖 (onglet En jeu).</p>';
         return;
       }
 
@@ -1661,9 +1633,6 @@
             <div class="best-actions">
               <button data-best="ajouter"   data-id="${escapeHtml(t.id)}" title="Ajouter à la partie">➕</button>
               <button data-best="placer"    data-id="${escapeHtml(t.id)}" title="Ajouter et placer sur la carte">🗺️</button>
-              <button data-best="editer"    data-id="${escapeHtml(t.id)}" title="Modifier le modèle">✏️</button>
-              <button data-best="dupliquer" data-id="${escapeHtml(t.id)}" title="Dupliquer">⧉</button>
-              <button data-best="supprimer" data-id="${escapeHtml(t.id)}" class="danger" title="Retirer du bestiaire">🗑️</button>
             </div>
           </div>`;
       }).join('');
@@ -1724,24 +1693,8 @@
       if (!template) return;
 
       try {
-        if (action === 'editer') {
-          ouvrirEditeurBestiaire(template);
-          return;
-        }
-
-        if (action === 'supprimer') {
-          if (!confirm(`Retirer « ${template.nom} » du bestiaire ?\n\nLes créatures déjà en jeu ne sont pas affectées.`)) return;
-          await api('DELETE', `/api/mob-templates/${encodeURIComponent(id)}`);
-          setStatus('Modèle retiré du bestiaire.');
-        }
-
-        if (action === 'dupliquer') {
-          const nom = prompt('Nom du duplicata :', `${template.nom} (copie)`);
-          if (nom === null) return;
-          const data = await api('POST', `/api/mob-templates/${encodeURIComponent(id)}/duplicate`, { nom });
-          setStatus(data.message);
-        }
-
+        // V2.3 : créer, modifier ou supprimer un modèle se fait dans
+        // Données de jeu ; la carte s'en sert pour ajouter et placer.
         if (action === 'ajouter') {
           const data = await api('POST', `/api/mob-templates/${encodeURIComponent(id)}/spawn`);
           setStatus(`${data.mob.nom} ajoutée à la partie.`);
@@ -1798,62 +1751,8 @@
       } catch (error) { setStatus(error.message, true); }
     }
 
-    // --- Éditeur de modèle -------------------------------------------------
-
-    function ouvrirEditeurBestiaire(template) {
-      templateEnEdition = template || null;
-      document.getElementById('best-editeur').hidden = false;
-      document.getElementById('best-nom').value = template?.nom || '';
-      document.getElementById('best-categorie').value = template?.categorie || 'autre';
-      document.getElementById('best-icone').value = template?.icone || '';
-      document.getElementById('best-hp').value = template?.hp?.max ?? 10;
-      document.getElementById('best-mana').value = template?.mana?.max ?? 0;
-      document.getElementById('best-description').value = template?.description || '';
-      document.getElementById('best-notes').value = template?.notes || '';
-      document.getElementById('best-nom').focus();
-    }
-
-    function fermerEditeurBestiaire() {
-      templateEnEdition = null;
-      document.getElementById('best-editeur').hidden = true;
-    }
-
-    document.getElementById('best-nouveau').addEventListener('click', () => ouvrirEditeurBestiaire(null));
-    document.getElementById('best-annuler').addEventListener('click', fermerEditeurBestiaire);
     document.getElementById('best-recherche').addEventListener('input', renderBestiaire);
     document.getElementById('map-recherche').addEventListener('input', renderBibliotheque);
-
-    document.getElementById('best-enregistrer').addEventListener('click', async () => {
-      const nom = document.getElementById('best-nom').value.trim();
-      if (!nom) { setStatus('Le nom de la créature est requis.', true); return; }
-
-      const hpMax = Math.max(0, Number(document.getElementById('best-hp').value) || 0);
-      const manaMax = Math.max(0, Number(document.getElementById('best-mana').value) || 0);
-
-      const corps = {
-        nom,
-        categorie: document.getElementById('best-categorie').value,
-        icone: document.getElementById('best-icone').value.trim() || undefined,
-        // Un modèle se définit à pleine ressource : c'est l'instance qui
-        // encaissera ensuite les dégâts, sans jamais toucher au modèle.
-        hp: { max: hpMax, current: hpMax },
-        mana: { max: manaMax, current: manaMax },
-        description: document.getElementById('best-description').value,
-        notes: document.getElementById('best-notes').value
-      };
-
-      try {
-        if (templateEnEdition) {
-          await api('PUT', `/api/mob-templates/${encodeURIComponent(templateEnEdition.id)}`, corps);
-          setStatus(`« ${nom} » mis à jour. Les créatures déjà en jeu sont inchangées.`);
-        } else {
-          await api('POST', '/api/mob-templates', corps);
-          setStatus(`« ${nom} » ajouté au bestiaire.`);
-        }
-        fermerEditeurBestiaire();
-        await chargerBestiaire();
-      } catch (error) { setStatus(error.message, true); }
-    });
 
     // ---------------------------------------------------------------------
     // Liste des entités présentes sur la carte
@@ -2126,6 +2025,23 @@
     }
 
     document.getElementById('opt-aura').addEventListener('change', majAura);
+
+    // V2.3 — Créatures mortes sur l'Écran partagé : option de la partie.
+    const optEcranMorts = document.getElementById('opt-ecran-morts');
+    fetch('/api/ecran').then(r => r.json())
+      .then(etat => { optEcranMorts.checked = etat.masquerMorts !== false; })
+      .catch(() => {});
+    optEcranMorts.addEventListener('change', async () => {
+      try {
+        await api('POST', '/api/ecran', { masquerMorts: optEcranMorts.checked });
+        setStatus(optEcranMorts.checked
+          ? "Les créatures mortes sont masquées sur l'Écran."
+          : "Les créatures mortes restent visibles sur l'Écran.");
+      } catch (error) {
+        optEcranMorts.checked = !optEcranMorts.checked;
+        setStatus(error.message, true);
+      }
+    });
     document.getElementById('opt-aura-cases').addEventListener('input', majAura);
     // Ajustée : la carte tient en entier dans le cadre.
     // Échelle réelle : la carte garde sa taille de case et le cadre défile.

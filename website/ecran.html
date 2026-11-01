@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Écran — ArcaneSync</title>
   <link rel="icon" type="image/png" href="img/icon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* Écran partagé de la table : affichage seul, plein cadre.
@@ -66,6 +66,7 @@
     #initiative li.courant::before { content: '▶ '; }
     #initiative-cache { margin: 6px 0 0; font-size: 13px; font-style: italic; opacity: .8; }
   </style>
+  <script src="outils-communs.js"></script>
 </head>
 <body>
   <header class="ecran-barre">
@@ -100,7 +101,7 @@
 
     // --- Carte : projection « écran » du serveur (vision du groupe) --------
     const socket = ArcaneMap.connect('ecran', '');
-    const renderer = ArcaneMap.createRenderer(document.getElementById('map-canvas'), {});
+    const renderer = ArcaneMap.createRenderer(document.getElementById('map-canvas'), { ecran: true });
     renderer.setOption('showCoords', false);
 
     const statut = document.getElementById('ecran-statut');
@@ -146,8 +147,7 @@
 
     // --- Initiative : affichée pendant un combat, par-dessus la vue ---------
     // Projection « table » : les créatures cachées par le MJ n'y figurent pas.
-    const echapper = valeur => String(valeur ?? '').replace(/[&<>"']/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const echapper = ArcaneOutils.echapper;   // outils-communs.js
 
     async function chargerInitiative() {
       let etat;

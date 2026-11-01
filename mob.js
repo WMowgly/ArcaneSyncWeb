@@ -3,6 +3,21 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
+const { nombre } = require('./etat-personnage');
+
+// V2.3 — PV d'une créature créée sans PV renseignés (« créature vierge »).
+// Avant, elle naissait à 0 / 0, donc « MORT ».
+const PV_PAR_DEFAUT = 10;
+
+/**
+ * Ressource {current, max} d'une créature : nombres, 0 <= current <= max.
+ * Valeur actuelle absente : le maximum. Valeur non numérique : le défaut.
+ */
+function ressourceMob(ressource, maxParDefaut = 0) {
+  const max = Math.max(0, nombre(ressource?.max, maxParDefaut));
+  const current = Math.max(0, Math.min(nombre(ressource?.current, max), max));
+  return { max, current };
+}
 
 const templatesFile = cheminDonnees('mob_templates.json');
 let templates = [];
@@ -84,6 +99,10 @@ function nommerInstance(nomBase, mobsExistants = {}) {
 function normaliserMob(input = {}, options = {}) {
   const now = new Date().toISOString();
   const categorie = CATEGORIES_MOB[input.categorie] ? input.categorie : 'autre';
+  // Nombres validés (V2.3) : un texte (« abc ») n'est plus enregistré tel
+  // quel, ni transformé en null.
+  const hp = ressourceMob(input.hp, PV_PAR_DEFAUT);
+  const stat = cle => nombre(input.stats?.[cle]);
 
   return {
     id: options.id || input.id || generateId('mob'),
@@ -96,41 +115,29 @@ function normaliserMob(input = {}, options = {}) {
     templateId: typeof input.templateId === 'string' ? input.templateId.slice(0, 120) : '',
     description: input.description || '',
     stats: {
-      force: input.stats?.force ?? 0,
-      dexterite: input.stats?.dexterite ?? 0,
-      magie: input.stats?.magie ?? 0,
-      constitution: input.stats?.constitution ?? 0,
-      charisme: input.stats?.charisme ?? 0,
-      perception: input.stats?.perception ?? 0,
-      chance: input.stats?.chance ?? 0,
-      intelligence: input.stats?.intelligence ?? 0
+      force: stat('force'),
+      dexterite: stat('dexterite'),
+      magie: stat('magie'),
+      constitution: stat('constitution'),
+      charisme: stat('charisme'),
+      perception: stat('perception'),
+      chance: stat('chance'),
+      intelligence: stat('intelligence')
     },
-    hp: {
-      max: Math.max(0, Number(input.hp?.max ?? 0)),
-      current: Math.max(0, Math.min(Number(input.hp?.current ?? input.hp?.max ?? 0), Number(input.hp?.max ?? 0)))
-    },
-    mana: {
-      max: Math.max(0, Number(input.mana?.max ?? 0)),
-      current: Math.max(0, Math.min(Number(input.mana?.current ?? input.mana?.max ?? 0), Number(input.mana?.max ?? 0)))
-    },
-    statut: (Number(input.hp?.current ?? input.hp?.max ?? 0) <= 0) ? 'mort' : 'vivant',
+    hp,
+    mana: ressourceMob(input.mana),
+    statut: hp.current <= 0 ? 'mort' : 'vivant',
     // V1.13.8 : conditions (poison, brûlure...). Simple conservation ici,
     // c'est session.js qui valide contre STATUTS_JOUEUR.
     statuts: Array.isArray(input.statuts) ? clone(input.statuts) : [],
     armure: {
       type: input.armure?.type || '',
       resistance: input.armure?.resistance || '',
-      durabilite: {
-        max: input.armure?.durabilite?.max ?? 0,
-        current: input.armure?.durabilite?.current ?? input.armure?.durabilite?.max ?? 0
-      },
-      protection: {
-        max: input.armure?.protection?.max ?? 0,
-        current: input.armure?.protection?.current ?? input.armure?.protection?.max ?? 0
-      }
+      durabilite: ressourceMob(input.armure?.durabilite),
+      protection: ressourceMob(input.armure?.protection)
     },
-    bonus_vie: input.bonus_vie ?? 0,
-    intox: input.intox ?? 0,
+    bonus_vie: Math.max(0, nombre(input.bonus_vie)),
+    intox: Math.max(0, nombre(input.intox)),
     armes: Array.isArray(input.armes) ? clone(input.armes) : [],
     spells: Array.isArray(input.spells) ? clone(input.spells) : [],
     competences: Array.isArray(input.competences) ? clone(input.competences) : [],
@@ -294,5 +301,6 @@ module.exports = {
   deleteMobTemplate,
   createMobFromTemplate,
   duplicateMob,
-  normaliserMob
+  normaliserMob,
+  PV_PAR_DEFAUT
 };

@@ -489,8 +489,7 @@ try {
 
   [
     "app.post('/api/session/import'",
-    "app.delete('/api/joueurs/delete/:id'",
-    "app.delete('/api/joueurs/delete-by-name/:nom'"
+    "app.delete('/api/joueurs/delete/:id'"
   ].forEach(signature => {
     const corps = corpsDeRoute(serverSource, signature);
     assert(corps, `Route introuvable : ${signature}`);
@@ -509,6 +508,10 @@ try {
     "La suppression depuis la liste des joueurs doit transmettre le rôle MJ.");
   assert(/session\/import[\s\S]{0,320}role: 'mj'/.test(interfaceMjSource),
     "L'import de session depuis l'interface MJ doit transmettre le rôle MJ.");
+
+  // V2.3 : la suppression par nom, sans appelant, a été retirée.
+  assert(!serverSource.includes("app.delete('/api/joueurs/delete-by-name/:nom'"),
+    'La route delete-by-name, sans appelant, aurait dû être retirée.');
 
   // Code mort retiré : la route des types génériques n'a plus d'appelant.
   assert(!serverSource.includes("app.get('/api/map/element-kinds'"),

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scène de jeu — ArcaneSync V1.10</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="mj-code.js"></script>
   <style>
@@ -136,6 +136,7 @@
     body.integre .scene-help,
     body.integre #scene-role { display: none; }
   </style>
+  <script src="outils-communs.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -173,7 +174,7 @@
           Le MJ peut déplacer tous les tokens ; un joueur peut déplacer uniquement son propre personnage.
           <strong>Visibilité :</strong> seul le MJ peut cacher ou révéler un mob déjà créé.
           Un mob caché reste dans la partie mais n'est pas envoyé aux joueurs.
-          Les dessins et textes sont synchronisés en direct et ne sont pas sauvegardés comme données permanentes.
+          Les dessins et textes sont synchronisés en direct et enregistrés : ils restent après un rechargement, jusqu'à « Effacer dessins » (MJ).
         </p>
       </section>
 
@@ -247,12 +248,7 @@
     resetButton.hidden = role !== 'mj';
     clearDrawingButton.hidden = role !== 'mj';
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-        .replace(/'/g,'&#039;');
-    }
+    function escapeHtml(value) { return ArcaneOutils.echapper(value); }   // outils-communs.js
 
     function setStatus(message, error=false) {
       statusEl.textContent = message;
@@ -306,6 +302,8 @@
       return (scene.entities.mobs || []).find(x=>x.id===token.entityId);
     }
 
+    // Dessine le pion et RENVOIE son étiquette, posée ensuite par
+    // dessinerEtiquettes sans chevaucher les autres (V2.3).
     function renderToken(token) {
       const x=token.x*scene.width;
       const y=token.y*scene.height;
@@ -327,18 +325,8 @@
       ctx.textBaseline='middle';
       ctx.fillText(isMob ? '👹' : '👤',x,y);
 
-      ctx.font='bold 15px sans-serif';
-      ctx.textBaseline='top';
       const name=entity?.nom || (isMob?'Mob':'Joueur');
       const label=name.length>18 ? `${name.slice(0,17)}…` : name;
-      const labelWidth=Math.max(70,ctx.measureText(label).width+16);
-      ctx.fillStyle='rgba(255,248,220,0.92)';
-      ctx.fillRect(x-labelWidth/2,y+31,labelWidth,23);
-      ctx.strokeStyle='#8b5e3c';
-      ctx.strokeRect(x-labelWidth/2,y+31,labelWidth,23);
-      ctx.fillStyle='#3b2f1e';
-      ctx.textBaseline='middle';
-      ctx.fillText(label,x,y+42);
 
       if(entity?.hp) {
         const max=Math.max(1,Number(entity.hp.max)||1);
@@ -361,6 +349,29 @@
         ctx.font='bold 13px sans-serif';
         ctx.fillText('MORT',x,y-51);
       }
+      return { label, x, y };
+    }
+
+    // V2.3 — Noms sans chevauchement : sous le pion, au-dessus, puis plus bas.
+    function dessinerEtiquettes(etiquettes) {
+      const posees=[];
+      const chevauche=r=>posees.some(p=>r.x<p.x+p.w+1&&p.x<r.x+r.w+1&&r.y<p.y+p.h+1&&p.y<r.y+r.h+1);
+      ctx.font='bold 15px sans-serif';
+      etiquettes.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(e=>{
+        const w=Math.max(70,ctx.measureText(e.label).width+16), h=23, x=e.x-w/2;
+        const places=[e.y+31,e.y-80,e.y+55,e.y+79].map(y=>({x,y,w,h}));
+        const place=places.find(r=>!chevauche(r))||places[0];
+        posees.push(place);
+        ctx.fillStyle='rgba(255,248,220,0.92)';
+        ctx.fillRect(place.x,place.y,w,h);
+        ctx.strokeStyle='#8b5e3c';
+        ctx.lineWidth=1;
+        ctx.strokeRect(place.x,place.y,w,h);
+        ctx.fillStyle='#3b2f1e';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText(e.label,e.x,place.y+h/2);
+      });
     }
 
     // Rendu complet : le calque des dessins est reconstruit, puis composé.
@@ -395,7 +406,7 @@
       ctx.drawImage(calque,0,0);
       ctx.restore();
 
-      Object.values(scene.tokens || {}).forEach(renderToken);
+      dessinerEtiquettes(Object.values(scene.tokens || {}).map(renderToken));
     }
 
     /** Dessine un trait ou un texte sur le calque ; la gomme y perce un trou. */

@@ -1,11 +1,4 @@
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+function escapeHtml(value) { return window.ArcaneOutils.echapper(value); }   // outils-communs.js
 
 // ---------------------------------------------------------------------------
 // Listes du personnage (sorts, sorts mineurs, attaques, compétences) :
@@ -123,8 +116,14 @@ async function preparerListes(form) {
       const champ = event.target;
       if (champ.dataset.col !== 'nom') return;
       const connu = entrees.find(e => e.nom === champ.value.trim());
-      if (!connu) return;
       const ligne = champ.closest('.mj-liste-ligne');
+      // V2.3 : l'identifiant de référence (refId) suit le nom choisi ; un
+      // nom libre n'est relié à aucune référence.
+      let origine = {};
+      try { origine = JSON.parse(ligne.dataset.origine || '{}'); } catch { origine = {}; }
+      if (connu?.id) origine.refId = connu.id; else delete origine.refId;
+      ligne.dataset.origine = JSON.stringify(origine);
+      if (!connu) return;
       const degats = ligne.querySelector('[data-col="degats"]');
       const niveau = ligne.querySelector('[data-col="niveau"]');
       if (degats && !degats.value) degats.value = connu.degats || '';
@@ -434,7 +433,22 @@ export function showMJPopup(joueur) {
     window.open(`fiche_perso.html?${params.toString()}`, '_blank');
   });
 
-  overlay.querySelector('.edit-player-btn').addEventListener('click', () => {
+  overlay.querySelector('.edit-player-btn').addEventListener('click', async () => {
+    // V2.3 : l'éditeur part des valeurs ACTUELLES et retient la révision de
+    // la fiche. Si le joueur l'enregistre entre-temps, le serveur refuse
+    // l'enregistrement au lieu d'effacer ses changements.
+    let revisionOuverture = null;
+    try {
+      const [etat, fiche] = await Promise.all([
+        fetch(`/api/session/player/${encodeURIComponent(joueur.id)}`).then(r => (r.ok ? r.json() : null)),
+        fetch(`/api/joueurs/${encodeURIComponent(joueur.id)}`).then(r => (r.ok ? r.json() : null))
+      ]);
+      if (etat) joueur = { ...joueur, ...etat };
+      if (fiche) revisionOuverture = Number.isInteger(fiche.revision) ? fiche.revision : 0;
+    } catch (erreur) {
+      console.error('Valeurs actuelles du personnage indisponibles :', erreur);
+    }
+
     overlay.querySelector('.modal').innerHTML = `
       <span class="close-btn" aria-label="Fermer">&times;</span>
       <h2>Modifier ${escapeHtml(joueur.nom)}</h2>
@@ -471,13 +485,26 @@ export function showMJPopup(joueur) {
         const response = await fetch('/api/session/player', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: joueur.id, nouvellesDonnees })
+          body: JSON.stringify({ id: joueur.id, nouvellesDonnees, revisionAttendue: revisionOuverture })
         });
         const result = await response.json();
+        if (response.status === 409) {
+          // Rien n'a été enregistré : le MJ rouvre l'éditeur sur les valeurs actuelles.
+          message.textContent = result.message;
+          message.classList.add('error');
+          submit.textContent = 'Rouvrir avec les valeurs actuelles';
+          submit.disabled = false;
+          submit.type = 'button';
+          submit.addEventListener('click', () => {
+            showMJPopup(joueur);
+            document.querySelector('.modal-overlay .edit-player-btn')?.click();
+          }, { once: true });
+          return;
+        }
         if (!response.ok) throw new Error(result.message || `Erreur HTTP ${response.status}`);
 
         joueur = { ...joueur, ...result.session };
-        message.textContent = 'Modifications enregistrées dans la partie.';
+        message.textContent = 'Modifications enregistrées (fiche et partie).';
         message.classList.add('success');
 
         setTimeout(() => {

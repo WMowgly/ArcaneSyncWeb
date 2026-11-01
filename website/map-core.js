@@ -19,12 +19,8 @@ window.ArcaneMap = (function () {
   // Marge réservée aux règles de coordonnées (en unités logiques).
   const GUTTER = 22;
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+  // outils-communs.js doit être chargé avant ce fichier (carte MJ, Écran).
+  function escapeHtml(value) { return ArcaneOutils.echapper(value); }   // outils-communs.js
 
   function cellKey(x, y) {
     return `${x},${y}`;
@@ -448,12 +444,21 @@ window.ArcaneMap = (function () {
       ctx.globalAlpha = 1;
     }
 
+    // V2.3 — Écran partagé (option `ecran`) : lu de loin, sur une télévision.
+    // Étiquettes et barres de vie plus grandes, jetons qui remplissent leur case.
+    const ECRAN = opts.ecran === true;
+
+    /**
+     * Dessine le jeton et RENVOIE son étiquette (nom) sans la dessiner :
+     * les étiquettes sont posées ensuite toutes ensemble, en évitant de se
+     * chevaucher (voir dessinerEtiquettes).
+     */
     function dessinerToken(token, apercu) {
       const g = grid();
       const taille = token.size || 1;
       const cx = px(apercu ? apercu.x : token.x) + (taille * g.cellSize) / 2;
       const cy = px(apercu ? apercu.y : token.y) + (taille * g.cellSize) / 2;
-      const rayon = (taille * g.cellSize) / 2 - 3;
+      const rayon = (taille * g.cellSize) / 2 - (ECRAN ? 1 : 3);
 
       ctx.globalAlpha = apercu ? 0.6 : 1;
 
@@ -484,32 +489,23 @@ window.ArcaneMap = (function () {
 
       const nom = token.label || token.entity?.nom || (token.kind === 'mob' ? 'Créature' : 'Personnage');
       const libelle = nom.length > 14 ? `${nom.slice(0, 13)}…` : nom;
-      const policeNom = Math.max(9, g.cellSize / 4.2);
-
-      ctx.font = `bold ${policeNom}px sans-serif`;
-      const largeur = ctx.measureText(libelle).width + 8;
-      ctx.fillStyle = 'rgba(255,248,220,0.92)';
-      ctx.fillRect(cx - largeur / 2, cy + rayon + 1, largeur, policeNom + 5);
-      ctx.strokeStyle = '#8b5e3c';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(cx - largeur / 2, cy + rayon + 1, largeur, policeNom + 5);
-      ctx.fillStyle = '#3b2f1e';
-      ctx.fillText(libelle, cx, cy + rayon + 3 + policeNom / 2);
+      const policeNom = ECRAN ? Math.max(13, g.cellSize / 2.8) : Math.max(9, g.cellSize / 4.2);
 
       // Barre de vie.
+      const hauteurBarre = ECRAN ? 8 : 5;
       if (token.entity?.hp) {
         const max = Math.max(1, Number(token.entity.hp.max) || 1);
         const cur = Math.max(0, Number(token.entity.hp.current) || 0);
         const pct = Math.max(0, Math.min(1, cur / max));
-        const bw = taille * g.cellSize - 10;
-        const by = cy - rayon - 7;
+        const bw = taille * g.cellSize - (ECRAN ? 4 : 10);
+        const by = cy - rayon - hauteurBarre - 2;
         ctx.fillStyle = '#fff';
-        ctx.fillRect(cx - bw / 2, by, bw, 5);
+        ctx.fillRect(cx - bw / 2, by, bw, hauteurBarre);
         ctx.fillStyle = pct > 0.5 ? '#3f7d4a' : pct > 0.2 ? '#b08948' : '#8b3e3c';
-        ctx.fillRect(cx - bw / 2, by, bw * pct, 5);
+        ctx.fillRect(cx - bw / 2, by, bw * pct, hauteurBarre);
         ctx.strokeStyle = '#3b2f1e';
         ctx.lineWidth = 1;
-        ctx.strokeRect(cx - bw / 2, by, bw, 5);
+        ctx.strokeRect(cx - bw / 2, by, bw, hauteurBarre);
       }
 
       // Marqueurs réservés à la vue MJ.
@@ -524,6 +520,55 @@ window.ArcaneMap = (function () {
         ctx.fillText('🔒', cx + rayon - 4, cy - rayon + 4);
       }
 
+      ctx.globalAlpha = 1;
+      return {
+        libelle, police: policeNom, cx, cy, alpha: apercu ? 0.6 : 1,
+        // Au-dessus : au-dessus de la barre de vie (et du marqueur « CACHÉ »).
+        dessous: cy + rayon + 1,
+        dessus: cy - rayon - hauteurBarre - 4 - (token.visibleToPlayers === false ? 12 : 0),
+        // Le jeton et sa barre de vie : aucune étiquette ne doit les couvrir.
+        zone: { x: cx - rayon, y: cy - rayon - hauteurBarre - 2, w: 2 * rayon, h: 2 * rayon + hauteurBarre + 2 }
+      };
+    }
+
+    /**
+     * V2.3 — Étiquettes sans chevauchement. Deux jetons voisins avaient
+     * des noms superposés, illisibles (« Nou test ture »). Chaque étiquette
+     * prend la première place libre : sous le jeton, au-dessus, puis plus
+     * bas. Ordre stable (de haut en bas, puis de gauche à droite) : une
+     * étiquette ne saute pas d'une place à l'autre à chaque rendu.
+     */
+    function dessinerEtiquettes(etiquettes) {
+      const posees = etiquettes.filter(Boolean).map(e => e.zone);
+      const chevauche = r => posees.some(p =>
+        r.x < p.x + p.w + 1 && p.x < r.x + r.w + 1 && r.y < p.y + p.h + 1 && p.y < r.y + r.h + 1);
+
+      etiquettes
+        .filter(Boolean)
+        .sort((a, b) => a.cy - b.cy || a.cx - b.cx)
+        .forEach(e => {
+          ctx.font = `bold ${e.police}px sans-serif`;
+          const w = ctx.measureText(e.libelle).width + 8;
+          const h = e.police + 5;
+          const x = e.cx - w / 2;
+          const places = [e.dessous, e.dessus - h, e.dessous + h + 1, e.dessous + 2 * (h + 1)]
+            .map(y => ({ x, y, w, h }));
+          // Dans le cadre de la carte, sinon une étiquette du bord serait coupée.
+          const dansCadre = r => r.y >= 0 && r.y + r.h <= logicalHeight();
+          const place = places.find(r => dansCadre(r) && !chevauche(r)) || places.find(dansCadre) || places[0];
+          posees.push(place);
+
+          ctx.globalAlpha = e.alpha;
+          ctx.fillStyle = 'rgba(255,248,220,0.92)';
+          ctx.fillRect(place.x, place.y, w, h);
+          ctx.strokeStyle = '#8b5e3c';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(place.x, place.y, w, h);
+          ctx.fillStyle = '#3b2f1e';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(e.libelle, e.cx, place.y + 2 + e.police / 2);
+        });
       ctx.globalAlpha = 1;
     }
 
@@ -869,15 +914,19 @@ window.ArcaneMap = (function () {
       // les tokens transmis sont par construction dans une case visible.
       dessinerBrouillard();
 
+      const etiquettes = [];
       Object.values(state.map.tokens || {}).forEach(token => {
         if (state.ghost && state.ghost.id === token.id) return;
-        dessinerToken(token, null);
+        etiquettes.push(dessinerToken(token, null));
       });
 
       if (state.ghost) {
         const token = state.map.tokens[state.ghost.id];
-        if (token) dessinerToken(token, state.ghost);
+        if (token) etiquettes.push(dessinerToken(token, state.ghost));
       }
+
+      // Les noms par-dessus tous les jetons, sans se chevaucher.
+      dessinerEtiquettes(etiquettes);
 
       // Les annotations sont une couche par-dessus la scène.
       dessinerAnnotations();

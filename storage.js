@@ -32,6 +32,34 @@ const fs = require('fs');
 const depots = new Map();
 let arretInstalle = false;
 
+// ---------------------------------------------------------------------------
+// FICHIERS ILLISIBLES (V2.3)
+//
+// Un fichier de données présent mais illisible (JSON abîmé, contenu
+// inattendu) faisait démarrer le module concerné à VIDE ; le premier
+// enregistrement écrasait alors le fichier avec cette partie vide.
+//
+// Le module qui échoue à lire son fichier le signale ici. Dès lors :
+//   - toute écriture de ce fichier est refusée (le fichier reste intact) ;
+//   - server.js refuse de démarrer et indique la sauvegarde à restaurer.
+// ---------------------------------------------------------------------------
+const illisibles = new Map();   // chemin -> message d'erreur
+
+function signalerFichierIllisible(cheminFichier, erreur) {
+  illisibles.set(cheminFichier, erreur?.message || String(erreur));
+}
+
+/** [{ chemin, erreur }] des fichiers de données qui n'ont pas pu être lus. */
+function fichiersIllisibles() {
+  return [...illisibles].map(([chemin, erreur]) => ({ chemin, erreur }));
+}
+
+function ecritureBloquee(cheminFichier, etiquette) {
+  if (!illisibles.has(cheminFichier)) return false;
+  console.error(`[Données] Écriture de ${etiquette} refusée : le fichier n'a pas pu être lu au démarrage.`);
+  return true;
+}
+
 /**
  * Dépôt d'écriture pour un fichier. Deux appels sur le même chemin
  * renvoient le même dépôt : recharger un module ne perd pas l'écriture
@@ -85,6 +113,7 @@ function creerDepot(cheminFichier, options = {}) {
   const depot = {
     /** Écriture immédiate et atomique. Comportement historique. */
     ecrire(contenu) {
+      if (ecritureBloquee(cheminFichier, etiquette)) return false;
       // Une écriture immédiate rend caduque toute version en attente.
       contenuEnAttente = null;
       annulerMinuteur();
@@ -101,6 +130,7 @@ function creerDepot(cheminFichier, options = {}) {
      * la moitié du coût.
      */
     ecrireDifferee(contenu) {
+      if (ecritureBloquee(cheminFichier, etiquette)) return false;
       contenuEnAttente = contenu;
 
       if (!minuteur) {
@@ -303,6 +333,8 @@ function installerArret() {
 
 module.exports = {
   creerDepot,
+  signalerFichierIllisible,
+  fichiersIllisibles,
   dossierDonnees,
   cheminDonnees,
   flushAll,

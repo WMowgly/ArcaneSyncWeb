@@ -13,15 +13,14 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const io = require('socket.io')(server);
-const fs = require('fs');
 const mapStore = require('./map');
 const mjCode = require('./mjcode');
 const tableau = require('./tableau');
-const fsPromises = require('fs').promises;
 const os = require('os');
 const {
   sauvegarderFichiers,
-  cheminDonnees
+  cheminDonnees,
+  fichiersIllisibles
 } = require('./storage');
 const {
   getJoueurs,
@@ -35,37 +34,35 @@ const {
   getSceneState,
   ensureSceneState,
   moveSceneToken,
-  setMobSceneVisibility,
   getActiveMapId,
   getEcranVue
 } = require('./session');
 const diffusionCarte = require('./serveur/diffusion-carte');
 const { getActiveMapForViewer, emitMapState } = diffusionCarte;
 
+// ------------------------------------------------------------------
+// V2.3 — Fichier de données illisible : on ne démarre pas.
+//
+// Démarrer quand même ouvrirait une partie vide, et le premier
+// enregistrement écraserait le fichier. On s'arrête AVANT la rotation des
+// sauvegardes : les cinq générations valables restent intactes.
+// ------------------------------------------------------------------
+(function verifierFichiersDeDonnees() {
+  const illisibles = fichiersIllisibles();
+  if (!illisibles.length) return;
+  const path = require('path');
+  console.error('\n[Données] Démarrage annulé : fichier(s) de données illisible(s).');
+  illisibles.forEach(({ chemin, erreur }) => {
+    const nom = path.basename(chemin);
+    console.error(`\n  - ${chemin}\n    ${erreur}`);
+    console.error(`    Pour restaurer la dernière sauvegarde : mettez ce fichier de côté, puis copiez`);
+    console.error(`    ${path.join(path.dirname(chemin), 'sauvegardes', `${nom}.1`)} à sa place.`);
+  });
+  console.error('\nAucun fichier n\'a été modifié. Relancez le serveur une fois le fichier réparé ou restauré.\n');
+  process.exit(1);
+})();
+
 diffusionCarte.attacherIo(io);
-
-// Configuration pour le tableau
-const JSON_FILE = cheminDonnees('tableau.json');
-let documentData = {
-    content: "",
-    lastSaved: null,
-    users: {}
-};
-
-// Charger les données du tableau
-async function initializeDocumentData() {
-  try {
-    if (fs.existsSync(JSON_FILE)) {
-      const fileContent = await fsPromises.readFile(JSON_FILE, 'utf8');
-      documentData = JSON.parse(fileContent);
-      if (!documentData.users) {
-        documentData.users = {};
-      }
-    }
-  } catch (err) {
-    console.error('Erreur lors du chargement du document:', err);
-  }
-}
 
 // Middleware
 app.use(express.json());
@@ -381,22 +378,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('sceneSetMobVisibility', ({mobId,visible}) => {
-    if(socket.handshake.query?.role !== 'mj') {
-      socket.emit('sceneMoveRejected',{message:'Seul le MJ peut modifier la visibilité des mobs.'});
-      return;
-    }
-
-    const result=setMobSceneVisibility(mobId,visible);
-    if(!result.success) {
-      socket.emit('sceneMoveRejected',{message:result.message});
-      return;
-    }
-
-    io.emit('sceneUpdated');
-    emitMapState();
-  });
-
   // Événement de dessin
   // Segments du trait en cours : diffusion en direct seulement. Le trait
   // complet est enregistré à la fin du geste (tableauTrait).
@@ -426,58 +407,11 @@ io.on('connection', (socket) => {
     io.emit('clearDrawings');
   });
 
-  // Mouvement de curseur
-  socket.on('cursorMove', ({ clientId, range }) => {
-    socket.broadcast.emit('cursorUpdate', {
-      clientId: clientId,
-      range: range
-    });
-  });
-
-  // Sauvegarde du document
-  socket.on('saveDocument', async ({ content }) => {
-    documentData.content = content;
-    documentData.lastSaved = new Date().toISOString();
-      
-    try {
-      await fsPromises.writeFile(JSON_FILE, JSON.stringify(documentData, null, 2));
-      io.emit('documentData', {
-        content: documentData.content,
-        lastSaved: documentData.lastSaved
-      });
-      console.log('Document sauvegardé:', new Date().toISOString());
-    } catch (err) {
-      console.error('Erreur lors de la sauvegarde:', err);
-    }
-  });
-
-  socket.on('loadDocument', () => {
-      socket.emit('documentData', documentData);
-  });
-
-  // Quitter le document
-  socket.on('leave', ({ clientId }) => {
-    console.log('Client quitte le document:', clientId);
-    
-    if (documentData.users[clientId]) {
-      delete documentData.users[clientId];
-      io.emit('usersUpdate', documentData.users);
-    }
-  });
-
-  // Déconnexion du client
+  // V2.3 : les gestionnaires de l'ancien « document partagé » (curseurs,
+  // saveDocument, loadDocument, leave, fichier tableau.json) et
+  // sceneSetMobVisibility n'avaient plus aucune page cliente : retirés.
   socket.on('disconnect', () => {
     console.log('Client déconnecté:', socket.id);
-    
-    // Rechercher et supprimer l'utilisateur avec ce socketId
-    const clientId = Object.keys(documentData.users).find(
-      key => documentData.users[key].socketId === socket.id
-    );
-    
-    if (clientId) {
-      delete documentData.users[clientId];
-      io.emit('usersUpdate', documentData.users);
-    }
   });
 });
 
@@ -525,12 +459,10 @@ sauvegarderDonnees();
 // MJ — pour un controle de bout en bout sans couper une partie en cours.
 const PORT = Number(process.env.PORT) || 3000;
 
-initializeDocumentData().then(() => {
+server.listen(PORT, () => {
   const ip = getLocalIPAddress();
-  server.listen(PORT, () => {
-    console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://' + ip + ':' + PORT);
-    if (!mjCode.estConfigure()) {
-      console.log('[Code MJ] Aucun code MJ : il sera demandé à la première ouverture d\'une page MJ.');
-    }
-  });
+  console.log('\x1b[36m%s\x1b[0m', '[Serveur Principal] En ligne : http://' + ip + ':' + PORT);
+  if (!mjCode.estConfigure()) {
+    console.log('[Code MJ] Aucun code MJ : il sera demandé à la première ouverture d\'une page MJ.');
+  }
 });

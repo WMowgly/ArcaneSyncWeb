@@ -10,14 +10,15 @@ const express = require('express');
 const {
   getJoueurs,
   getJoueurById,
-  sauvegardeData
+  sauvegardeData,
+  revisionDe
 } = require('../joueur');
 const {
   getSession,
   getSessionPlayerById,
   ensureSessionPlayer,
   sauvegarderEtatSession,
-  getDonneesPersonnageDepuisSession,
+  synchroniserSessionDepuisPersonnage,
   importerSession,
   validerSessionImport,
   getPlayerPersonalNotes,
@@ -31,12 +32,15 @@ const {
   setMobSceneVisibility,
   getEcranVue,
   setEcranVue,
+  getEcranMasquerMorts,
+  setEcranMasquerMorts,
   getReglesRepos,
   setReglesRepos,
   appliquerRepos
 } = require('../session');
 const { roleDepuisRequete, refuserSiPasMj, sansDonneesPrivees } = require('./acces');
 const { emitMapState } = require('./diffusion-carte');
+const { separerDefinitionEtEtat } = require('../etat-personnage');
 
 const app = express.Router();
 let io = null;
@@ -44,8 +48,9 @@ let io = null;
 // ------------------------------------------------------------------
 // API de session de jeu
 //
-// IMPORTANT : cette API ne modifie JAMAIS data.json.
-// Elle manipule uniquement l'état de la partie active.
+// Ces routes manipulent l'état de la partie active. Seule exception :
+// POST /api/session/player envoie la DÉFINITION du personnage (éditeur
+// du MJ) dans la fiche, conformément à la règle fiche / partie.
 // ------------------------------------------------------------------
 
 // État des personnages enrichi avec la partie active.
@@ -135,7 +140,7 @@ app.put('/api/session/player/:id/personal-notes',(req,res)=>{
   const result=setPlayerPersonalNotes(req.params.id,req.body?.content);
   if(!result.success) return res.status(400).json({message:result.message});
 
-  if(!sauvegardeData({id:req.params.id},{personalNotes:result.content})) {
+  if(!sauvegardeData({id:req.params.id},{personalNotes:result.content},{revision:false})) {
     return res.status(500).json({message:'Notes sauvegardées dans la session mais pas dans le personnage.'});
   }
 
@@ -179,15 +184,27 @@ app.delete('/api/session/public-notes/:id',(req,res)=>{
 // ÉCRAN PARTAGÉ : le MJ choisit ce qu'il affiche (carte ou tableau blanc).
 // ------------------------------------------------------------------
 app.get('/api/ecran', (req, res) => {
-  res.json({ vue: getEcranVue() });
+  res.json({ vue: getEcranVue(), masquerMorts: getEcranMasquerMorts() });
 });
 
+// Le MJ choisit la vue et/ou l'option « créatures mortes masquées » (V2.3).
 app.post('/api/ecran', (req, res) => {
   if (refuserSiPasMj(req, res)) return;
-  const result = setEcranVue(req.body?.vue);
-  if (!result.success) return res.status(400).json({ message: result.message });
-  io.emit('ecranVue', { vue: result.vue });
-  res.json({ vue: result.vue });
+  const { vue, masquerMorts } = req.body || {};
+  if (vue === undefined && typeof masquerMorts !== 'boolean') {
+    return res.status(400).json({ message: 'Rien à modifier.' });
+  }
+  if (vue !== undefined) {
+    const result = setEcranVue(vue);
+    if (!result.success) return res.status(400).json({ message: result.message });
+    io.emit('ecranVue', { vue: result.vue });
+  }
+  if (typeof masquerMorts === 'boolean') {
+    const result = setEcranMasquerMorts(masquerMorts);
+    if (!result.success) return res.status(500).json({ message: result.message });
+    if (result.modifie) emitMapState();
+  }
+  res.json({ vue: getEcranVue(), masquerMorts: getEcranMasquerMorts() });
 });
 
 // ------------------------------------------------------------------
@@ -232,27 +249,8 @@ app.post('/api/session/scene/mob/:id/toggle-visibility',(req,res)=>{
   });
 });
 
-app.put('/api/session/scene/mob/:id/visibility',(req,res)=>{
-  if (refuserSiPasMj(req, res)) return;
-
-  // Important : Boolean("false") vaut true en JavaScript.
-  // On accepte uniquement un vrai booléen pour éviter que "Montrer"
-  // soit interprété comme "Cacher".
-  if (typeof req.body?.visible !== 'boolean') {
-    return res.status(400).json({message:'La valeur visible doit être un booléen.'});
-  }
-  const visible = req.body.visible;
-  const result=setMobSceneVisibility(req.params.id,visible);
-  if(!result.success) return res.status(404).json({message:result.message});
-
-  io.emit('sceneUpdated');
-  emitMapState();
-  res.json({
-    message: visible ? 'Mob rendu visible aux joueurs.' : 'Mob caché aux joueurs.',
-    mobId:req.params.id,
-    visibleToPlayers:visible
-  });
-});
+// V2.3 : PUT /api/session/scene/mob/:id/visibility, sans appelant, a été
+// retirée ; le tableau blanc utilise la bascule ci-dessus.
 
 app.post('/api/session/scene/reset',(req,res)=>{
   if (refuserSiPasMj(req, res)) return;
@@ -361,48 +359,9 @@ app.post('/api/session/import', (req, res) => {
   }
 });
 
-app.post('/api/session/player/:id/apply-to-character', (req, res) => {
-  if (refuserSiPasMj(req, res)) return;
-  const id = req.params.id;
-  const joueur = getJoueurById(id);
+// V2.3 : POST /api/session/player/:id/apply-to-character (recopier l'état
+// de partie dans la fiche), sans appelant depuis la V1.16, a été retirée.
 
-  if (!joueur) {
-    return res.status(404).json({ message: "Personnage introuvable." });
-  }
-
-  const donneesSession = getDonneesPersonnageDepuisSession(id);
-
-  if (!donneesSession) {
-    return res.status(404).json({
-      message: "Aucun état de session disponible pour ce personnage."
-    });
-  }
-
-  const success = sauvegardeData({ id }, donneesSession);
-
-  if (!success) {
-    return res.status(500).json({
-      message: "Impossible d'importer l'état de la partie dans la Fiche de Perso."
-    });
-  }
-
-  const joueurMisAJour = getJoueurById(id);
-
-  io.emit('playerUpdate', {
-    type: 'manualSessionImport',
-    player: joueurMisAJour.nom,
-    playerId: id
-  });
-
-  res.status(200).json({
-    message: `L'état actuel de la partie a été importé dans la Fiche de Perso de ${joueurMisAJour.nom}.`,
-    playerId: id,
-    player: sansDonneesPrivees(joueurMisAJour)
-  });
-});
-
-// Champs qu'un joueur peut enregistrer sans code MJ.
-const CHAMPS_ETAT_JEU = new Set(['hp', 'mana', 'armure', 'bonus_vie', 'intox', 'survie']);
 
 app.post('/api/session/player', (req, res) => {
   const { id, nouvellesDonnees } = req.body;
@@ -413,10 +372,17 @@ app.post('/api/session/player', (req, res) => {
     });
   }
 
-  // L'Interface de Jeu enregistre l'état de jeu du personnage ; tout le
-  // reste (stats, inventaire, équipement...) passe par l'éditeur du MJ.
-  const champsHorsJeu = Object.keys(nouvellesDonnees).filter(champ => !CHAMPS_ETAT_JEU.has(champ));
-  if (champsHorsJeu.length && refuserSiPasMj(req, res)) return;
+  // V2.3 — Règle fiche / partie. L'envoi est séparé en deux :
+  //   - l'ÉTAT DE JEU (PV, mana, durabilité et protection actuels, vie
+  //     bonus, intox, survie) va dans la partie ; le joueur peut l'envoyer ;
+  //   - la DÉFINITION (nom, statistiques, maximums, armure, sorts,
+  //     équipement...) va dans la FICHE, puis la partie en est resynchronisée
+  //     en gardant son état. Réservé au MJ (éditeur de personnage).
+  // Avant, la définition envoyée par le MJ n'allait que dans la partie : la
+  // fiche gardait les anciennes valeurs et les rétablissait au premier
+  // enregistrement de la fiche.
+  const { definition, etat } = separerDefinitionEtEtat(nouvellesDonnees);
+  if (Object.keys(definition).length && refuserSiPasMj(req, res)) return;
 
   const joueur = getJoueurById(id);
 
@@ -457,64 +423,46 @@ app.post('/api/session/player', (req, res) => {
     return res.status(400).json({ message: "L'armure du joueur est invalide." });
   }
 
-  const success = sauvegarderEtatSession(id, nouvellesDonnees);
+  // 1) La définition d'abord : les nouveaux maximums bornent ensuite l'état.
+  const definitionModifiee = Object.keys(definition).length > 0;
+  if (definitionModifiee) {
+    // L'éditeur indique la révision de la fiche qu'il a ouverte : si le
+    // joueur l'a enregistrée entre-temps, on ne l'écrase pas.
+    const attendue = req.body.revisionAttendue;
+    if (attendue !== undefined && attendue !== null && Number(attendue) !== revisionDe(joueur)) {
+      return res.status(409).json({
+        conflit: true,
+        revision: revisionDe(joueur),
+        message: `${joueur.nom} a été modifié ailleurs (fiche du joueur) depuis l'ouverture de l'éditeur. Rouvrez l'éditeur pour repartir des valeurs actuelles.`
+      });
+    }
+    if (!sauvegardeData({ id }, definition)) {
+      return res.status(500).json({
+        message: "Impossible d'enregistrer les modifications dans la Fiche de Perso."
+      });
+    }
+    if (!synchroniserSessionDepuisPersonnage(getJoueurById(id))) {
+      return res.status(500).json({
+        message: "La fiche a été enregistrée, mais la partie n'a pas pu être synchronisée."
+      });
+    }
+  }
 
-  if (!success) {
+  // 2) Puis l'état de jeu, borné par les maximums de la fiche.
+  if (!sauvegarderEtatSession(id, etat)) {
     return res.status(500).json({
       message: "Impossible de sauvegarder l'état de session."
     });
   }
 
-  /*
-   * Inventaire et équipement sont des données persistantes du personnage.
-   * Le MJ les modifie depuis son éditeur de fiche : elles doivent donc
-   * rester liées à data.json, tout en continuant à alimenter la session.
-   *
-   * Les ressources de combat (HP/Mana), elles, restent des données de
-   * session et ne sont PAS écrites automatiquement dans la fiche.
-   */
-  const donneesPersistantesMJ = {};
-  const champsInventaireEquipement = [
-    'inventaire',
-    'armes',
-    'armure',
-    'sac',
-    'ceinture'
-  ];
-
-  champsInventaireEquipement.forEach(champ => {
-    if (nouvellesDonnees[champ] !== undefined) {
-      donneesPersistantesMJ[champ] = nouvellesDonnees[champ];
-    }
-  });
-
-  if (Object.keys(donneesPersistantesMJ).length > 0) {
-    const personnageMisAJour = sauvegardeData({ id }, donneesPersistantesMJ);
-
-    if (!personnageMisAJour) {
-      return res.status(500).json({
-        message: "La session a été sauvegardée, mais l'inventaire/équipement n'a pas pu être enregistré dans la Fiche de Perso."
-      });
-    }
-
-    /*
-     * sauvegardeData() persiste uniquement le personnage.
-     * La session déjà sauvegardée juste au-dessus reste donc la source
-     * de vérité pour les ressources de la partie (HP/Mana/statuts).
-     * L'inventaire et l'équipement sont désormais identiques dans les
-     * deux représentations.
-     */
-  }
-
   const joueurSession = sansDonneesPrivees(getSessionPlayerById(id));
+  const nomActuel = getJoueurById(id)?.nom || joueur.nom;   // le MJ a pu le renommer
 
-  // Événement spécifique à la session : la fiche de personnage
-  // n'écoute volontairement PAS cet événement.
   // `source` : l'Interface de Jeu prévient le joueur quand le MJ modifie
   // son personnage (pas quand il le modifie lui-même).
   io.emit('sessionPlayerUpdate', {
     type: 'update',
-    player: joueur.nom,
+    player: nomActuel,
     playerId: id,
     session: joueurSession,
     source: roleDepuisRequete(req) === 'mj' ? 'mj' : 'joueur'
@@ -531,11 +479,16 @@ app.post('/api/session/player', (req, res) => {
     session: joueurSession
   });
 
+  // La fiche a changé (éditeur du MJ) : mêmes avis qu'un enregistrement de fiche.
+  if (definitionModifiee) {
+    io.emit('playerUpdate', { type: 'update', player: nomActuel, playerId: id });
+  }
+
   // La carte affiche les HP et statuts en direct : elle doit suivre.
   emitMapState();
 
   res.status(200).json({
-    message: `L'état de session de ${joueur.nom} a été sauvegardé.`,
+    message: `L'état de session de ${nomActuel} a été sauvegardé.`,
     playerId: id,
     session: joueurSession
   });

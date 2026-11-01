@@ -163,5 +163,19 @@ module.exports = {
     const polices = await page.evaluer(`(() => { const p = e => getComputedStyle(e).fontFamily;
       return { texte: p(document.querySelector('.section label')), titre: p(document.querySelector('h1')) }; })()`);
     verifier(/Segoe/.test(polices.texte) && /Uncial/.test(polices.titre), 'police : texte lisible, titres en Uncial Antiqua');
+
+    // V2.3 : la police des titres est servie par le serveur de la partie,
+    // sans Internet (Google Fonts n'est plus appelé).
+    const chargement = await page.evaluer(`document.fonts.ready.then(async () => {
+      await document.fonts.load('20px "Uncial Antiqua"');
+      const sources = performance.getEntriesByType('resource').map(r => r.name);
+      return {
+        chargee: document.fonts.check('20px "Uncial Antiqua"'),
+        locale: sources.some(n => n.includes('/polices/uncial-antiqua')),
+        externe: sources.some(n => n.includes('googleapis') || n.includes('gstatic'))
+      };
+    })`);
+    verifier(chargement.chargee && chargement.locale && !chargement.externe,
+      `police : chargée depuis le serveur de la partie, sans Internet (${JSON.stringify(chargement)})`);
   }
 };

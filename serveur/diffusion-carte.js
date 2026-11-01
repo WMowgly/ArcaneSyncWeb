@@ -12,7 +12,8 @@ const {
   ensureSessionPlayer,
   getSessionMobs,
   getActiveMapId,
-  setActiveMapId
+  setActiveMapId,
+  getEcranMasquerMorts
 } = require('../session');
 
 let io = null;
@@ -48,6 +49,18 @@ function buildMapEntities() {
   }));
 
   return { players, mobs };
+}
+
+/**
+ * V2.3 — Écran partagé : sans les créatures mortes, si le MJ l'a choisi
+ * (option enregistrée dans la partie, vraie par défaut). Fonction pure : la
+ * projection reçue n'est pas modifiée.
+ */
+function projectionEcran(projection, masquerMorts) {
+  if (!projection || !masquerMorts || !projection.tokens) return projection;
+  const tokens = Object.fromEntries(Object.entries(projection.tokens)
+    .filter(([, token]) => !(token.kind === 'mob' && token.entity?.statut === 'mort')));
+  return { ...projection, tokens };
 }
 
 /**
@@ -106,9 +119,10 @@ function emitMapState(socketCible) {
     const cle = role === 'player' ? `player|${playerId}` : role;
 
     if (!cache.has(cle)) {
-      cache.set(cle, contexte
+      const brute = contexte
         ? mapStore.getMapForViewer(contexte.mapId, { role, playerId, entities: contexte.entities })
-        : null);
+        : null;
+      cache.set(cle, role === 'ecran' ? projectionEcran(brute, getEcranMasquerMorts()) : brute);
     }
 
     const projection = cache.get(cle);
@@ -138,4 +152,4 @@ function emitMapState(socketCible) {
   });
 }
 
-module.exports = { attacherIo, buildMapEntities, chargerCarteActive, getActiveMapForViewer, emitMapState };
+module.exports = { attacherIo, buildMapEntities, chargerCarteActive, getActiveMapForViewer, emitMapState, projectionEcran };

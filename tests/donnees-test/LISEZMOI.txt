@@ -1,0 +1,15 @@
+Jeu de données des tests (V2.3)
+================================
+
+Les tests (npm test, npm run test:e2e) ne lisent plus la partie en cours :
+ils copient CE dossier dans un dossier temporaire et travaillent sur la copie.
+La partie réelle (data.json, session.json, maps.json... à la racine) n'est ni
+lue ni modifiée par les tests.
+
+Contenu : une copie figée des données au 1er novembre 2026, dont les notes
+personnelles, les anciens messages privés et les notes publiques ont été
+remplacés par des textes neutres.
+
+À modifier seulement pour faire évoluer les tests : plusieurs contrôles
+comptent sur ce contenu (au moins deux personnages, une carte active, des
+sorts de référence...).

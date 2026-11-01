@@ -73,9 +73,11 @@ function listesSortsReference(chemin = fichierSorts()) {
 //
 // Chaque écriture est précédée d'une rotation de sauvegardes (5 versions dans
 // database/sauvegardes/) puis faite de façon atomique. Les identifiants sont
-// stables : modifier un sort ne change jamais son id. Les personnages, eux,
-// mémorisent le NOM : un sort renommé devient « hors base » sur leurs fiches,
-// sans être perdu.
+// stables : modifier un sort ne change jamais son id. Les personnages
+// mémorisent le nom ET, depuis la V2.3, cet identifiant (refId) : un sort
+// renommé reste relié à sa référence. Une ancienne entrée sans refId est
+// retrouvée par son nom ; introuvable, elle devient « hors base » sur la
+// fiche, sans être perdue.
 // ---------------------------------------------------------------------------
 
 const MAX_NIVEAU = 20;

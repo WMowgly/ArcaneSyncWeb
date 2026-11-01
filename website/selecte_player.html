@@ -92,6 +92,7 @@
   <link rel="stylesheet" href="joueur-mobile.css"/>
   <script src="/socket.io/socket.io.js"></script>
   <script src="mj-code.js"></script>
+  <script src="outils-communs.js"></script>
 </head>
 <body class="page-personnages">
   <div id="navbar-placeholder"></div>
@@ -103,8 +104,7 @@
   <script type="module">
     import { lienInterfaceJeu } from './popupjoueur.js';
 
-    const echapper = valeur => String(valeur ?? '').replace(/[&<>"']/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const echapper = ArcaneOutils.echapper;   // outils-communs.js
 
     // Fonction pour charger et afficher les joueurs
     function loadAndDisplayPlayers() {
@@ -150,7 +150,7 @@
                     <div class="stat-bar-text">${echapper(joueur.mana?.current || 0)} / ${echapper(joueur.mana?.max || 0)}</div>
                   </div>
                 </div>
-                <p class="intox">Intox : ${echapper(joueur.intox ?? 0)} / ${echapper(joueur?.stats?.constitution ?? 0)}</p>
+                <p class="intox">Intox : ${echapper(joueur.intox ?? 0)} / ${Number(joueur?.stats?.constitution) > 0 ? echapper(joueur.stats.constitution) : '—'}</p>
                 <span class="jouer">Jouer ▶</span>
               </a>
               ${appareilMj ? '<button class="delete-btn" type="button">Supprimer (MJ)</button>' : ''}
@@ -171,7 +171,6 @@
                   return message;
                 })
                 .then(message => {
-                  console.log("Réponse serveur :", message);
                   card.remove();
                 })
                 .catch(err => {
@@ -227,12 +226,10 @@
 
     // Écouter les mises à jour
     socket.on('sessionUpdated', (data) => {
-      console.log('Mise à jour de la partie reçue:', data);
       loadAndDisplayPlayers();
     });
 
     socket.on('playerUpdate', (data) => {
-      console.log('Mise à jour reçue:', data);
       loadAndDisplayPlayers(); // Recharger la liste des joueurs
     });
   </script>

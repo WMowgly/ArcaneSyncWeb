@@ -250,3 +250,33 @@ if (!mjSourceV182.includes('Math.min(manaMax,manaCur+amount)')) throw new Error(
     delete require.cache[require.resolve('../mob')];
   }
 }
+
+// ======================================================================
+// V2.3 — Nombres des créatures validés ; créature vierge à 10 PV.
+// ======================================================================
+{
+  const { normaliserMob, PV_PAR_DEFAUT } = require('../mob');
+  const echec = message => { throw new Error(message); };
+
+  const vierge = normaliserMob({ nom: 'Vierge' });
+  if (PV_PAR_DEFAUT !== 10 || vierge.hp.max !== 10 || vierge.hp.current !== 10 || vierge.statut !== 'vivant') {
+    echec(`Une créature vierge doit naître vivante à 10 / 10 PV (${JSON.stringify(vierge.hp)}, ${vierge.statut}).`);
+  }
+
+  const texte = normaliserMob({ nom: 'Texte', hp: { max: 'abc' }, stats: { force: '12', magie: 'x' }, intox: '-3', bonus_vie: '2' });
+  if (texte.hp.max !== 10 || texte.hp.current !== 10) echec(`PV max non numérique : défaut attendu (${JSON.stringify(texte.hp)}).`);
+  if (texte.stats.force !== 12 || texte.stats.magie !== 0) echec(`Statistiques : nombres attendus (${JSON.stringify(texte.stats)}).`);
+  if (texte.intox !== 0 || texte.bonus_vie !== 2) echec('Intoxication et vie bonus : nombres positifs attendus.');
+
+  const borne = normaliserMob({ nom: 'Borne', hp: { max: '20', current: '50' }, mana: { max: 5, current: -2 } });
+  if (borne.hp.max !== 20 || borne.hp.current !== 20 || borne.mana.current !== 0) {
+    echec(`Ressources : 0 <= actuel <= max attendu (${JSON.stringify([borne.hp, borne.mana])}).`);
+  }
+
+  const zero = normaliserMob({ nom: 'Zéro', hp: { max: 0 } });
+  if (zero.hp.max !== 0 || zero.statut !== 'mort') echec('Un maximum de 0 choisi par le MJ est conservé (créature morte).');
+
+  const tombee = normaliserMob({ nom: 'Tombée', hp: { max: 8, current: 0 } });
+  if (tombee.statut !== 'mort') echec('Une créature à 0 PV reste morte.');
+  console.log('PASS: créatures — nombres validés, créature vierge à 10 / 10 PV, morte à 0 PV');
+}

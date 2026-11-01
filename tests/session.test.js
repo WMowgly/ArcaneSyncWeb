@@ -20,7 +20,6 @@ try {
     getSessionPlayerById,
     synchroniserSessionDepuisPersonnage,
     sauvegarderEtatSession,
-    getDonneesPersonnageDepuisSession,
     importerSession,
     validerSessionImport
   } = require('../session');
@@ -49,9 +48,9 @@ try {
     throw new Error('La session de test devrait être valide.');
   }
 
-  const donneesPourImport = getDonneesPersonnageDepuisSession(joueur.id);
-  if (!donneesPourImport || !donneesPourImport.hp) {
-    throw new Error("Impossible de préparer les données pour l'import manuel.");
+  // V2.3 : la recopie manuelle partie -> fiche (sans appelant) a été retirée.
+  if (require('../session').getDonneesPersonnageDepuisSession) {
+    throw new Error('La recopie manuelle partie -> fiche, sans appelant, aurait dû être retirée.');
   }
 
   const invalidValidation = validerSessionImport({ id: 'x', players: { bad: { id: 'different' } } });
@@ -364,19 +363,19 @@ if (!navbarSourceV191.includes('tableau.html')) throw new Error('Lien tableau ab
 // v1.10.1 mob visibility checks
 if (!sessionSourceV191.includes('visibleToPlayers')) throw new Error('État de visibilité des mobs absent.');
 if (!sessionSourceV191.includes('setMobSceneVisibility')) throw new Error('Fonction de visibilité des mobs absente.');
-if (!serverSourceV191.includes('/api/session/scene/mob/:id/visibility')) throw new Error('API de visibilité des mobs absente.');
-if (!serverSourceV191.includes('Seul le MJ peut modifier la visibilité des mobs.')) throw new Error('Protection MJ de la visibilité absente.');
+// V2.3 : la route PUT .../visibility et l'événement socket sceneSetMobVisibility,
+// sans appelant, ont été retirés ; seule reste la bascule (MJ), plus bas.
+if (serverSourceV191.includes("app.put('/api/session/scene/mob/:id/visibility'")) throw new Error('Route de visibilité sans appelant toujours présente.');
+if (serverSourceV191.includes("socket.on('sceneSetMobVisibility'")) throw new Error('Événement sceneSetMobVisibility sans appelant toujours présent.');
 if (!tableauSourceV191.includes('data-scene-visibility')) throw new Error('Contrôle de visibilité absent du tableau de scène.');
 if (!tableauSourceV191.includes('Cacher aux joueurs')) throw new Error('Bouton Cacher aux joueurs absent.');
 if (!tableauSourceV191.includes('Montrer aux joueurs')) throw new Error('Bouton Montrer aux joueurs absent.');
 
 
-// v1.10.2 visibility boolean regression checks
-if (!serverSourceV191.includes("typeof req.body?.visible !== 'boolean'")) {
-  throw new Error('Validation booléenne de la visibilité absente.');
-}
-if (!serverSourceV191.includes("const visible = req.body.visible")) {
-  throw new Error('Lecture stricte de la visibilité absente.');
+// v1.10.2 : la bascule décide elle-même du prochain état (aucun booléen lu
+// dans la requête, donc pas de confusion entre false et "false").
+if (!serverSourceV191.includes("const nextVisible = token.visibleToPlayers === false;")) {
+  throw new Error('La bascule de visibilité doit calculer elle-même le prochain état.');
 }
 
 
@@ -440,19 +439,19 @@ const serverSourceV112 = require('./_sources').sourceServeur();
 const sessionSourceV112 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'session.js'), 'utf8');
 const ficheSourceV112 = fsV191.readFileSync(pathV191.join(__dirname, '..', 'website', 'fiche_perso.html'), 'utf8');
 
-if (!serverSourceV112.includes("const donneesPersistantesMJ = {}")) {
-  throw new Error('La persistance MJ de l’inventaire/équipement est absente.');
+// V2.3 : toute la DÉFINITION envoyée par l'éditeur MJ (inventaire et
+// équipement compris) va dans la fiche ; le comportement est vérifié par
+// tests/fiche-partie.test.js.
+if (!serverSourceV112.includes("separerDefinitionEtEtat(nouvellesDonnees)")
+    || !serverSourceV112.includes("sauvegardeData({ id }, definition)")) {
+  throw new Error('La persistance MJ de la définition (inventaire, équipement...) dans la fiche est absente.');
 }
-for (const champ of ['inventaire', 'armes', 'armure', 'sac', 'ceinture']) {
-  if (!serverSourceV112.includes(`'${champ}'`)) {
-    throw new Error(`Le champ ${champ} n’est pas synchronisé depuis l’éditeur MJ.`);
+{
+  const { separerDefinitionEtEtat } = require('../etat-personnage');
+  const { definition } = separerDefinitionEtEtat({ inventaire: [], armes: [], armure: { type: 'x' }, sac: '', ceinture: '' });
+  for (const champ of ['inventaire', 'armes', 'armure', 'sac', 'ceinture']) {
+    if (!(champ in definition)) throw new Error(`Le champ ${champ} n’est pas synchronisé depuis l’éditeur MJ.`);
   }
-}
-if (!sessionSourceV112.includes("inventaire: normaliserInventaireSession(etatSession.inventaire)")) {
-  throw new Error('L’inventaire n’est pas exporté de la session vers la fiche.');
-}
-if (!sessionSourceV112.includes("armes: Array.isArray(etatSession.armes) ? etatSession.armes : []")) {
-  throw new Error('Les armes ne sont pas exportées de la session vers la fiche.');
 }
 if (!ficheSourceV112.includes("inventaire: getInventaire()")) {
   throw new Error('La fiche de personnage ne sauvegarde pas son inventaire.');

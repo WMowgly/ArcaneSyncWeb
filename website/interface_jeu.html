@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interface de Jeu</title>
-  <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="polices/polices.css">
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="police-lisible.css"/>
   <script src="/socket.io/socket.io.js"></script>
@@ -143,6 +143,12 @@
     .sort-meta { color: #6b5135; font-size: 13px; }
     .sorts-vide { margin: 0; opacity: .8; }
 
+    /* Équipement et compétences (V2.3) : consultation en jeu, repliable. */
+    #equipement-repli > summary { cursor: pointer; font-weight: 700; margin-top: 12px; }
+    #equipement-contenu { margin-top: 12px; }
+    .equipement-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 9px 10px; }
+    .equipement-texte { margin: 0; white-space: pre-wrap; font-size: 14px; }
+
     /* Notification : changement fait par le MJ (ou repos). */
     .notification-jeu {
       position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
@@ -170,6 +176,7 @@
     }
   </style>
   <link rel="stylesheet" href="joueur-mobile.css"/>
+  <script src="outils-communs.js"></script>
 </head>
 <body>
 
@@ -295,6 +302,16 @@
       <h2>✨ Sorts et attaques</h2>
       <div id="sorts-contenu"><p class="sorts-vide">Chargement...</p></div>
     </section>
+
+    <!-- V2.3 : armes, objets équipés et compétences, consultables en jeu
+         sans ouvrir la fiche. Lecture seule : ils se modifient sur la fiche. -->
+    <section class="section notes-panel" id="equipement-panel">
+      <h2>🎒 Équipement et compétences</h2>
+      <details id="equipement-repli">
+        <summary>Armes, objets équipés et compétences</summary>
+        <div id="equipement-contenu"><p class="sorts-vide">Chargement...</p></div>
+      </details>
+    </section>
     </div><!-- fin de .jeu-principal -->
 
     <!-- Caractéristiques de référence du personnage (lecture seule). Les
@@ -339,12 +356,7 @@
     let reference = null;     // Données de jeu (descriptions des sorts)
 
 
-    function escapeNotesHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-        .replace(/'/g,'&#039;');
-    }
+    function escapeNotesHtml(value) { return ArcaneOutils.echapper(value); }   // outils-communs.js
 
     function formatNotesDate(value) {
       try { return new Date(value).toLocaleString('fr-FR'); }
@@ -374,8 +386,13 @@
       catch (_) { reference = null; }
     }
 
-    function detailReference(nom, liste) {
-      return (liste || []).find(entree => normaliserNom(entree.nom) === normaliserNom(nom)) || null;
+    // Par l'identifiant de référence (refId, V2.3) d'abord : un sort renommé
+    // dans les Données de jeu garde sa description ; sinon par le nom.
+    function detailReference(enregistre, liste) {
+      const entrees = liste || [];
+      return (enregistre?.refId && entrees.find(entree => entree.id === enregistre.refId))
+        || entrees.find(entree => normaliserNom(entree.nom) === normaliserNom(enregistre?.nom))
+        || null;
     }
 
     function renderSorts(joueur) {
@@ -398,14 +415,14 @@
         <div class="sorts-groupe">
           <h3>${groupe.titre}</h3>
           <div class="sorts-liste">${groupe.liste.map(entree => {
-            const detail = detailReference(entree.nom, groupe.ref);
+            const detail = detailReference(entree, groupe.ref);
             const degats = entree.degats || detail?.degats;
             const meta = [detail?.type_action && `Action : ${detail.type_action}`, detail?.duree && `Durée : ${detail.duree}`,
               detail?.element && `Élément : ${detail.element}`, detail?.armes && `Armes : ${detail.armes}`].filter(Boolean);
             return `
               <details class="sort">
                 <summary>
-                  <span class="sort-nom">${escapeNotesHtml(entree.nom)}</span>
+                  <span class="sort-nom">${escapeNotesHtml(entree.refId && detail ? detail.nom : entree.nom)}</span>
                   ${degats ? `<span class="sort-badge degats">🎲 ${escapeNotesHtml(degats)}</span>` : ''}
                   ${groupe.niveau && entree.niveau ? `<span class="sort-badge">Niv. ${escapeNotesHtml(entree.niveau)}</span>` : ''}
                 </summary>
@@ -416,6 +433,66 @@
               </details>`;
           }).join('')}</div>
         </div>`).join('');
+    }
+
+    // -----------------------------------------------------------------
+    // Équipement et compétences (V2.3) : lecture seule, d'après la fiche.
+    // Le bloc reste replié ou ouvert d'une visite à l'autre.
+    // -----------------------------------------------------------------
+    const CLE_REPLI_EQUIPEMENT = 'arcanesync.jeu.equipementOuvert';
+    {
+      const repli = document.getElementById('equipement-repli');
+      try { repli.open = localStorage.getItem(CLE_REPLI_EQUIPEMENT) === '1'; } catch (_) {}
+      repli.addEventListener('toggle', () => {
+        try { localStorage.setItem(CLE_REPLI_EQUIPEMENT, repli.open ? '1' : '0'); } catch (_) {}
+      });
+    }
+
+    function renderEquipement(joueur) {
+      const e = escapeNotesHtml;
+      const texte = valeur => String(valeur ?? '').trim();
+      const liste = valeur => (Array.isArray(valeur) ? valeur : []).filter(Boolean);
+      const armes = liste(joueur.armes).filter(a => texte(a.type) || texte(a.degats));
+      const equipes = liste(joueur.inventaire).filter(o => o.equipe && texte(o.nom));
+      const competences = liste(joueur.competences).filter(c => texte(c.nom));
+      const speciales = texte(joueur.skills_speciales);
+      const ORIGINE = { racial: 'Race', classe: 'Classe' };
+
+      const groupe = (titre, contenu) => `<div class="sorts-groupe"><h3>${titre}</h3>${contenu}</div>`;
+      const blocs = [];
+      if (armes.length) {
+        blocs.push(groupe('Armes', `<div class="sorts-liste">${armes.map(a => `
+          <div class="sort"><div class="equipement-ligne">
+            <span class="sort-nom">${e(texte(a.type) || 'Arme')}</span>
+            ${texte(a.degats) ? `<span class="sort-badge degats">🎲 ${e(a.degats)}</span>` : ''}
+          </div></div>`).join('')}</div>`));
+      }
+      if (equipes.length) {
+        blocs.push(groupe('Objets équipés', `<div class="sorts-liste">${equipes.map(o => {
+          const entete = `<span class="sort-nom">${e(o.nom)}</span>
+            ${Number(o.quantite) > 1 ? `<span class="sort-badge">× ${e(o.quantite)}</span>` : ''}
+            ${texte(o.emplacement) ? `<span class="sort-badge">${e(o.emplacement)}</span>` : ''}`;
+          return texte(o.description)
+            ? `<details class="sort"><summary>${entete}</summary><div class="sort-detail"><p>${e(o.description)}</p></div></details>`
+            : `<div class="sort"><div class="equipement-ligne">${entete}</div></div>`;
+        }).join('')}</div>`));
+      }
+      if (competences.length) {
+        blocs.push(groupe('Compétences', `<div class="sorts-liste">${competences.map(c => `
+          <details class="sort">
+            <summary>
+              <span class="sort-nom">${e(c.nom)}</span>
+              ${ORIGINE[c.type] ? `<span class="sort-badge">${ORIGINE[c.type]}</span>` : ''}
+              ${c.niveau ? `<span class="sort-badge">Niv. ${e(c.niveau)}</span>` : ''}
+            </summary>
+            <div class="sort-detail"><p>${texte(c.effet) ? e(c.effet) : 'Pas de description.'}</p></div>
+          </details>`).join('')}</div>`));
+      }
+      if (speciales) blocs.push(groupe('Compétences spéciales', `<p class="equipement-texte">${e(speciales)}</p>`));
+
+      document.getElementById('equipement-contenu').innerHTML = blocs.length
+        ? blocs.join('')
+        : '<p class="sorts-vide">Ni arme, ni objet équipé, ni compétence : ils se renseignent sur la fiche.</p>';
     }
 
     // -----------------------------------------------------------------
@@ -698,6 +775,7 @@
       document.getElementById('player_intox_max').value = constitution > 0 ? constitution : '';
       if (joueur.stats) renderStats(joueur.stats);
       renderSorts(joueur);
+      renderEquipement(joueur);
 
       // Jets de survie : état de la partie.
       for (let i = 0; i < 3; i++) {

@@ -81,4 +81,71 @@ function normaliserValeursPersonnage(personnage) {
   return resultat;
 }
 
-module.exports = { nombre, bornerRessource, bornerIntox, normaliserValeursPersonnage };
+// ---------------------------------------------------------------------------
+// DÉFINITION ou ÉTAT DE JEU (V2.3)
+//
+// Règle : la fiche (data.json) porte la DÉFINITION du personnage ; la partie
+// (session.json) porte l'ÉTAT DE JEU. Un même envoi peut mêler les deux
+// (éditeur du MJ) : cette fonction le sépare, pour que chaque valeur aille
+// dans le bon fichier.
+//
+//   État de jeu : PV et mana actuels, durabilité et protection actuelles,
+//                 vie bonus, intoxication, jets de survie.
+//   Définition  : tout le reste (nom, statistiques, maximums, armure,
+//                 sorts, équipement, textes...).
+// ---------------------------------------------------------------------------
+const CHAMPS_ETAT = ['bonus_vie', 'intox', 'survie'];
+const RESSOURCES = ['hp', 'mana'];
+const RESSOURCES_ARMURE = ['durabilite', 'protection'];
+
+const estObjet = valeur => valeur !== null && typeof valeur === 'object' && !Array.isArray(valeur);
+
+/** Sépare une ressource {current, max, ...} : current -> état, le reste -> définition. */
+function separerRessource(ressource) {
+  const { current, ...reste } = ressource;
+  return {
+    etat: current !== undefined ? { current } : null,
+    definition: Object.keys(reste).length ? reste : null
+  };
+}
+
+/**
+ * { definition, etat } : deux objets partiels, éventuellement vides.
+ * Les valeurs mal formées (une ressource qui n'est pas un objet...) restent
+ * dans la définition, où les contrôles habituels les refusent.
+ */
+function separerDefinitionEtEtat(donnees) {
+  const definition = {};
+  const etat = {};
+  if (!estObjet(donnees)) return { definition, etat };
+
+  Object.entries(donnees).forEach(([cle, valeur]) => {
+    if (CHAMPS_ETAT.includes(cle)) {
+      etat[cle] = valeur;
+    } else if (RESSOURCES.includes(cle) && estObjet(valeur)) {
+      const parts = separerRessource(valeur);
+      if (parts.etat) etat[cle] = parts.etat;
+      if (parts.definition) definition[cle] = parts.definition;
+    } else if (cle === 'armure' && estObjet(valeur)) {
+      const armureDefinition = {};
+      const armureEtat = {};
+      Object.entries(valeur).forEach(([sousCle, sousValeur]) => {
+        if (RESSOURCES_ARMURE.includes(sousCle) && estObjet(sousValeur)) {
+          const parts = separerRessource(sousValeur);
+          if (parts.etat) armureEtat[sousCle] = parts.etat;
+          if (parts.definition) armureDefinition[sousCle] = parts.definition;
+        } else {
+          armureDefinition[sousCle] = sousValeur;
+        }
+      });
+      if (Object.keys(armureEtat).length) etat.armure = armureEtat;
+      if (Object.keys(armureDefinition).length) definition.armure = armureDefinition;
+    } else {
+      definition[cle] = valeur;
+    }
+  });
+
+  return { definition, etat };
+}
+
+module.exports = { nombre, bornerRessource, bornerIntox, normaliserValeursPersonnage, separerDefinitionEtEtat };

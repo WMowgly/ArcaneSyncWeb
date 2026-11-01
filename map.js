@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { creerDepot, cheminDonnees } = require('./storage');
+const { creerDepot, cheminDonnees, signalerFichierIllisible } = require('./storage');
 
 const cheminFichier = cheminDonnees('maps.json');
 
@@ -384,6 +384,8 @@ function lireMaps() {
   } catch (error) {
     console.error('Erreur lors de la lecture de maps.json:', error);
     maps = {};
+    // Fichier présent mais illisible : aucune carte ne doit l'écraser.
+    signalerFichierIllisible(cheminFichier, error);
   }
 }
 

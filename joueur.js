@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { creerDepot, cheminDonnees } = require('./storage');
+const { creerDepot, cheminDonnees, signalerFichierIllisible } = require('./storage');
 const { bornerRessource, normaliserValeursPersonnage } = require('./etat-personnage');
 
 const cheminFichier = cheminDonnees('data.json');
@@ -67,7 +67,10 @@ if (fs.existsSync(cheminFichier)) {
       }
     }
   } catch (err) {
+    // Fichier présent mais illisible : aucune fiche ne doit l'écraser.
     console.error("Erreur lors de la lecture des joueurs:", err);
+    joueurs = [];
+    signalerFichierIllisible(cheminFichier, err);
   }
 }
 
@@ -153,11 +156,23 @@ function supprimerJoueur({ id, nom }) {
 // Ressources {current, max}, vie bonus, intoxication, statistiques : règles
 // communes à la fiche et à la partie, dans etat-personnage.js.
 
-function sauvegardeData({ id, nom }, nouvellesDonnees) {
-  console.log(
-    "Tentative de mise à jour du joueur :",
-    id ? `id=${id}` : `nom=${nom}`
-  );
+/**
+ * Révision d'un personnage (V2.3) : augmente à chaque modification de sa
+ * définition. Une page qui enregistre la fiche entière indique la révision
+ * qu'elle a chargée ; si elle a changé entre-temps (MJ, autre appareil),
+ * l'enregistrement est refusé au lieu d'effacer ces changements.
+ * Absente des anciennes fiches : vaut alors 0.
+ */
+function revisionDe(joueur) {
+  return Number.isInteger(joueur?.revision) ? joueur.revision : 0;
+}
+
+/**
+ * Enregistre une modification de fiche.
+ * `options.revision === false` : modification hors définition (notes
+ * personnelles), qui ne doit pas invalider une fiche ouverte ailleurs.
+ */
+function sauvegardeData({ id, nom }, nouvellesDonnees, options = {}) {
 
   const index = trouverIndexJoueur({ id, nom });
 
@@ -174,6 +189,7 @@ function sauvegardeData({ id, nom }, nouvellesDonnees) {
     ...joueurActuel,
     ...nouvellesDonnees,
     id: joueurActuel.id,
+    revision: options.revision === false ? revisionDe(joueurActuel) : revisionDe(joueurActuel) + 1,
     inventaire: nouvellesDonnees.inventaire !== undefined
       ? normaliserInventaire(nouvellesDonnees.inventaire)
       : normaliserInventaire(joueurActuel.inventaire),
@@ -215,7 +231,7 @@ function sauvegardeData({ id, nom }, nouvellesDonnees) {
   }
 
   joueurs = joueursMisAJour;
-  console.log("Joueur mis à jour :", joueurs[index]);
+  console.log(`Joueur mis à jour : ${joueurMisAJour.nom} (révision ${joueurMisAJour.revision})`);
   return true;
 }
 
@@ -225,5 +241,6 @@ module.exports = {
   getJoueurById,
   supprimerJoueur,
   sauvegardeData,
+  revisionDe,
   normaliserInventaire
 };
