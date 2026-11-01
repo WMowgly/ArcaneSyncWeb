@@ -83,8 +83,22 @@ window.ArcaneMap = (function () {
       aura: { actif: false, cases: 1 },   // portee affichee autour de la selection
       // 1 = la carte est ajustée à l'espace disponible.
       // > 1 = échelle agrandie, le conteneur prend le relais en défilement.
-      zoom: 1
+      zoom: 1,
+      // V2.4 — Combattant dont c'est le tour (identifiant de jeton, ex.
+      // « player:… ») : anneau doré. null hors combat.
+      actifId: null,
+      // V2.4 — Cadrage de l'Écran choisi par le MJ : rectangle de cases
+      // {x, y, w, h} (null = carte entière) et suivi du combattant actif.
+      // Sur l'Écran, il fixe la zone affichée ; sur la carte MJ, il est
+      // dessiné en pointillés (zoneEcranVisible).
+      cadrage: null,
+      suivreActif: false,
+      zoneEcranVisible: false,
+      apercuCadrage: null          // rectangle en cours de tracé (carte MJ)
     };
+
+    // V2.4 — Taille de la zone suivie quand aucun cadrage n'est choisi.
+    const SUIVI_PAR_DEFAUT = { w: 16, h: 10 };
 
     function grid() {
       return state.map?.grid || { cols: 1, rows: 1, cellSize: 48, showGrid: true };
@@ -135,6 +149,18 @@ window.ArcaneMap = (function () {
 
       const dispoL = Math.max(200, rect.width - 4);
       const dispoH = Math.max(160, rect.height - 4);
+
+      // V2.4 — Écran : le canevas remplit tout son cadre ; la zone de carte
+      // affichée (cadrage) et l'échelle sont fixées à chaque rendu
+      // (appliquerVueEcran), pour suivre les jetons sans tout redimensionner.
+      if (opts.ecran === true) {
+        canvas.style.width = `${Math.round(dispoL)}px`;
+        canvas.style.height = `${Math.round(dispoH)}px`;
+        canvas.width = Math.round(dispoL * dpr);
+        canvas.height = Math.round(dispoH * dpr);
+        render();
+        return;
+      }
 
       // Échelle d'ajustement : la plus contraignante des deux dimensions.
       const ajustement = Math.min(dispoL / logicalWidth(), dispoH / logicalHeight());
@@ -297,8 +323,12 @@ window.ArcaneMap = (function () {
 
     function dessinerFond() {
       const g = grid();
-      ctx.fillStyle = '#e8dcc3';
-      ctx.fillRect(0, 0, logicalWidth(), logicalHeight());
+      // Marge des repères (numéros de cases) : jamais sur l'Écran, où elle
+      // apparaissait comme une bande beige autour de la carte.
+      if (opts.ecran !== true) {
+        ctx.fillStyle = '#e8dcc3';
+        ctx.fillRect(0, 0, logicalWidth(), logicalHeight());
+      }
       ctx.fillStyle = state.map.background?.color || '#fffdf7';
       ctx.fillRect(GUTTER, GUTTER, g.cols * g.cellSize, g.rows * g.cellSize);
 
@@ -462,6 +492,20 @@ window.ArcaneMap = (function () {
 
       ctx.globalAlpha = apercu ? 0.6 : 1;
 
+      // V2.4 — Combattant dont c'est le tour : anneau doré lumineux.
+      const actif = !apercu && state.actifId && token.id === state.actifId;
+      if (actif) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, rayon + Math.max(3, g.cellSize / 9), 0, Math.PI * 2);
+        ctx.shadowColor = 'rgba(255, 200, 40, 0.9)';
+        ctx.shadowBlur = Math.max(8, g.cellSize / 3);
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = Math.max(3, g.cellSize / 8);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       // Halo de portée de vision (uniquement pour son propre personnage).
       if (!apercu && token.own && state.map.self?.visionRange) {
         ctx.beginPath();
@@ -491,9 +535,10 @@ window.ArcaneMap = (function () {
       const libelle = nom.length > 14 ? `${nom.slice(0, 13)}…` : nom;
       const policeNom = ECRAN ? Math.max(13, g.cellSize / 2.8) : Math.max(9, g.cellSize / 4.2);
 
-      // Barre de vie.
-      const hauteurBarre = ECRAN ? 8 : 5;
-      if (token.entity?.hp) {
+      // Barre de vie : carte MJ seulement. Sur l'Écran, les PV du groupe sont
+      // dans la colonne de droite et ceux des créatures restent cachés (V2.4).
+      const hauteurBarre = ECRAN ? 0 : 5;
+      if (!ECRAN && token.entity?.hp) {
         const max = Math.max(1, Number(token.entity.hp.max) || 1);
         const cur = Math.max(0, Number(token.entity.hp.current) || 0);
         const pct = Math.max(0, Math.min(1, cur / max));
@@ -522,7 +567,7 @@ window.ArcaneMap = (function () {
 
       ctx.globalAlpha = 1;
       return {
-        libelle, police: policeNom, cx, cy, alpha: apercu ? 0.6 : 1,
+        libelle, police: policeNom, cx, cy, alpha: apercu ? 0.6 : 1, actif,
         // Au-dessus : au-dessus de la barre de vie (et du marqueur « CACHÉ »).
         dessous: cy + rayon + 1,
         dessus: cy - rayon - hauteurBarre - 4 - (token.visibleToPlayers === false ? 12 : 0),
@@ -559,10 +604,11 @@ window.ArcaneMap = (function () {
           posees.push(place);
 
           ctx.globalAlpha = e.alpha;
-          ctx.fillStyle = 'rgba(255,248,220,0.92)';
+          // Combattant actif : étiquette dorée.
+          ctx.fillStyle = e.actif ? 'rgba(250,222,130,0.97)' : 'rgba(255,248,220,0.92)';
           ctx.fillRect(place.x, place.y, w, h);
-          ctx.strokeStyle = '#8b5e3c';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = e.actif ? '#9a7410' : '#8b5e3c';
+          ctx.lineWidth = e.actif ? 2 : 1;
           ctx.strokeRect(place.x, place.y, w, h);
           ctx.fillStyle = '#3b2f1e';
           ctx.textAlign = 'center';
@@ -889,6 +935,91 @@ window.ArcaneMap = (function () {
       ctx.restore();
     }
 
+    /**
+     * V2.4 — Zone de la carte montrée par l'Écran, en cases :
+     * le cadrage du MJ (ou la carte entière), recentrée sur le combattant
+     * actif si le suivi est demandé, et toujours dans les limites de la carte.
+     */
+    function zoneEcran() {
+      const g = grid();
+      const borner = (debut, taille, max) => Math.max(0, Math.min(debut, max - taille));
+      const c = state.cadrage;
+      let w = c ? Math.min(c.w, g.cols) : g.cols;
+      let h = c ? Math.min(c.h, g.rows) : g.rows;
+      let x = c ? borner(c.x, w, g.cols) : 0;
+      let y = c ? borner(c.y, h, g.rows) : 0;
+
+      const suivi = state.suivreActif && state.actifId && state.map?.tokens?.[state.actifId];
+      if (suivi) {
+        if (!c) { w = Math.min(SUIVI_PAR_DEFAUT.w, g.cols); h = Math.min(SUIVI_PAR_DEFAUT.h, g.rows); }
+        const taille = suivi.size || 1;
+        x = borner(suivi.x + taille / 2 - w / 2, w, g.cols);
+        y = borner(suivi.y + taille / 2 - h / 2, h, g.rows);
+      }
+      return { x, y, w, h, entiere: !c && !suivi };
+    }
+
+    /**
+     * Écran : place la zone choisie au centre du canevas, à la plus grande
+     * échelle possible. La zone est élargie aux proportions de l'écran (on
+     * montre plus de carte plutôt que des bandes vides), sans sortir de la
+     * carte quand c'est possible. La marge des repères n'est jamais montrée.
+     */
+    function appliquerVueEcran() {
+      const g = grid();
+      const dpr = window.devicePixelRatio || 1;
+      const largeur = canvas.width / dpr;
+      const hauteur = canvas.height / dpr;
+      const zone = zoneEcran();
+
+      let vx = GUTTER + zone.x * g.cellSize;
+      let vy = GUTTER + zone.y * g.cellSize;
+      let vw = zone.w * g.cellSize;
+      let vh = zone.h * g.cellSize;
+      const proportions = largeur / hauteur;
+      if (vw / vh < proportions) { const nw = vh * proportions; vx -= (nw - vw) / 2; vw = nw; }
+      else { const nh = vw / proportions; vy -= (nh - vh) / 2; vh = nh; }
+
+      const recaler = (debut, taille, origine, total) => (taille <= total
+        ? Math.max(origine, Math.min(debut, origine + total - taille))
+        : origine + (total - taille) / 2);
+      vx = recaler(vx, vw, GUTTER, g.cols * g.cellSize);
+      vy = recaler(vy, vh, GUTTER, g.rows * g.cellSize);
+
+      const echelle = (largeur / vw) * dpr;
+      ctx.setTransform(echelle, 0, 0, echelle, -vx * echelle, -vy * echelle);
+    }
+
+    /** Carte MJ : rectangle de la zone de l'Écran, et cadrage en cours de tracé. */
+    function dessinerZoneEcran() {
+      const g = grid();
+      const rectangle = (r, couleur, epais, texte) => {
+        ctx.save();
+        ctx.setLineDash([10, 6]);
+        ctx.strokeStyle = couleur;
+        ctx.lineWidth = epais;
+        ctx.strokeRect(px(r.x) + 1, px(r.y) + 1, r.w * g.cellSize - 2, r.h * g.cellSize - 2);
+        if (texte) {
+          ctx.setLineDash([]);
+          ctx.font = `bold ${Math.max(10, g.cellSize / 3.2)}px sans-serif`;
+          const tw = ctx.measureText(texte).width + 10;
+          const th = Math.max(10, g.cellSize / 3.2) + 6;
+          ctx.fillStyle = couleur;
+          ctx.fillRect(px(r.x) + 1, px(r.y) + 1, tw, th);
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(texte, px(r.x) + 6, px(r.y) + 1 + th / 2);
+        }
+        ctx.restore();
+      };
+      if (state.zoneEcranVisible) {
+        const zone = zoneEcran();
+        if (!zone.entiere) rectangle(zone, '#2b4c7e', 3, state.suivreActif && state.actifId ? '🖥️ Écran (suit le combattant)' : '🖥️ Écran');
+      }
+      if (state.apercuCadrage) rectangle(state.apercuCadrage, '#d4af37', 3, '🖥️ Nouveau cadrage');
+    }
+
     function dessinerSurvol() {
       if (!state.hoverCell || !inBounds(state.hoverCell)) return;
       const g = grid();
@@ -904,6 +1035,13 @@ window.ArcaneMap = (function () {
         return;
       }
 
+      if (opts.ecran === true) {
+        // Le cadrage peut montrer plus que la carte : tout le canevas est
+        // effacé, puis la zone choisie est placée (V2.4).
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        appliquerVueEcran();
+      }
       ctx.clearRect(0, 0, logicalWidth(), logicalHeight());
       dessinerFond();
 
@@ -932,6 +1070,7 @@ window.ArcaneMap = (function () {
       dessinerAnnotations();
 
       dessinerAura();
+      dessinerZoneEcran();
       dessinerMesure();
       dessinerSurvol();
       dessinerCoordonnees();

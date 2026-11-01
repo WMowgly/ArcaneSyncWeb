@@ -18,7 +18,8 @@ const {
   getSessionMobs,
   sauvegarderMobSession,
   getActiveMapId,
-  setActiveMapId
+  setActiveMapId,
+  getEcranReglages
 } = require('../session');
 const {
   createMobFromTemplate,
@@ -222,6 +223,8 @@ app.post('/api/maps/:mapId/activate', (req, res) => {
   if (!result.success) return res.status(500).json({ message: result.message });
 
   io.emit('mapLibraryUpdated');
+  // Nouvelle carte : cadrage de l'Écran remis sur la carte entière (V2.4).
+  if (result.modifie) io.emit('ecranReglages', getEcranReglages());
   emitMapState();
   res.json({ message: 'Carte chargée pour toute la table.', activeMapId: result.activeMapId });
 });

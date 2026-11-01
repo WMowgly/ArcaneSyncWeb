@@ -287,6 +287,11 @@ let session = {
   ecranVue: 'carte',
   // V2.3 : les créatures mortes n'apparaissent pas sur l'Écran (option MJ).
   ecranMasquerMorts: true,
+  // V2.4 : bandeau des PV du groupe, cadrage (zone de la carte, en cases ;
+  // null = carte entière) et suivi du combattant actif.
+  ecranGroupe: true,
+  ecranCadrage: null,
+  ecranSuivreActif: false,
   // Ordre d'initiative du combat en cours (voir initiative.js).
   initiative: null,
   // Règles des repos court / long, choisies par le MJ (voir repos.js).
@@ -294,6 +299,19 @@ let session = {
 };
 
 const VUES_ECRAN = ['carte', 'tableau'];
+
+/**
+ * Cadrage de l'Écran (V2.4) : rectangle de cases {x, y, w, h}, entiers,
+ * x et y >= 0, largeur et hauteur d'au moins une case. Toute autre valeur :
+ * null (carte entière). Les limites de la carte sont appliquées à
+ * l'affichage, la carte active pouvant changer.
+ */
+function normaliserCadrage(cadrage) {
+  if (!cadrage || typeof cadrage !== 'object') return null;
+  const [x, y, w, h] = ['x', 'y', 'w', 'h'].map(cle => Math.round(Number(cadrage[cle])));
+  if (![x, y, w, h].every(Number.isFinite) || w < 1 || h < 1) return null;
+  return { x: Math.max(0, x), y: Math.max(0, y), w: Math.min(500, w), h: Math.min(500, h) };
+}
 const normaliserVueEcran = vue => (VUES_ECRAN.includes(vue) ? vue : 'carte');
 
 function lireSession() {
@@ -341,6 +359,9 @@ function lireSession() {
         : null,
       ecranVue: normaliserVueEcran(donnees.ecranVue),
       ecranMasquerMorts: donnees.ecranMasquerMorts !== false,
+      ecranGroupe: donnees.ecranGroupe !== false,
+      ecranCadrage: normaliserCadrage(donnees.ecranCadrage),
+      ecranSuivreActif: donnees.ecranSuivreActif === true,
       initiative: initiativeModele.normaliserEtat(donnees.initiative),
       repos: reposModele.normaliserRegles(donnees.repos)
     };
@@ -523,6 +544,9 @@ function importerSession(nouvelleSession) {
       : null,
     ecranVue: normaliserVueEcran(nouvelleSession.ecranVue),
     ecranMasquerMorts: nouvelleSession.ecranMasquerMorts !== false,
+    ecranGroupe: nouvelleSession.ecranGroupe !== false,
+    ecranCadrage: normaliserCadrage(nouvelleSession.ecranCadrage),
+    ecranSuivreActif: nouvelleSession.ecranSuivreActif === true,
     initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative),
     repos: reposModele.normaliserRegles(nouvelleSession.repos)
   };
@@ -835,6 +859,9 @@ function setActiveMapId(mapId) {
   const nouvelleSession = {
     ...session,
     activeMapId: valeur,
+    // V2.4 : un cadrage tracé sur l'ancienne carte n'a pas de sens sur la
+    // nouvelle : l'Écran repart sur la carte entière.
+    ecranCadrage: null,
     lastSaved: new Date().toISOString()
   };
 
@@ -855,15 +882,46 @@ function getEcranMasquerMorts() {
   return session.ecranMasquerMorts !== false;
 }
 
-function setEcranMasquerMorts(masquer) {
-  const valeur = masquer !== false;
-  if (getEcranMasquerMorts() === valeur) return { success: true, masquerMorts: valeur, modifie: false };
-  const nouvelleSession = { ...session, ecranMasquerMorts: valeur, lastSaved: new Date().toISOString() };
+/** Réglages de l'Écran choisis par le MJ (hors vue carte / tableau). */
+function getEcranReglages() {
+  return {
+    masquerMorts: getEcranMasquerMorts(),
+    groupe: session.ecranGroupe !== false,
+    cadrage: normaliserCadrage(session.ecranCadrage),
+    suivreActif: session.ecranSuivreActif === true
+  };
+}
+
+/**
+ * Modifie un ou plusieurs réglages de l'Écran, en une seule écriture.
+ * `partiel` : { masquerMorts?, groupe?, suivreActif? (booléens), cadrage? (rectangle ou null) }.
+ */
+function setEcranReglages(partiel = {}) {
+  const BOOLEENS = { masquerMorts: 'ecranMasquerMorts', groupe: 'ecranGroupe', suivreActif: 'ecranSuivreActif' };
+  const changements = {};
+  for (const [cle, champ] of Object.entries(BOOLEENS)) {
+    if (partiel[cle] === undefined) continue;
+    if (typeof partiel[cle] !== 'boolean') return { success: false, message: `Réglage « ${cle} » invalide.` };
+    changements[champ] = partiel[cle];
+  }
+  if (partiel.cadrage !== undefined) {
+    const cadrage = normaliserCadrage(partiel.cadrage);
+    if (partiel.cadrage !== null && !cadrage) return { success: false, message: 'Cadrage invalide.' };
+    changements.ecranCadrage = cadrage;
+  }
+
+  const avant = getEcranReglages();
+  const modifie = Object.entries(changements)
+    .some(([champ, valeur]) => JSON.stringify(session[champ] ?? null) !== JSON.stringify(valeur));
+  if (!modifie) return { success: true, reglages: avant, modifie: false, masquerMortsModifie: false };
+
+  const nouvelleSession = { ...session, ...changements, lastSaved: new Date().toISOString() };
   if (!ecrireSession(nouvelleSession)) {
-    return { success: false, message: "Impossible de sauvegarder l'option de l'écran." };
+    return { success: false, message: "Impossible de sauvegarder les réglages de l'écran." };
   }
   session = nouvelleSession;
-  return { success: true, masquerMorts: valeur, modifie: true };
+  const reglages = getEcranReglages();
+  return { success: true, reglages, modifie: true, masquerMortsModifie: reglages.masquerMorts !== avant.masquerMorts };
 }
 
 function setEcranVue(vue) {
@@ -1039,7 +1097,9 @@ module.exports = {
   setActiveMapId,
   getEcranVue,
   getEcranMasquerMorts,
-  setEcranMasquerMorts,
+  getEcranReglages,
+  setEcranReglages,
+  normaliserCadrage,
   setEcranVue,
   getInitiative,
   setInitiative,

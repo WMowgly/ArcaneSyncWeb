@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-10-29T22:53:49.727Z",
+  "lastSaved": "2026-11-01T20:54:14.039Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -700,6 +700,10 @@
   },
   "activeMapId": "map_97a4b44fe820c8b5",
   "ecranVue": "carte",
+  "ecranMasquerMorts": true,
+  "ecranGroupe": true,
+  "ecranCadrage": null,
+  "ecranSuivreActif": false,
   "initiative": {
     "actif": false,
     "round": 1,

@@ -37,7 +37,9 @@
     #ecran-titre { flex: 1; font-size: 14px; opacity: .9; }
     #ecran-statut { font-size: 13px; }
 
-    .vue { flex: 1; min-height: 0; }
+    /* Corps : la vue (carte ou tableau blanc) et, à sa droite, les PV du groupe. */
+    .ecran-corps { flex: 1; min-height: 0; display: flex; }
+    .vue { flex: 1; min-height: 0; min-width: 0; }
     .vue[hidden] { display: none; }
     #vue-carte { position: relative; padding: 8px; }
     #vue-carte .canvas-wrap {
@@ -65,6 +67,46 @@
     #initiative li.courant { border: 2px solid var(--bord); background: #f3e3c8; font-weight: 700; }
     #initiative li.courant::before { content: '▶ '; }
     #initiative-cache { margin: 6px 0 0; font-size: 13px; font-style: italic; opacity: .8; }
+    /* Le panneau d'initiative reste sur la carte, à gauche de la colonne du groupe. */
+    body.avec-groupe #initiative { right: calc(var(--largeur-groupe) + 12px); }
+
+    /* V2.4 — PV du groupe : colonne à droite de la carte, lisible de loin. */
+    :root { --largeur-groupe: 250px; }
+    #groupe {
+      flex: 0 0 var(--largeur-groupe); display: flex; flex-direction: column; gap: 10px;
+      padding: 10px; overflow-y: auto; background: #f3e9d2; border-left: 3px solid var(--bord);
+    }
+    #groupe[hidden] { display: none; }
+    .pj {
+      flex: 0 0 auto; min-width: 0; padding: 6px 10px 8px;
+      border: 2px solid #d9c8a9; border-radius: 10px; background: #fffdf6;
+    }
+    .pj.actif { border-color: #d4af37; background: #fff6d9; box-shadow: 0 0 0 3px rgba(212, 175, 55, .45); }
+    .pj-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+    .pj-nom { font-weight: 700; font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pj.actif .pj-nom::before { content: '▶ '; color: #9a7410; }
+    .pj-agonie { flex: 0 0 auto; font-size: 14px; font-weight: 700; color: #9b2c2c; }
+    .pj-barre {
+      position: relative; height: 24px; margin-top: 5px; overflow: hidden;
+      border: 2px solid var(--bord); border-radius: 12px; background: #e9e2d2;
+    }
+    .pj-remplie { position: absolute; inset: 0 auto 0 0; }
+    .pj-texte {
+      position: absolute; inset: 0; text-align: center; line-height: 20px;
+      font-size: 16px; font-weight: 700; color: #fff;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    }
+
+    /* Écran étroit (tablette en portrait) : les PV repassent sous la carte. */
+    @media (max-width: 760px) {
+      .ecran-corps { flex-direction: column; }
+      #groupe {
+        flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; justify-content: center;
+        overflow: visible; border-left: 0; border-top: 3px solid var(--bord);
+      }
+      .pj { flex: 1 1 180px; max-width: 280px; }
+      body.avec-groupe #initiative { right: 12px; max-height: calc(100vh - 190px); }
+    }
   </style>
   <script src="outils-communs.js"></script>
 </head>
@@ -79,6 +121,7 @@
     <a href="index.html" title="Retour à l'accueil">Accueil</a>
   </header>
 
+  <div class="ecran-corps">
   <section id="vue-carte" class="vue">
     <div class="canvas-wrap"><canvas id="map-canvas" width="600" height="400"></canvas></div>
     <p id="carte-vide" hidden>Aucune carte active.</p>
@@ -87,6 +130,10 @@
   <section id="vue-tableau" class="vue" hidden>
     <!-- Chargé à la première ouverture : le tableau blanc en spectateur. -->
   </section>
+
+  <!-- V2.4 : PV du groupe, à droite de la carte comme du tableau blanc. -->
+  <aside id="groupe" hidden aria-label="Points de vie du groupe"></aside>
+  </div><!-- fin de .ecran-corps -->
 
   <aside id="initiative" hidden aria-live="polite">
     <h2>⚔️ Round <span id="initiative-round">1</span></h2>
@@ -103,6 +150,8 @@
     const socket = ArcaneMap.connect('ecran', '');
     const renderer = ArcaneMap.createRenderer(document.getElementById('map-canvas'), { ecran: true });
     renderer.setOption('showCoords', false);
+    // Consultation de l’affichage (contrôles automatiques, diagnostic).
+    window.ArcaneRendu = renderer;
 
     const statut = document.getElementById('ecran-statut');
     const titre = document.getElementById('ecran-titre');
@@ -149,9 +198,16 @@
     // Projection « table » : les créatures cachées par le MJ n'y figurent pas.
     const echapper = ArcaneOutils.echapper;   // outils-communs.js
 
+    // V2.4 — Combattant dont c'est le tour (null hors combat, ou quand une
+    // créature cachée agit : le serveur ne la nomme pas à la table).
+    let actifId = null;
+
     async function chargerInitiative() {
       let etat;
       try { etat = await (await fetch('/api/initiative')).json(); } catch (_) { return; }
+      actifId = etat.actif ? etat.courant : null;
+      renderer.setOption('actifId', actifId);
+      renderGroupe();
       const panneau = document.getElementById('initiative');
       panneau.hidden = !etat.actif || !etat.entrees.length;
       if (panneau.hidden) return;
@@ -163,6 +219,53 @@
 
     socket.on('initiativeUpdated', chargerInitiative);
     socket.on('connect', chargerInitiative);
+
+    // --- V2.4 : bandeau des PV du groupe -----------------------------------
+    // Les personnages seulement, barres et chiffres. Les PV sont déjà publics
+    // (liste des personnages) ; le bandeau suit les mises à jour en direct.
+    const groupe = document.getElementById('groupe');
+    let reglages = { groupe: true, cadrage: null, suivreActif: false };
+    let joueurs = [];
+
+    function renderGroupe() {
+      const visible = reglages.groupe !== false && joueurs.length > 0;
+      groupe.hidden = !visible;
+      document.body.classList.toggle('avec-groupe', visible);
+      if (!visible) return;
+      groupe.innerHTML = joueurs.map(j => {
+        const max = Math.max(0, Number(j.hp?.max) || 0);
+        const cur = Math.max(0, Math.min(Number(j.hp?.current) || 0, max));
+        const part = max > 0 ? cur / max : 0;
+        const couleur = part > 0.5 ? '#3f7d4a' : part > 0.2 ? '#b08948' : '#8b3e3c';
+        const agonie = cur <= 0 || (j.statuts || []).some(s => s?.id === 'agonie');
+        const actif = actifId === `player:${j.id}`;
+        return `<div class="pj${actif ? ' actif' : ''}" data-id="${echapper(j.id)}">
+            <div class="pj-tete"><span class="pj-nom">${echapper(j.nom)}</span>${agonie ? '<span class="pj-agonie">💀 Agonie</span>' : ''}</div>
+            <div class="pj-barre"><span class="pj-remplie" style="width:${Math.round(part * 100)}%;background:${couleur}"></span>
+              <span class="pj-texte">${cur} / ${max}</span></div>
+          </div>`;
+      }).join('');
+    }
+
+    let minuterieGroupe = null;
+    function chargerGroupe() {
+      clearTimeout(minuterieGroupe);
+      minuterieGroupe = setTimeout(async () => {
+        try { joueurs = await (await fetch('/api/session/players')).json(); } catch (_) { return; }
+        if (!Array.isArray(joueurs)) joueurs = [];
+        renderGroupe();
+      }, 150);
+    }
+    ['sessionUpdated', 'playerUpdate', 'sessionPlayerUpdate'].forEach(evenement => socket.on(evenement, chargerGroupe));
+    socket.on('connect', chargerGroupe);
+
+    // --- V2.4 : réglages du MJ (bandeau, cadrage, suivi du combattant) -------
+    socket.on('ecranReglages', (nouveaux = {}) => {
+      reglages = { ...reglages, ...nouveaux };
+      renderer.setOption('suivreActif', reglages.suivreActif === true);
+      renderer.setOption('cadrage', reglages.cadrage || null);
+      renderGroupe();
+    });
 
     document.getElementById('btn-plein-ecran').addEventListener('click', () => {
       if (document.fullscreenElement) document.exitFullscreen?.();

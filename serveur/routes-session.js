@@ -32,8 +32,8 @@ const {
   setMobSceneVisibility,
   getEcranVue,
   setEcranVue,
-  getEcranMasquerMorts,
-  setEcranMasquerMorts,
+  getEcranReglages,
+  setEcranReglages,
   getReglesRepos,
   setReglesRepos,
   appliquerRepos
@@ -184,14 +184,20 @@ app.delete('/api/session/public-notes/:id',(req,res)=>{
 // ÉCRAN PARTAGÉ : le MJ choisit ce qu'il affiche (carte ou tableau blanc).
 // ------------------------------------------------------------------
 app.get('/api/ecran', (req, res) => {
-  res.json({ vue: getEcranVue(), masquerMorts: getEcranMasquerMorts() });
+  res.json({ vue: getEcranVue(), ...getEcranReglages() });
 });
 
-// Le MJ choisit la vue et/ou l'option « créatures mortes masquées » (V2.3).
+// Le MJ choisit la vue (carte / tableau) et les réglages de l'Écran :
+// créatures mortes masquées (V2.3), bandeau du groupe, cadrage, suivi du
+// combattant actif (V2.4). Chaque champ est facultatif.
 app.post('/api/ecran', (req, res) => {
   if (refuserSiPasMj(req, res)) return;
-  const { vue, masquerMorts } = req.body || {};
-  if (vue === undefined && typeof masquerMorts !== 'boolean') {
+  const { vue, ...reste } = req.body || {};
+  const partiel = {};
+  ['masquerMorts', 'groupe', 'cadrage', 'suivreActif'].forEach(cle => {
+    if (reste[cle] !== undefined) partiel[cle] = reste[cle];
+  });
+  if (vue === undefined && !Object.keys(partiel).length) {
     return res.status(400).json({ message: 'Rien à modifier.' });
   }
   if (vue !== undefined) {
@@ -199,12 +205,13 @@ app.post('/api/ecran', (req, res) => {
     if (!result.success) return res.status(400).json({ message: result.message });
     io.emit('ecranVue', { vue: result.vue });
   }
-  if (typeof masquerMorts === 'boolean') {
-    const result = setEcranMasquerMorts(masquerMorts);
-    if (!result.success) return res.status(500).json({ message: result.message });
-    if (result.modifie) emitMapState();
+  if (Object.keys(partiel).length) {
+    const result = setEcranReglages(partiel);
+    if (!result.success) return res.status(400).json({ message: result.message });
+    if (result.modifie) io.emit('ecranReglages', result.reglages);
+    if (result.masquerMortsModifie) emitMapState();
   }
-  res.json({ vue: getEcranVue(), masquerMorts: getEcranMasquerMorts() });
+  res.json({ vue: getEcranVue(), ...getEcranReglages() });
 });
 
 // ------------------------------------------------------------------

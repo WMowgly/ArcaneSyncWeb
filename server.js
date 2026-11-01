@@ -35,7 +35,8 @@ const {
   ensureSceneState,
   moveSceneToken,
   getActiveMapId,
-  getEcranVue
+  getEcranVue,
+  getEcranReglages
 } = require('./session');
 const diffusionCarte = require('./serveur/diffusion-carte');
 const { getActiveMapForViewer, emitMapState } = diffusionCarte;
@@ -203,6 +204,7 @@ io.on('connection', (socket) => {
 
   // Vue de l'Écran partagé : envoyée à la connexion, puis à chaque choix du MJ.
   socket.emit('ecranVue', { vue: getEcranVue() });
+  socket.emit('ecranReglages', getEcranReglages());
 
   // Rooms privées joueur <-> MJ pour les notes personnelles.
   const privateRole = socket.handshake.query?.role;

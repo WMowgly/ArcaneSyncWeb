@@ -173,6 +173,9 @@
     .best-icone{font-size:15px;flex:0 0 auto}
     .best-actions{display:flex;gap:3px;margin-top:5px}
     .best-actions button{flex:1 1 0;padding:3px 0;font-size:10.5px}
+    #ecran-panneau .row button{white-space:normal;line-height:1.15}
+    .case-ecran{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px}
+    .case-ecran input{width:auto;margin:0}
     #best-gerer{display:inline-flex;align-items:center;padding:3px 8px;border:1px solid var(--bord);border-radius:5px;background:var(--actif);color:var(--encre);text-decoration:none;font-size:12px;white-space:nowrap}
 
     .entity-list{display:grid;gap:5px;max-height:44vh;overflow-y:auto}
@@ -364,6 +367,21 @@
             </div>
           </div>
         </details>
+
+        <!-- V2.4 : ce que montre l'Écran partagé (enregistré dans la partie). -->
+        <details class="box" open id="ecran-panneau">
+          <summary>🖥️ Écran partagé</summary>
+          <div class="body">
+            <div class="row">
+              <button id="btn-ecran-cadrer" type="button" title="Tracez un rectangle sur la carte : l'Écran affichera cette zone">🖥️ Cadrer</button>
+              <button id="btn-ecran-entiere" type="button" title="L'Écran montre toute la carte">⛶ Carte entière</button>
+            </div>
+            <label class="case-ecran"><input type="checkbox" id="opt-ecran-suivre"> Suivre le combattant actif</label>
+            <label class="case-ecran"><input type="checkbox" id="opt-ecran-groupe" checked> Bandeau des PV du groupe</label>
+            <label class="case-ecran" title="Les créatures mortes n'apparaissent pas sur l'Écran partagé ; la carte MJ les montre toujours."><input type="checkbox" id="opt-ecran-morts" checked> Morts masqués sur l'Écran</label>
+            <p class="hint" id="ecran-cadrage-etat">L'Écran montre toute la carte.</p>
+          </div>
+        </details>
       </aside>
 
       <!-- ==================== COLONNE CENTRALE : carte ==================== -->
@@ -385,7 +403,6 @@
           <label title="Cercle de portée autour du jeton sélectionné"><input type="checkbox" id="opt-aura"> Aura de portée
             <input id="opt-aura-cases" type="number" min="1" max="60" value="1" title="Portée en cases" style="width:52px" disabled></label>
           <span id="opt-aura-etat" hidden style="color:#8b3e3c">sélectionnez un jeton</span>
-          <label title="Les créatures mortes n'apparaissent pas sur l'Écran partagé ; la carte MJ les montre toujours."><input type="checkbox" id="opt-ecran-morts" checked> Morts masqués sur l'Écran</label>
           <button id="btn-zoom" title="Basculer entre carte ajustée et échelle réelle">🔍 Ajustée</button>
           <button id="btn-export" title="Exporter en PNG">📥</button>
         </div>
@@ -461,10 +478,13 @@
     const escapeHtml = ArcaneMap.escapeHtml;
 
     const renderer = ArcaneMap.createRenderer(canvas, {});
+    // Consultation de l’affichage (contrôles automatiques, diagnostic).
+    window.ArcaneRendu = renderer;
 
     let bibliotheque = [];
     let activeMapId = null;
     let outil = 'select';
+    let cadrageEnCours = null;   // V2.4 : rectangle de cadrage de l'Écran en cours de tracé
     let couleurDecor = '#f3ead2';     // couleur du pinceau de décor
     let templates = [];
     let selection = null;           // {type:'token'|'element', id}
@@ -667,7 +687,9 @@
       dessin:       { titre: 'Dessiner',   panneau: 'annot',
                       aide: 'Glissez pour tracer. Visible en direct par la table. Ctrl + Z annule.' },
       texte:        { titre: 'Écrire',     panneau: 'annot',
-                      aide: 'Cliquez pour poser un texte. Ctrl + Z annule.' }
+                      aide: 'Cliquez pour poser un texte. Ctrl + Z annule.' },
+      ecran:        { titre: "Cadrer l'Écran", panneau: null,
+                      aide: "Glissez un rectangle : l'Écran affichera cette zone. Un simple clic y recentre le cadrage actuel." }
     };
 
     function setTool(nom) {
@@ -697,6 +719,15 @@
       event.preventDefault();
       const cell = renderer.cellFromEvent(event);
       if (!renderer.inBounds(cell)) return;
+
+      // V2.4 — Cadrage de l'Écran : un rectangle tracé à la souris. Ce
+      // n'est pas une édition de la carte : permis aussi en vue joueur.
+      if (outil === 'ecran') {
+        cadrageEnCours = { x0: cell.x, y0: cell.y };
+        renderer.setOption('apercuCadrage', { x: cell.x, y: cell.y, w: 1, h: 1 });
+        canvas.setPointerCapture?.(event.pointerId);
+        return;
+      }
 
       if (outil === 'mesure') {
         // Outil de LECTURE : local au poste du MJ, aucune requête. Autorisé
@@ -772,6 +803,16 @@
       renderer.setHover(renderer.inBounds(cell) ? cell : null);
       coordEl.textContent = renderer.inBounds(cell) ? `Case : ${cell.x} , ${cell.y}` : 'Case : —';
 
+      if (cadrageEnCours) {
+        if (renderer.inBounds(cell)) {
+          renderer.setOption('apercuCadrage', {
+            x: Math.min(cadrageEnCours.x0, cell.x), y: Math.min(cadrageEnCours.y0, cell.y),
+            w: Math.abs(cell.x - cadrageEnCours.x0) + 1, h: Math.abs(cell.y - cadrageEnCours.y0) + 1
+          });
+        }
+        return;
+      }
+
       if (outil === 'mesure' && renderer.state.mesure) {
         renderer.prolongerMesure(renderer.pointFromEvent(event));
         return;
@@ -827,6 +868,12 @@
     });
 
     function terminerPointer() {
+      if (cadrageEnCours) {
+        const zone = renderer.state.apercuCadrage;
+        cadrageEnCours = null;
+        renderer.setOption('apercuCadrage', null);
+        if (zone) envoyerCadrage(zone).catch(error => setStatus(error.message, true));
+      }
       if (renderer.state.mesure) renderer.terminerMesure();
       if (drag) {
         drag = null;
@@ -2026,22 +2073,84 @@
 
     document.getElementById('opt-aura').addEventListener('change', majAura);
 
-    // V2.3 — Créatures mortes sur l'Écran partagé : option de la partie.
-    const optEcranMorts = document.getElementById('opt-ecran-morts');
-    fetch('/api/ecran').then(r => r.json())
-      .then(etat => { optEcranMorts.checked = etat.masquerMorts !== false; })
-      .catch(() => {});
-    optEcranMorts.addEventListener('change', async () => {
-      try {
-        await api('POST', '/api/ecran', { masquerMorts: optEcranMorts.checked });
-        setStatus(optEcranMorts.checked
-          ? "Les créatures mortes sont masquées sur l'Écran."
-          : "Les créatures mortes restent visibles sur l'Écran.");
-      } catch (error) {
-        optEcranMorts.checked = !optEcranMorts.checked;
-        setStatus(error.message, true);
-      }
+    // ---------------------------------------------------------------------
+    // Écran partagé (V2.3 – V2.4) : créatures mortes, bandeau du groupe,
+    // cadrage et suivi du combattant actif. Réglages enregistrés dans la
+    // partie ; la carte MJ montre en pointillés la zone vue par l'Écran.
+    // ---------------------------------------------------------------------
+    const casesEcran = {
+      masquerMorts: [document.getElementById('opt-ecran-morts'),
+        "Les créatures mortes sont masquées sur l'Écran.", "Les créatures mortes restent visibles sur l'Écran."],
+      groupe: [document.getElementById('opt-ecran-groupe'),
+        "Le bandeau des PV du groupe est affiché sur l'Écran.", "Le bandeau des PV du groupe est masqué."],
+      suivreActif: [document.getElementById('opt-ecran-suivre'),
+        "L'Écran suit le combattant dont c'est le tour.", "L'Écran ne suit plus le combattant actif."]
+    };
+    let cadrageEcran = null;
+
+    function appliquerReglagesEcran(reglages = {}) {
+      Object.entries(casesEcran).forEach(([cle, [caseACocher]]) => {
+        if (typeof reglages[cle] === 'boolean') caseACocher.checked = reglages[cle];
+      });
+      if (reglages.cadrage !== undefined) cadrageEcran = reglages.cadrage || null;
+      renderer.setOption('suivreActif', casesEcran.suivreActif[0].checked);
+      renderer.setOption('cadrage', cadrageEcran);
+      renderer.setOption('zoneEcranVisible', true);
+      document.getElementById('ecran-cadrage-etat').textContent =
+        (cadrageEcran ? `L'Écran montre une zone de ${cadrageEcran.w} × ${cadrageEcran.h} cases` : "L'Écran montre toute la carte")
+        + (casesEcran.suivreActif[0].checked ? ', centrée sur le combattant actif.' : '.');
+    }
+
+    async function reglerEcran(changements, message) {
+      const reglages = await api('POST', '/api/ecran', changements);
+      appliquerReglagesEcran(reglages);
+      if (message) setStatus(message);
+    }
+
+    Object.entries(casesEcran).forEach(([cle, [caseACocher, siCoche, siDecoche]]) => {
+      caseACocher.addEventListener('change', async () => {
+        try {
+          await reglerEcran({ [cle]: caseACocher.checked }, caseACocher.checked ? siCoche : siDecoche);
+        } catch (error) {
+          caseACocher.checked = !caseACocher.checked;
+          setStatus(error.message, true);
+        }
+      });
     });
+
+    /** Rectangle tracé (ou simple clic : recentre le cadrage actuel). */
+    async function envoyerCadrage(zone) {
+      setTool('select');
+      if (zone.w < 2 && zone.h < 2) {
+        if (!cadrageEcran) { setStatus("Tracez un rectangle d'au moins deux cases pour cadrer l'Écran.", true); return; }
+        const recentre = {
+          x: Math.max(0, zone.x - Math.floor(cadrageEcran.w / 2)),
+          y: Math.max(0, zone.y - Math.floor(cadrageEcran.h / 2)),
+          w: cadrageEcran.w, h: cadrageEcran.h
+        };
+        await reglerEcran({ cadrage: recentre }, `Écran recentré en ${zone.x},${zone.y}.`);
+        return;
+      }
+      await reglerEcran({ cadrage: zone }, `L'Écran montre maintenant ${zone.w} × ${zone.h} cases.`);
+    }
+
+    document.getElementById('btn-ecran-cadrer').addEventListener('click', () => setTool('ecran'));
+    document.getElementById('btn-ecran-entiere').addEventListener('click', () =>
+      reglerEcran({ cadrage: null }, "L'Écran montre toute la carte.").catch(error => setStatus(error.message, true)));
+
+    fetch('/api/ecran').then(r => r.json()).then(appliquerReglagesEcran).catch(() => {});
+    socket.on('ecranReglages', appliquerReglagesEcran);
+
+    // Combattant dont c'est le tour : anneau doré (vue MJ complète, créatures
+    // cachées comprises).
+    async function chargerCombattantActif() {
+      try {
+        const etat = await (await fetch('/api/initiative?role=mj')).json();
+        renderer.setOption('actifId', etat.actif ? (etat.entrees?.[etat.tour]?.id || null) : null);
+      } catch (_) { /* hors ligne : l'anneau reviendra à la reconnexion */ }
+    }
+    socket.on('initiativeUpdated', chargerCombattantActif);
+    chargerCombattantActif();
     document.getElementById('opt-aura-cases').addEventListener('input', majAura);
     // Ajustée : la carte tient en entier dans le cadre.
     // Échelle réelle : la carte garde sa taille de case et le cadre défile.
@@ -2103,6 +2212,7 @@
     socket.on('connect', () => {
       setStatus('🟢 Carte synchronisée.');
       socket.emit('mapRequest');
+      chargerCombattantActif();
     });
 
     socket.on('disconnect', () => setStatus('🔴 Connexion perdue — reconnexion…', true));
