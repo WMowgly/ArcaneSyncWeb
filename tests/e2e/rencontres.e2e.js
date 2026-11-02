@@ -145,6 +145,49 @@ module.exports = {
       'page MJ : initiative de la rencontre pré-remplie dans la préparation du combat');
     verifier(await page.evaluer(`document.querySelector('${ligne(chefDeploye.id)}')?.value === ''`), 'page MJ : sans valeur prévue, le champ reste à saisir');
 
+    // Mobs de la partie active : ceux de la rencontre sont regroupés dans un bloc nommé.
+    const blocsMobs = `[...document.querySelectorAll('#active-mobs-list details.mobs-rencontre')].map(b =>
+      b.querySelector('.mobs-rencontre-nom').textContent.trim() + '=' + [...b.querySelectorAll('.active-mob-card')].map(c => c.dataset.id).sort().join(',')).join('|')`;
+    verifier(await page.attendre(`${blocsMobs} === '⚔️ Embuscade du pont=${nouveaux.map(m => m.id).sort().join(',')}'`, 20),
+      `page MJ : mobs de la rencontre regroupés dans « ⚔️ Embuscade du pont » (${await page.evaluer(blocsMobs)})`);
+    verifier(await page.evaluer(`!document.querySelector('#active-mobs-list > .mobs-grille .active-mob-card[data-id="${gobelinDeploye.id}"]')`),
+      'page MJ : ils ne sont plus mêlés aux mobs isolés');
+
+    // Initiative : étiquette de la rencontre sur ses créatures, pas sur les personnages.
+    const etiquette = id => `document.querySelector('#initiative-preparation-liste tr[data-entity="${id}"] .etiquette-rencontre')?.textContent.trim()`;
+    verifier(await page.evaluer(`${etiquette(gobelinDeploye.id)} === '⚔️ Embuscade du pont'`), 'initiative (préparation) : étiquette « ⚔️ Embuscade du pont »');
+    const premierJoueur = lireJson('data.json')[0];
+    verifier(await page.evaluer(`${etiquette(premierJoueur.id)} === undefined`), 'initiative (préparation) : pas d\'étiquette sur un personnage');
+
+    // Une créature modifiée recharge la préparation sans effacer les saisies en cours.
+    await page.evaluer(`(() => { const champ = document.querySelector('${ligne(premierJoueur.id)}'); champ.value = '17'; champ.focus(); })()`);
+    await page.evaluer(`document.querySelector('#initiative-preparation-liste tr[data-entity="${chefDeploye.id}"] [data-a="participe"]').checked = false`);
+    await api('PUT', `/api/mobs/${chefDeploye.id}`, { hp: { current: 9 } }, mj);
+    await page.attendre('false', 6);
+    verifier(await page.evaluer(`document.querySelector('${ligne(premierJoueur.id)}').value === '17'
+        && document.querySelector('#initiative-preparation-liste tr[data-entity="${chefDeploye.id}"] [data-a="participe"]').checked === false
+        && document.activeElement === document.querySelector('${ligne(premierJoueur.id)}')`),
+    'initiative (préparation) : une créature modifiée ne fait pas perdre les valeurs tapées ni le champ actif');
+    await page.capture('rencontres-mj.png', '#active-mobs-list');
+
+    // En combat : l'étiquette suit la créature dans l'ordre de jeu.
+    await api('POST', '/api/initiative/demarrer', { entrees: [
+      { kind: 'player', entityId: premierJoueur.id, nom: premierJoueur.nom, valeur: 17 },
+      { kind: 'mob', entityId: gobelinDeploye.id, nom: gobelinDeploye.nom, valeur: 13 }
+    ] }, mj);
+    verifier(await page.attendre(`[...document.querySelectorAll('#initiative-ordre li')].find(li => li.dataset.id === 'mob:${gobelinDeploye.id}')
+        ?.querySelector('.etiquette-rencontre')?.textContent.trim() === '⚔️ Embuscade du pont'`, 20),
+    'initiative (combat) : étiquette de la rencontre dans l\'ordre de jeu');
+    verifier(await page.evaluer(`!document.querySelector('#initiative-ordre li[data-id="player:${premierJoueur.id}"] .etiquette-rencontre')`),
+      'initiative (combat) : pas d\'étiquette sur un personnage');
+    await page.capture('rencontres-initiative.png', '#initiative-ordre');
+    await api('POST', '/api/initiative/terminer', {}, mj);
+    await page.ouvrir('ecran.html');
+    await api('POST', '/api/initiative/demarrer', { entrees: [{ kind: 'mob', entityId: gobelinDeploye.id, nom: gobelinDeploye.nom, valeur: 13 }] }, mj);
+    await page.attendre("document.querySelectorAll('#initiative-ordre li').length === 1", 20);
+    verifier(await page.evaluer("!document.body.innerHTML.includes('Embuscade')"), 'Écran : le nom de la rencontre n\'apparaît jamais');
+    await api('POST', '/api/initiative/terminer', {}, mj);
+
     // --- Carte MJ : retirer toute une sous-liste de la partie (✖ de l'en-tête) --------------------
     await page.ouvrir('map.html');
     await page.attendre("document.querySelectorAll('#entity-list details.sous-groupe').length === 1", 30);

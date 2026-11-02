@@ -378,7 +378,9 @@ app.post('/api/maps/:mapId/spawn-mob', (req, res) => {
 
     if (!result.success) return res.status(400).json({ message: result.message });
 
-    io.emit('mobUpdated', { type: 'createdOnMap', mob });
+    // Signal seul : la fiche (notes, description) n'est jamais diffusée ; chaque
+    // page recharge ce que son rôle a le droit de voir.
+    io.emit('mobUpdated', { type: 'createdOnMap', mobId: mob.id });
     io.emit('sceneUpdated');
     emitMapState();
     res.status(201).json({ message: 'Créature ajoutée à la carte.', mob, tokenId: result.tokenId });

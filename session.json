@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-11-02T13:21:42.359Z",
+  "lastSaved": "2026-11-02T13:40:59.557Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -425,98 +425,6 @@
       "notes": "",
       "createdAt": "2026-08-12T10:07:39.323Z",
       "updatedAt": "2026-10-26T18:10:36.715Z"
-    },
-    "mob_49678c78fe979cf6": {
-      "id": "mob_49678c78fe979cf6",
-      "nom": "Nouvelle créature",
-      "description": "",
-      "stats": {
-        "force": 0,
-        "dexterite": 0,
-        "magie": 0,
-        "constitution": 0,
-        "charisme": 0,
-        "perception": 0,
-        "chance": 0,
-        "intelligence": 0
-      },
-      "hp": {
-        "max": 0,
-        "current": 0
-      },
-      "mana": {
-        "max": 0,
-        "current": 0
-      },
-      "statut": "mort",
-      "armure": {
-        "type": "",
-        "resistance": "",
-        "durabilite": {
-          "max": 0,
-          "current": 0
-        },
-        "protection": {
-          "max": 0,
-          "current": 0
-        }
-      },
-      "bonus_vie": 0,
-      "intox": 0,
-      "armes": [],
-      "spells": [],
-      "competences": [],
-      "notes": "",
-      "createdAt": "2026-08-20T21:29:24.941Z",
-      "updatedAt": "2026-08-20T21:29:24.941Z"
-    },
-    "mob_addc23d8e0371487": {
-      "id": "mob_addc23d8e0371487",
-      "nom": "Créature",
-      "categorie": "autre",
-      "icone": "👹",
-      "templateId": "",
-      "description": "",
-      "stats": {
-        "force": 0,
-        "dexterite": 0,
-        "magie": 0,
-        "constitution": 0,
-        "charisme": 0,
-        "perception": 0,
-        "chance": 0,
-        "intelligence": 0
-      },
-      "hp": {
-        "max": 0,
-        "current": 0
-      },
-      "mana": {
-        "max": 0,
-        "current": 0
-      },
-      "statut": "mort",
-      "statuts": [],
-      "armure": {
-        "type": "",
-        "resistance": "",
-        "durabilite": {
-          "max": 0,
-          "current": 0
-        },
-        "protection": {
-          "max": 0,
-          "current": 0
-        }
-      },
-      "bonus_vie": 0,
-      "intox": 0,
-      "armes": [],
-      "spells": [],
-      "competences": [],
-      "notes": "",
-      "createdAt": "2026-10-26T22:06:26.858Z",
-      "updatedAt": "2026-10-26T22:06:26.858Z"
     },
     "mob_4292ad3b7416e766": {
       "id": "mob_4292ad3b7416e766",
@@ -1080,22 +988,6 @@
         "entityId": "char_bbab36ec3cfd4b9486aba0e7da726870",
         "x": 0.603404255319149,
         "y": 0.18845181602212557
-      },
-      "mob:mob_49678c78fe979cf6": {
-        "id": "mob:mob_49678c78fe979cf6",
-        "type": "mob",
-        "entityId": "mob_49678c78fe979cf6",
-        "x": 0.7267587939698492,
-        "y": 0.16450892175946916,
-        "visibleToPlayers": true
-      },
-      "mob:mob_addc23d8e0371487": {
-        "id": "mob:mob_addc23d8e0371487",
-        "type": "mob",
-        "entityId": "mob_addc23d8e0371487",
-        "x": 0.87,
-        "y": 0.18,
-        "visibleToPlayers": false
       },
       "mob:mob_e5ff92276d1dc841": {
         "id": "mob:mob_e5ff92276d1dc841",

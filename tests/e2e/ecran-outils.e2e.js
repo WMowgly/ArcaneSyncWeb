@@ -76,5 +76,36 @@ module.exports = {
     verifier(await page.attendre("[...document.querySelectorAll('#initiative-ordre li.hors-jeu')].some(li => li.textContent.includes('Squelette brisé') && li.textContent.includes('💀'))", 30),
       'page MJ : la créature morte est barrée (💀) dans l\'ordre');
     await api('POST', '/api/initiative/terminer', {}, mj);
+
+    // --- Confidentialité : une page non-MJ ne reçoit jamais la fiche d'une créature ---------------
+    // Une connexion « joueur » note tout ce qu'elle reçoit pendant que le MJ
+    // crée, modifie, duplique créatures et modèles du bestiaire.
+    await page.ouvrir('ecran.html');
+    await page.attendre("document.getElementById('ecran-statut').textContent.includes('Synchronisé')", 30);
+    await page.evaluer(`new Promise(resoudre => {
+      window.__recus = [];
+      const s = io({ query: { role: 'player' } });
+      s.onAny((nom, ...args) => window.__recus.push([nom, args]));
+      s.on('connect', () => resoudre(true));
+      window.__espion = s;
+    })`);
+    const secret = { description: 'SECRET-description', notes: 'SECRET-notes' };
+    const liche = (await api('POST', '/api/mobs', { nom: 'Liche', ...secret }, mj)).donnees.mob;
+    await api('PUT', `/api/mobs/${liche.id}`, { notes: 'SECRET-notes-2' }, mj);
+    await api('POST', `/api/mobs/${liche.id}/statuses`, { statutId: 'poison' }, mj);
+    await api('POST', `/api/mobs/${liche.id}/duplicate`, {}, mj);
+    const modele = (await api('POST', '/api/mob-templates', { nom: 'Spectre', ...secret }, mj)).donnees.template;
+    await api('PUT', `/api/mob-templates/${modele.id}`, { notes: 'SECRET-notes-3' }, mj);
+    await api('POST', `/api/mob-templates/${modele.id}/duplicate`, {}, mj);
+    await api('POST', `/api/mob-templates/${modele.id}/spawn`, {}, mj);
+    await api('POST', `/api/maps/${encodeURIComponent(mapId)}/spawn-mob`, { templateId: modele.id }, mj);
+    await api('POST', `/api/mob-templates/from-mob/${liche.id}`, { nom: 'Liche (modèle)' }, mj);
+    await page.attendre('false', 4);
+    const recus = await page.evaluer('JSON.stringify(window.__recus)');
+    const evenements = new Set(JSON.parse(recus).map(([nom]) => nom));
+    verifier(evenements.has('mobUpdated') && evenements.has('mobTemplateUpdated'),
+      `confidentialité : les signaux de mise à jour arrivent bien (${[...evenements].join(', ')})`);
+    verifier(!recus.includes('SECRET'), 'confidentialité : aucune note ni description de créature ou de modèle n\'est envoyée à une page non-MJ');
+    await page.evaluer('window.__espion.close()');
   }
 };

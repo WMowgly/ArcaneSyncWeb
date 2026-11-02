@@ -284,11 +284,27 @@
 
     /* Liste des mobs en jeu : grille de cartes compactes, comme les
        joueurs, plutôt qu'une pile de blocs pleine largeur. */
-    #active-mobs-list {
+    #active-mobs-list { display: grid; gap: 12px; }
+    #active-mobs-list .mobs-grille {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
       gap: 10px;
     }
+    /* V2.4 — Mobs d'une même rencontre : bloc repliable nommé comme elle. */
+    .mobs-rencontre {
+      border: 1px solid #c9a96e; border-left: 5px solid #7d3f3f; border-radius: 8px;
+      padding: 4px 10px 10px; background: #fbf1da;
+    }
+    .mobs-rencontre > summary {
+      display: flex; align-items: baseline; gap: 10px; padding: 5px 0;
+      cursor: pointer; list-style: none; user-select: none;
+    }
+    .mobs-rencontre > summary::-webkit-details-marker { display: none; }
+    .mobs-rencontre > summary::before { content: '▾'; display: inline-block; width: 12px; color: #7d3f3f; transition: transform .15s; }
+    .mobs-rencontre:not([open]) > summary::before { transform: rotate(-90deg); }
+    .mobs-rencontre-nom { font-family: 'Uncial Antiqua', serif; font-size: 1.05em; color: #7d3f3f; }
+    .mobs-rencontre-compte { font-size: .85em; color: #6b5a45; }
+    .mobs-rencontre > .mobs-grille { margin-top: 6px; }
     #mob-management #active-mobs-list .active-mob-card { margin: 0; }
     #mob-management .active-mob-card.dead .stat-bar { opacity: .6; }
     .active-mob-head {
@@ -347,6 +363,12 @@
     .initiative-ordre .valeur { min-width: 34px; text-align: center; font-weight: 700; color: #5c3b21; }
     .initiative-ordre .nom { flex: 1; }
     .initiative-ordre .cache { font-size: .8em; color: #7a2222; }
+    /* V2.4 — Rencontre d'une créature : étiquette teintée (une teinte par rencontre). */
+    .etiquette-rencontre {
+      display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 9px;
+      background: var(--teinte, #7d3f3f); color: #fff; font-size: .78em; font-weight: 600;
+      white-space: nowrap; vertical-align: 1px; text-decoration: none;
+    }
     .initiative-ordre button { padding: 3px 8px; font-size: .85em; }
     /* Encoche ⠿ : on la saisit pour déplacer la ligne (souris ou doigt). */
     .poignee {
@@ -1191,27 +1213,82 @@
       return result;
     }
 
+    // V2.4 — Rencontre de chaque créature, affichée en étiquette dans
+    // l'initiative : même nom que les sous-listes (« Bataillon », « Bataillon
+    // #2 »), et une teinte par rencontre pour les repérer d'un coup d'œil.
+    const TEINTES_RENCONTRE = ['#7d3f3f', '#3f6287', '#4f7a3a', '#7a4f8b', '#8a5a12', '#2f7a77'];
+    let rencontreParMob = new Map();
+    function memoriserRencontres(mobs) {
+      const { groupes } = ArcaneOutils.regrouperParRencontre(Array.isArray(mobs) ? mobs : [], m => m.rencontre);
+      rencontreParMob = new Map();
+      groupes.forEach((groupe, rang) => groupe.liste.forEach(m =>
+        rencontreParMob.set(m.id, { titre: groupe.titre, teinte: TEINTES_RENCONTRE[rang % TEINTES_RENCONTRE.length] })));
+    }
+    function etiquetteRencontre(mobId) {
+      const r = rencontreParMob.get(mobId);
+      return r ? ` <span class="etiquette-rencontre" style="--teinte:${r.teinte}" title="Rencontre « ${escapeHtml(r.titre)} »">⚔️ ${escapeHtml(r.titre)}</span>` : '';
+    }
+
     // Combattants proposés : les personnages, puis les créatures vivantes.
-    async function preparerInitiative() {
+    // `garderSaisies` (rechargement automatique : créature modifiée, rencontre
+    // déployée...) : les initiatives déjà tapées, les cases cochées et l'ordre
+    // choisi à la main sont conservés.
+    async function preparerInitiative({ garderSaisies = false } = {}) {
+      const corps = document.getElementById('initiative-preparation-liste');
+      const cleDe = (kind, entityId) => `${kind}:${entityId}`;
+      const saisies = new Map();
+      let focus = null;
+      if (garderSaisies) {
+        corps.querySelectorAll('tr[data-kind]').forEach((tr, rang) => saisies.set(cleDe(tr.dataset.kind, tr.dataset.entity), {
+          rang,
+          participe: tr.querySelector('[data-a="participe"]').checked,
+          valeur: tr.querySelector('[data-a="valeur"]').value,
+          cache: tr.querySelector('[data-a="cache"]')?.checked === true
+        }));
+        const ligneActive = document.activeElement?.closest?.('#initiative-preparation-liste tr[data-kind]');
+        if (ligneActive) focus = { cle: cleDe(ligneActive.dataset.kind, ligneActive.dataset.entity), a: document.activeElement.dataset.a };
+      }
+
       const [joueurs, mobs] = await Promise.all([
         fetch('/api/session/players').then(r => r.json()),
         fetch('/api/mobs').then(r => (r.ok ? r.json() : []))
       ]);
-      const lignes = [
+      memoriserRencontres(mobs);
+      let lignes = [
         ...joueurs.map(j => ({ kind: 'player', entityId: j.id, nom: j.nom })),
         ...mobs.filter(m => (Number(m.hp?.current) || 0) > 0)
           .map(m => ({ kind: 'mob', entityId: m.id, nom: m.nom, valeur: Number.isInteger(m.initiative) ? m.initiative : null }))
       ];
-      definirOrdreManuel(false);
-      document.getElementById('initiative-preparation-liste').innerHTML = lignes.length
+      if (garderSaisies && ordreManuel) {
+        // Ordre choisi à la main : gardé ; les nouveaux venus à la fin.
+        const rangDe = l => saisies.get(cleDe(l.kind, l.entityId))?.rang ?? Number.MAX_SAFE_INTEGER;
+        lignes = lignes.map((ligne, i) => ({ ligne, i }))
+          .sort((a, b) => rangDe(a.ligne) - rangDe(b.ligne) || a.i - b.i).map(({ ligne }) => ligne);
+      } else {
+        definirOrdreManuel(false);
+      }
+      corps.innerHTML = lignes.length
         ? lignes.map(l => `<tr data-kind="${l.kind}" data-entity="${escapeHtml(l.entityId)}" data-nom="${escapeHtml(l.nom)}">
             <td class="cellule-poignee"><span class="poignee" title="Saisir pour déplacer" aria-hidden="true">⠿</span></td>
             <td><input type="checkbox" data-a="participe" checked aria-label="${escapeHtml(l.nom)} participe"></td>
-            <td class="${l.kind === 'mob' ? 'initiative-mob' : ''}">${l.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(l.nom)}</td>
+            <td class="${l.kind === 'mob' ? 'initiative-mob' : ''}">${l.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(l.nom)}${l.kind === 'mob' ? etiquetteRencontre(l.entityId) : ''}</td>
             <td><input type="number" data-a="valeur" min="-99" max="999" step="1" placeholder="0"${l.valeur !== null && l.valeur !== undefined ? ` value="${l.valeur}"` : ''} aria-label="Initiative de ${escapeHtml(l.nom)}"></td>
             <td>${l.kind === 'mob' ? `<input type="checkbox" data-a="cache" aria-label="Cacher ${escapeHtml(l.nom)}">` : ''}</td>
           </tr>`).join('')
         : '<tr><td colspan="5">Aucun combattant disponible.</td></tr>';
+
+      if (!garderSaisies) return;
+      corps.querySelectorAll('tr[data-kind]').forEach(tr => {
+        const cle = cleDe(tr.dataset.kind, tr.dataset.entity);
+        const sauve = saisies.get(cle);
+        if (sauve) {
+          tr.querySelector('[data-a="participe"]').checked = sauve.participe;
+          tr.querySelector('[data-a="valeur"]').value = sauve.valeur;
+          const cache = tr.querySelector('[data-a="cache"]');
+          if (cache) cache.checked = sauve.cache;
+        }
+        if (focus?.cle === cle && focus.a) tr.querySelector(`[data-a="${focus.a}"]`)?.focus();
+      });
     }
 
     // Ordre manuel de la préparation : dès que le MJ déplace une ligne, le
@@ -1306,17 +1383,21 @@
             <button type="button" data-a="descendre" title="Descendre" aria-label="Descendre ${escapeHtml(e.nom)}" ${i === dernier ? 'disabled' : ''}>▼</button>
           </span>
           <span class="valeur">${e.valeur}</span>
-          <span class="nom">${e.horsJeu ? '💀' : e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
+          <span class="nom">${e.horsJeu ? '💀' : e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.kind === 'mob' ? etiquetteRencontre(e.entityId) : ''}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
           ${e.kind === 'mob' ? `<button type="button" data-a="cacher" title="${e.cache ? 'Montrer sur l’Écran' : 'Cacher de l’Écran'}">${e.cache ? '👁 Montrer' : '🙈 Cacher'}</button>` : ''}
           <button type="button" data-a="retirer" title="Retirer du combat">✖</button>
         </li>`).join('');
     }
 
-    async function chargerInitiative() {
+    // `garderSaisies` : voir preparerInitiative. Seulement si la préparation
+    // était déjà à l'écran (après un combat, elle repart de zéro).
+    async function chargerInitiative({ garderSaisies = false } = {}) {
       try {
+        const enPreparation = !document.getElementById('initiative-preparation').hidden;
         const etat = await fetch('/api/initiative').then(r => r.json());
+        if (etat.actif) memoriserRencontres(await fetch('/api/mobs').then(r => (r.ok ? r.json() : [])));
         afficherInitiative(etat);
-        if (!etat.actif) await preparerInitiative();
+        if (!etat.actif) await preparerInitiative({ garderSaisies: garderSaisies && enPreparation });
       } catch (error) {
         initiativeStatut(`Initiative indisponible : ${error.message}`);
       }
@@ -1374,9 +1455,10 @@
     // Pendant le combat : l'encoche ⠿ déplace le combattant (enregistré).
     rendreReordonnable(ordreInitiative, 'li[data-id]', (ligne, position) => deplacerCombattant(ligne.dataset.id, position));
 
-    socket.on('initiativeUpdated', () => chargerInitiative());
+    // Rechargements automatiques : la préparation en cours n'est pas effacée.
+    socket.on('initiativeUpdated', () => chargerInitiative({ garderSaisies: true }));
     // Une créature qui meurt est signalée (et sera sautée) sans attendre le tour suivant.
-    socket.on('mobUpdated', () => chargerInitiative());
+    socket.on('mobUpdated', () => chargerInitiative({ garderSaisies: true }));
     chargerInitiative();
 
     document.getElementById('public-note-save')?.addEventListener('click', savePublicNoteMJ);
@@ -1515,6 +1597,11 @@
     const mobFormTitle=document.getElementById('mob-form-title');
     const mobFormStatus=document.getElementById('mob-form-status');
     const activeMobsList=document.getElementById('active-mobs-list');
+    // Rencontres repliées par le MJ, mémorisées dans ce navigateur.
+    const CLE_MOBS_GROUPES_REPLIES='arcanesync.mj.rencontresReplies';
+    const mobsGroupesReplies=new Set((()=>{
+      try{ return JSON.parse(localStorage.getItem(CLE_MOBS_GROUPES_REPLIES))||[]; }catch(_){ return []; }
+    })());
     const mobTemplatesList=document.getElementById('mob-templates-list');
 
     const linesToArray=v=>v.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
@@ -1613,6 +1700,38 @@
       const saisies=memoriserSaisies(activeMobsList);
       activeMobsList.innerHTML='';
       if(!list.length){activeMobsList.innerHTML='<p>Aucun mob dans la partie.</p>';return;}
+
+      // V2.4 : les mobs d'une même rencontre déployée sont regroupés dans un
+      // bloc repliable nommé comme la rencontre (comme sur la carte et le
+      // tableau blanc), après les mobs isolés.
+      const {libres,groupes}=ArcaneOutils.regrouperParRencontre(list,m=>m.rencontre);
+      const grilleDe=new Map();
+      const nouvelleGrille=parent=>{
+        const grille=document.createElement('div');
+        grille.className='mobs-grille';
+        parent.appendChild(grille);
+        return grille;
+      };
+      if(libres.length){
+        const grille=nouvelleGrille(activeMobsList);
+        libres.forEach(m=>grilleDe.set(m.id,grille));
+      }
+      groupes.forEach(groupe=>{
+        const bloc=document.createElement('details');
+        bloc.className='mobs-rencontre';
+        bloc.dataset.groupe=groupe.cle;
+        bloc.open=!mobsGroupesReplies.has(groupe.cle);
+        const mortes=groupe.liste.filter(m=>(Number(m.hp?.current)||0)<=0).length;
+        bloc.innerHTML=`<summary><span class="mobs-rencontre-nom">⚔️ ${escapeHtml(groupe.titre)}</span>
+          <span class="mobs-rencontre-compte">${groupe.liste.length} créature(s)${mortes?` · ${mortes} morte(s)`:''}</span></summary>`;
+        bloc.addEventListener('toggle',()=>{
+          if(bloc.open) mobsGroupesReplies.delete(groupe.cle); else mobsGroupesReplies.add(groupe.cle);
+          try{ localStorage.setItem(CLE_MOBS_GROUPES_REPLIES,JSON.stringify([...mobsGroupesReplies])); }catch(_){ /* stockage indisponible */ }
+        });
+        activeMobsList.appendChild(bloc);
+        const grille=nouvelleGrille(bloc);
+        groupe.liste.forEach(m=>grilleDe.set(m.id,grille));
+      });
 
       list.forEach(m=>{
         const c=document.createElement('div'); c.className='active-mob-card';
@@ -1777,7 +1896,7 @@
           await loadActiveMobs();
         };
 
-        activeMobsList.appendChild(c);
+        grilleDe.get(m.id).appendChild(c);
       });
       restaurerSaisies(activeMobsList,saisies);
     }

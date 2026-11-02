@@ -41,6 +41,11 @@ app.get('/api/statuses',(req,res)=>res.json(getStatutsJoueurDisponibles()));
 // ------------------------------------------------------------------
 // MOBS / NPC — gestion uniquement par le MJ.
 // Aucun moteur de combat n'est exécuté par ArcaneSync.
+//
+// V2.4 : `mobUpdated` et `mobTemplateUpdated` sont diffusés à TOUTES les
+// pages (joueurs et Écran compris) : ils ne portent qu'un signal (type et
+// identifiant), jamais la fiche (notes, description, rencontre). Chaque page
+// recharge ce que son rôle a le droit de voir.
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 // V1.13.8 — Statuts des créatures.
@@ -54,7 +59,7 @@ app.post('/api/mobs/:id/statuses', (req, res) => {
   const result = ajouterStatutMob(req.params.id, req.body?.statutId);
   if (!result.success) return res.status(400).json({ message: result.message });
 
-  io.emit('mobUpdated', { type: 'statusUpdate', mob: result.mob });
+  io.emit('mobUpdated', { type: 'statusUpdate', mobId: req.params.id });
   emitMapState();
   res.json({ message: 'Statut appliqué.', mobId: req.params.id, statuts: result.mob.statuts });
 });
@@ -64,7 +69,7 @@ app.delete('/api/mobs/:id/statuses/:statutId', (req, res) => {
   const result = retirerStatutMob(req.params.id, req.params.statutId);
   if (!result.success) return res.status(400).json({ message: result.message });
 
-  io.emit('mobUpdated', { type: 'statusUpdate', mob: result.mob });
+  io.emit('mobUpdated', { type: 'statusUpdate', mobId: req.params.id });
   emitMapState();
   res.json({ message: 'Statut retiré.', mobId: req.params.id, statuts: result.mob.statuts });
 });
@@ -84,7 +89,7 @@ app.post('/api/mobs', (req, res) => {
     if (!sauvegarderMobSession(mob)) {
       return res.status(500).json({ message: 'Impossible de sauvegarder le mob.' });
     }
-    io.emit('mobUpdated', { type: 'created', mob });
+    io.emit('mobUpdated', { type: 'created', mobId: mob.id });
     io.emit('sceneUpdated');
     emitMapState();
     res.status(201).json({ message: 'Mob créé avec succès.', mob });
@@ -113,7 +118,7 @@ app.put('/api/mobs/:id', (req, res) => {
     if (!sauvegarderMobSession(mob)) {
       return res.status(500).json({ message: 'Impossible de modifier le mob.' });
     }
-    io.emit('mobUpdated', { type: 'updated', mob });
+    io.emit('mobUpdated', { type: 'updated', mobId: mob.id });
     io.emit('sceneUpdated');
     emitMapState();
     res.json({ message: 'Mob modifié avec succès.', mob });
@@ -152,7 +157,7 @@ app.post('/api/mobs/:id/duplicate', (req, res) => {
     if (!mob || !sauvegarderMobSession(mob)) {
       return res.status(500).json({ message: 'Impossible de dupliquer le mob.' });
     }
-    io.emit('mobUpdated', { type: 'duplicated', mob });
+    io.emit('mobUpdated', { type: 'duplicated', mobId: mob.id });
     io.emit('sceneUpdated');
     emitMapState();
     res.status(201).json({ message: `« ${mob.nom} » ajouté à la partie.`, mob });
@@ -176,7 +181,7 @@ app.post('/api/mob-templates', (req, res) => {
     const template = createMobTemplate(req.body);
     if (!template) return res.status(500).json({ message: 'Impossible de sauvegarder le template.' });
 
-    io.emit('mobTemplateUpdated', { type: 'created', template });
+    io.emit('mobTemplateUpdated', { type: 'created', templateId: template.id });
     res.status(201).json({ message: 'Template de mob créé avec succès.', template });
   } catch (error) {
     console.error('Erreur création template:', error);
@@ -190,7 +195,7 @@ app.put('/api/mob-templates/:id', (req, res) => {
     const template = updateMobTemplate(req.params.id, req.body || {});
     if (!template) return res.status(404).json({ message: 'Template de mob introuvable.' });
 
-    io.emit('mobTemplateUpdated', { type: 'updated', template });
+    io.emit('mobTemplateUpdated', { type: 'updated', templateId: template.id });
     res.json({ message: 'Template de mob modifié avec succès.', template });
   } catch (error) {
     console.error('Erreur modification template:', error);
@@ -235,7 +240,7 @@ app.post('/api/mob-templates/:id/duplicate', (req, res) => {
   const template = duplicateMobTemplate(req.params.id, req.body?.nom);
   if (!template) return res.status(404).json({ message: 'Modele de creature introuvable.' });
 
-  io.emit('mobTemplateUpdated', { type: 'duplicated', template });
+  io.emit('mobTemplateUpdated', { type: 'duplicated', templateId: template.id });
   res.status(201).json({ message: `« ${template.nom} » ajoute au bestiaire.`, template });
 });
 
@@ -249,7 +254,7 @@ app.post('/api/mob-templates/from-mob/:mobId', (req, res) => {
   const template = templateDepuisMob(mob, req.body?.nom);
   if (!template) return res.status(500).json({ message: 'Impossible de creer le modele.' });
 
-  io.emit('mobTemplateUpdated', { type: 'created', template });
+  io.emit('mobTemplateUpdated', { type: 'created', templateId: template.id });
   res.status(201).json({ message: `« ${template.nom} » ajoute au bestiaire.`, template });
 });
 
@@ -266,7 +271,7 @@ app.post('/api/mob-templates/:id/spawn', (req, res) => {
       return res.status(500).json({ message: 'Impossible de créer le mob dans la partie.' });
     }
 
-    io.emit('mobUpdated', { type: 'createdFromTemplate', mob });
+    io.emit('mobUpdated', { type: 'createdFromTemplate', mobId: mob.id });
     io.emit('sceneUpdated');
     emitMapState();
     res.status(201).json({ message: 'Mob créé depuis le template.', mob });
