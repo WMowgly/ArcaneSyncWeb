@@ -1,1 +1,100 @@
-[]
+[
+  {
+    "id": "mobtpl_f7b99faf4c9317a0",
+    "nom": "Commandant",
+    "categorie": "humanoide",
+    "icone": "🗡️",
+    "templateId": "",
+    "description": "",
+    "stats": {
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 0,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
+    },
+    "hp": {
+      "max": 20,
+      "current": 20
+    },
+    "mana": {
+      "max": 20,
+      "current": 20
+    },
+    "statut": "vivant",
+    "statuts": [],
+    "armure": {
+      "type": "",
+      "resistance": "",
+      "durabilite": {
+        "max": 0,
+        "current": 0
+      },
+      "protection": {
+        "max": 0,
+        "current": 0
+      }
+    },
+    "bonus_vie": 0,
+    "intox": 0,
+    "armes": [],
+    "spells": [],
+    "competences": [],
+    "notes": "",
+    "initiative": null,
+    "createdAt": "2026-11-02T12:42:21.759Z",
+    "updatedAt": "2026-11-02T12:42:34.931Z"
+  },
+  {
+    "id": "mobtpl_44dc34336d969672",
+    "nom": "Soldat",
+    "categorie": "humanoide",
+    "icone": "🗡️",
+    "templateId": "",
+    "description": "",
+    "stats": {
+      "force": 0,
+      "dexterite": 0,
+      "magie": 0,
+      "constitution": 0,
+      "charisme": 0,
+      "perception": 0,
+      "chance": 0,
+      "intelligence": 0
+    },
+    "hp": {
+      "max": 10,
+      "current": 10
+    },
+    "mana": {
+      "max": 10,
+      "current": 10
+    },
+    "statut": "vivant",
+    "statuts": [],
+    "armure": {
+      "type": "",
+      "resistance": "",
+      "durabilite": {
+        "max": 0,
+        "current": 0
+      },
+      "protection": {
+        "max": 0,
+        "current": 0
+      }
+    },
+    "bonus_vie": 0,
+    "intox": 0,
+    "armes": [],
+    "spells": [],
+    "competences": [],
+    "notes": "",
+    "initiative": null,
+    "createdAt": "2026-11-02T12:42:40.946Z",
+    "updatedAt": "2026-11-02T12:42:51.644Z"
+  }
+]

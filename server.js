@@ -40,6 +40,8 @@ const {
 } = require('./session');
 const diffusionCarte = require('./serveur/diffusion-carte');
 const { getActiveMapForViewer, emitMapState } = diffusionCarte;
+// Rencontres préparées (V2.4) : chargées avant la vérification des fichiers.
+require('./rencontres');
 
 // ------------------------------------------------------------------
 // V2.3 — Fichier de données illisible : on ne démarre pas.
@@ -78,6 +80,7 @@ app.use(require('./serveur/routes-reference')(io));
 app.use(require('./serveur/routes-cartes')(io));
 app.use(require('./serveur/routes-initiative')(io));
 app.use(require('./serveur/routes-reseau')(io));
+app.use(require('./serveur/routes-rencontres')(io));
 
 // ------------------------------------------------------------------
 // V1.12 — Reconnexion & resynchronisation de l'état autoritaire
@@ -380,6 +383,24 @@ io.on('connection', (socket) => {
     });
   });
 
+  // V2.4 — « Ping » du MJ (Alt + clic sur sa carte) : un cercle pulsant
+  // montre un point à la table. Relayé à l'Écran et aux postes MJ ; rien
+  // n'est enregistré.
+  socket.on('mapPing', ({ x, y } = {}) => {
+    if (socket.handshake.query?.role !== 'mj') return;
+    const mapId = getActiveMapId();
+    const px = Number(x);
+    const py = Number(y);
+    if (!mapId || !Number.isFinite(px) || !Number.isFinite(py)) return;
+    const ping = { mapId, x: Math.round(px * 100) / 100, y: Math.round(py * 100) / 100 };
+    io.sockets.sockets.forEach(destinataire => {
+      const roleCible = destinataire.handshake.query?.role;
+      if (destinataire.id !== socket.id && (roleCible === 'ecran' || roleCible === 'mj')) {
+        destinataire.emit('mapPing', ping);
+      }
+    });
+  });
+
   // Événement de dessin
   // Segments du trait en cours : diffusion en direct seulement. Le trait
   // complet est enregistré à la fin du geste (tableauTrait).
@@ -391,15 +412,29 @@ io.on('connection', (socket) => {
     socket.emit('tableauTraces', { traces: tableau.getTraces() });
   });
 
+  // V2.4 — Auteur d'un dessin, d'après la connexion (jamais le message).
+  const auteurDessin = () => {
+    const roleSocket = socket.handshake.query?.role;
+    if (roleSocket === 'mj') return 'mj';
+    const joueur = socket.handshake.query?.playerId;
+    return roleSocket === 'player' && joueur ? `player:${joueur}` : `spectateur:${socket.id}`;
+  };
+
   socket.on('tableauTrait', trait => {
-    const enregistre = tableau.ajouterTrait(trait);
+    const enregistre = tableau.ajouterTrait(trait, auteurDessin());
     if (enregistre) socket.broadcast.emit('tableauTrait', enregistre);
   });
 
   // Événement d'écriture
   socket.on('text', data => {
-    const enregistre = tableau.ajouterTexte(data);
+    const enregistre = tableau.ajouterTexte(data, auteurDessin());
     if (enregistre) socket.broadcast.emit('text', enregistre);
+  });
+
+  // V2.4 — Annuler un dessin (Ctrl + Z) : son auteur, ou le MJ.
+  socket.on('tableauAnnuler', ({ id } = {}) => {
+    if (typeof id !== 'string' || !id) return;
+    if (tableau.retirer(id, auteurDessin())) io.emit('tableauRetire', { id });
   });
 
   socket.on('clearDrawings', () => {
@@ -439,7 +474,7 @@ function getLocalIPAddress() {
 // rotation quand rien n'a changé depuis la dernière.
 // ------------------------------------------------------------------
 function sauvegarderDonnees() {
-  const fichiers = ['data.json', 'session.json', 'maps.json', 'mob_templates.json', 'tableau_dessins.json']
+  const fichiers = ['data.json', 'session.json', 'maps.json', 'mob_templates.json', 'rencontres.json', 'tableau_dessins.json']
     .map(nom => cheminDonnees(nom))
     // La référence des sorts, éditable par le MJ : sauvegardes dans database/sauvegardes/.
     .concat(cheminDonnees('database', 'sorts.json'));

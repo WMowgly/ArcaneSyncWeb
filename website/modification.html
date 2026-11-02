@@ -61,6 +61,18 @@
     .formulaire .large { grid-column: 1 / -1; }
     .formulaire textarea { min-height: 120px; resize: vertical; }
     .formulaire .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    /* V2.4 — Rencontres : une ligne par créature du bestiaire. */
+    .rencontre-lignes { display: grid; gap: 6px; }
+    .rencontre-ligne, .rencontre-entete { display: grid; grid-template-columns: minmax(0, 1fr) 80px 90px 34px; gap: 6px; align-items: center; }
+    .rencontre-entete { font-size: 12px; font-weight: 600; opacity: .75; }
+    .rencontre-ligne select, .rencontre-ligne input { width: 100%; box-sizing: border-box; }
+    .rencontre-ligne button, .rencontre-ajouter {
+      margin: 0; padding: 6px 10px; border: 1px solid #8b5e3c; border-radius: 6px; box-shadow: none;
+      background: #fff4d6; color: #5c3b21; font: inherit; font-size: 14px; cursor: pointer;
+    }
+    .rencontre-ligne button:hover, .rencontre-ajouter:hover { background: #f0e2c4; }
+    .rencontre-ligne button { color: #7a2222; border-color: #9b2c2c; background: #f7e2e2; padding: 6px 0; }
+    .rencontre-ajouter { justify-self: start; margin-top: 2px; }
     .formulaire .case { flex-direction: row; align-items: center; gap: 8px; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     .actions button {
@@ -89,6 +101,7 @@
       <button type="button" data-onglet="attaques">Attaques spéciales <span class="compte"></span></button>
       <button type="button" data-onglet="metamorphoses">Métamorphoses <span class="compte"></span></button>
       <button type="button" data-onglet="bestiaire">Bestiaire <span class="compte"></span></button>
+      <button type="button" data-onglet="rencontres">Rencontres <span class="compte"></span></button>
     </nav>
 
     <div class="modif-grille">
@@ -128,6 +141,7 @@
     // -----------------------------------------------------------------------
     let ref = { ecoles: [], sorts: [], attaques_speciales: { liste: [] }, metamorphoses: { formes: [] } };
     let modeles = [];
+    let rencontres = [];     // V2.4 : rencontres préparées
     let categories = [];
     let onglet = 'sorts';
     let selection = null;       // id de l'entrée ouverte, ou 'nouveau'
@@ -201,8 +215,23 @@
         filtre: () => [['', 'Toutes les catégories'], ...categories.map(c => [c.id, `${c.icone} ${c.nom}`])],
         filtrer: (m, v) => !v || m.categorie === v,
         nouveau: () => ({ nom: '', categorie: 'autre', icone: '', hp: { max: 10 }, mana: { max: 0 }, stats: {}, armes: [], spells: [], competences: [], description: '', notes: '' })
+      },
+      rencontres: {
+        entrees: () => rencontres,
+        meta: r => resumeRencontre(r),
+        filtre: () => [['', 'Toutes les rencontres']],
+        filtrer: () => true,
+        nouveau: () => ({ nom: '', notes: '', groupes: [{ templateId: modeles[0]?.id || '', quantite: 1, initiative: null }] })
       }
     };
+
+    // « 3 × Gobelin · 1 × Chef gobelin » (un modèle retiré du bestiaire est signalé).
+    function resumeRencontre(r) {
+      return (r.groupes || []).map(g => {
+        const modele = modeles.find(m => m.id === g.templateId);
+        return `${g.quantite} × ${modele ? modele.nom : '(modèle retiré)'}`;
+      }).join(' · ');
+    }
 
     function entreeCourante() {
       if (!selection || selection === 'nouveau') return null;
@@ -235,7 +264,7 @@
       const filtre = $('filtre').value;
       const liste = def.entrees()
         .filter(x => def.filtrer(x, filtre))
-        .filter(x => !texte || normal(`${x.nom} ${x.description || ''} ${x.armes || ''}`).includes(texte));
+        .filter(x => !texte || normal(`${x.nom} ${x.description || ''} ${x.armes || ''} ${x.notes || ''}`).includes(texte));
 
       $('liste').innerHTML = liste.length
         ? liste.map(x => `<button type="button" data-id="${escapeHtml(x.id)}" class="${x.id === selection ? 'actif' : ''}">
@@ -334,11 +363,40 @@
       ].join('');
     }
 
+    // V2.4 — Rencontre : nom, notes et lignes « modèle × quantité (initiative) ».
+    function ligneRencontre(g = {}) {
+      const choix = modeles.map(m => [m.id, `${m.icone || '👹'} ${m.nom}`]);
+      if (g.templateId && !modeles.some(m => m.id === g.templateId)) choix.unshift([g.templateId, '(modèle retiré du bestiaire)']);
+      return `<div class="rencontre-ligne">
+          <select data-r="modele" aria-label="Créature du bestiaire">${options(choix, g.templateId)}</select>
+          <input data-r="quantite" type="number" min="1" max="20" value="${escapeHtml(g.quantite ?? 1)}" aria-label="Quantité">
+          <input data-r="initiative" type="number" min="-99" max="999" placeholder="—" value="${escapeHtml(g.initiative ?? '')}" aria-label="Initiative (facultative)">
+          <button type="button" data-r="retirer" title="Retirer cette ligne">✖</button>
+        </div>`;
+    }
+
+    function formulaireRencontre(r) {
+      const sansModele = !modeles.length
+        ? '<p class="large liste-vide">Le bestiaire est vide : créez d\'abord des modèles dans l\'onglet Bestiaire.</p>' : '';
+      return [
+        champ('nom', 'Nom', saisie('nom', r.nom, 'required maxlength="120" placeholder="ex. Embuscade gobeline"'), true),
+        sansModele,
+        `<div class="large"><b>Créatures</b>
+          <div class="rencontre-lignes">
+            <div class="rencontre-entete"><span>Modèle du bestiaire</span><span>Nombre</span><span>Initiative</span><span></span></div>
+            <div id="rencontre-lignes">${(r.groupes || []).map(ligneRencontre).join('')}</div>
+            <button type="button" class="rencontre-ajouter" id="rencontre-ajouter">+ Ajouter une créature</button>
+          </div></div>`,
+        champ('notes', 'Notes MJ', `<textarea name="notes" style="min-height:70px" placeholder="Lieu, déclencheur, tactique…">${escapeHtml(r.notes)}</textarea>`, true)
+      ].join('');
+    }
+
     const AIDES = {
       sorts: 'Référence des sorts (sorts.json). Les dégâts de référence pré-remplissent la fiche ; chaque personnage peut ensuite les ajuster.',
       mineurs: 'Les sorts mineurs sont les sorts de niveau 0. Les dégâts de référence pré-remplissent la fiche.',
       attaques: 'Référence des attaques spéciales (sorts.json). Le niveau peut rester vide. ✨ = affinité magique.',
       metamorphoses: 'Formes animales des druides (sorts.json). En forme animale, le druide prend la FOR, la DEX et la CONST de la forme ; ses PV s\'ajoutent en PV bonus.',
+      rencontres: "Groupes de créatures du bestiaire, prêts à déployer depuis la carte MJ (onglet « Rencontres ») : un clic sur la carte les place. L'initiative, facultative, range les créatures dans un combat en cours ; sinon elle pré-remplit la préparation du combat.",
       bestiaire: "Modèles de créatures réutilisables. C'est le seul endroit où les créer, les modifier ou les supprimer ; la page MJ et la carte s'en servent pour ajouter des créatures à la partie. Les créatures déjà en jeu ne sont pas modifiées."
     };
 
@@ -353,7 +411,17 @@
       $('editeur').innerHTML = onglet === 'attaques' ? formulaireAttaque(entree)
         : onglet === 'metamorphoses' ? formulaireForme(entree)
         : onglet === 'bestiaire' ? formulaireModele(entree)
+        : onglet === 'rencontres' ? formulaireRencontre(entree)
         : formulaireSort(entree, onglet === 'mineurs');
+      if (onglet === 'rencontres') {
+        const lignesRencontre = $('rencontre-lignes');
+        $('rencontre-ajouter').addEventListener('click', () => {
+          lignesRencontre.insertAdjacentHTML('beforeend', ligneRencontre({ templateId: modeles[0]?.id || '', quantite: 1 }));
+        });
+        lignesRencontre.addEventListener('click', event => {
+          if (event.target.closest('[data-r="retirer"]')) event.target.closest('.rencontre-ligne').remove();
+        });
+      }
       $('editeur-actions').hidden = false;
       $('btn-dupliquer').disabled = id === 'nouveau';
       $('btn-supprimer').disabled = id === 'nouveau';
@@ -414,6 +482,16 @@
           description: val('description'), notes: val('notes')
         };
       }
+      if (onglet === 'rencontres') {
+        return {
+          nom: val('nom').trim(), notes: val('notes'),
+          groupes: [...f.querySelectorAll('.rencontre-ligne')].map(ligne => ({
+            templateId: ligne.querySelector('[data-r="modele"]').value,
+            quantite: Number(ligne.querySelector('[data-r="quantite"]').value) || 1,
+            initiative: ligne.querySelector('[data-r="initiative"]').value.trim() === '' ? null : Number(ligne.querySelector('[data-r="initiative"]').value)
+          })).filter(g => g.templateId)
+        };
+      }
       const sort = { nom: val('nom'), ecole: val('ecole'), duree: val('duree'), type_action: val('type_action'),
         element: val('element'), degats: val('degats'), description: val('description') };
       if (onglet === 'mineurs') sort.niveau = 0;
@@ -425,9 +503,10 @@
     const URLS = {
       sorts: '/api/reference/sorts', mineurs: '/api/reference/sorts',
       attaques: '/api/reference/attaques', metamorphoses: '/api/reference/metamorphoses',
-      bestiaire: '/api/mob-templates'
+      bestiaire: '/api/mob-templates',
+      rencontres: '/api/rencontres'
     };
-    const CLES_RESULTAT = { attaques: 'attaque', metamorphoses: 'forme', bestiaire: 'template' };
+    const CLES_RESULTAT = { attaques: 'attaque', metamorphoses: 'forme', bestiaire: 'template', rencontres: 'rencontre' };
     const cleResultat = () => CLES_RESULTAT[onglet] || 'sort';
 
     async function enregistrer() {
@@ -478,13 +557,15 @@
     // Chargement et navigation
     // -----------------------------------------------------------------------
     async function recharger() {
-      const [reference, tpl, cats] = await Promise.all([
+      const [reference, tpl, cats, prepares] = await Promise.all([
         fetch('/api/reference').then(r => r.json()),
         fetch('/api/mob-templates').then(r => r.json()),
-        categories.length ? categories : fetch('/api/mob-categories').then(r => r.json())
+        categories.length ? categories : fetch('/api/mob-categories').then(r => r.json()),
+        fetch('/api/rencontres').then(r => (r.ok ? r.json() : [])).catch(() => [])
       ]);
       ref = reference;
       modeles = Array.isArray(tpl) ? tpl : [];
+      rencontres = Array.isArray(prepares) ? prepares : [];
       categories = cats;
       majCompteurs();
       remplirFiltre();
@@ -515,6 +596,7 @@
     const socket = io({ query: { role: 'mj' } });
     socket.on('referenceUpdated', () => recharger().catch(() => {}));
     socket.on('mobTemplateUpdated', () => recharger().catch(() => {}));
+    socket.on('rencontresUpdated', () => recharger().catch(() => {}));
 
     recharger()
       .then(() => {

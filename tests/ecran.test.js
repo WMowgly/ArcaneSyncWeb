@@ -52,7 +52,8 @@ async function main() {
 
     // Valeurs par défaut.
     let r = await appel('GET', '/api/ecran');
-    verifier(r.donnees.groupe === true && r.donnees.cadrage === null && r.donnees.suivreActif === false && r.donnees.masquerMorts === true,
+    verifier(r.donnees.groupe === true && r.donnees.cadrage === null && r.donnees.suivreActif === false && r.donnees.masquerMorts === true
+      && r.donnees.rideau === false,
       `Réglages par défaut : bandeau affiché, carte entière, sans suivi (${JSON.stringify(r.donnees)}).`);
 
     // Le MJ règle l'Écran.
@@ -61,6 +62,14 @@ async function main() {
     r = await appel('GET', '/api/ecran');
     verifier(JSON.stringify(r.donnees.cadrage) === JSON.stringify({ x: 4, y: 2, w: 12, h: 8 }) && r.donnees.suivreActif === true && r.donnees.groupe === false,
       `Réglages enregistrés (${JSON.stringify(r.donnees)}).`);
+
+    // Rideau (V2.4) : baissé puis levé par le MJ, enregistré dans la partie.
+    r = await appel('POST', '/api/ecran', { rideau: true }, { mj: true });
+    verifier(r.donnees.rideau === true && JSON.parse(require('fs').readFileSync(bacDonnees.chemin('session.json'), 'utf8')).ecranRideau === true,
+      'Rideau baissé et enregistré.');
+    verifier((await appel('POST', '/api/ecran', { rideau: 'oui' }, { mj: true })).statut === 400, 'Rideau : booléen attendu.');
+    r = await appel('POST', '/api/ecran', { rideau: false }, { mj: true });
+    verifier(r.donnees.rideau === false, 'Rideau levé.');
 
     // Réservé au MJ, et valeurs contrôlées.
     verifier((await appel('POST', '/api/ecran', { cadrage: null })).statut === 403, 'Cadrage réservé au MJ.');

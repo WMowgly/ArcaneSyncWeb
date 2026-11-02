@@ -28,7 +28,7 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
 function creerBac() {
   const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'arcanesync-e2e-'));
   // Le tableau blanc part vide : les scénarios comptent les traits qu'ils tracent.
-  ['data.json', 'session.json', 'maps.json', 'mob_templates.json'].forEach(nom => {
+  ['data.json', 'session.json', 'maps.json', 'mob_templates.json', 'rencontres.json'].forEach(nom => {
     const source = path.join(DONNEES_TEST, nom);
     if (fs.existsSync(source)) fs.copyFileSync(source, path.join(dossier, nom));
   });

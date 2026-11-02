@@ -39,6 +39,7 @@ const FICHIERS = [
   'session.json',
   'maps.json',
   'mob_templates.json',
+  'rencontres.json',
   'tableau_dessins.json'
 ];
 

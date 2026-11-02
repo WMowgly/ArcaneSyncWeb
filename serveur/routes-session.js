@@ -195,7 +195,7 @@ app.post('/api/ecran', (req, res) => {
   if (refuserSiPasMj(req, res)) return;
   const { vue, ...reste } = req.body || {};
   const partiel = {};
-  ['masquerMorts', 'groupe', 'cadrage', 'suivreActif'].forEach(cle => {
+  ['masquerMorts', 'groupe', 'cadrage', 'suivreActif', 'rideau'].forEach(cle => {
     if (reste[cle] !== undefined) partiel[cle] = reste[cle];
   });
   if (vue === undefined && !Object.keys(partiel).length) {

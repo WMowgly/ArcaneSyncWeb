@@ -37,7 +37,7 @@ module.exports = {
       `tableau MJ : fiches avec jauges PV et Mana (${JSON.stringify(textes)})`);
     verifier(await page.attendre(`document.querySelector('${fiche}').classList.contains('actif') && actifId === 'player:${premier.id}'`, 20),
       'tableau MJ : combattant actif mis en avant (fiche et anneau doré)');
-    verifier(await page.evaluer("[...document.querySelectorAll('.tool-btn')].length === 4 && document.querySelectorAll('#nuancier button').length === 6"),
+    verifier(await page.evaluer("[...document.querySelectorAll('.outils .tool-btn')].length === 4 && !!document.getElementById('annuler-dessin') && document.querySelectorAll('#nuancier button').length === 6"),
       'tableau MJ : outils et nuancier au style de la carte MJ');
     verifier(await page.evaluer("getComputedStyle(document.body).fontFamily.includes('Segoe') && getComputedStyle(document.querySelector('h1')).fontFamily.includes('Uncial')"),
       'tableau MJ : texte lisible, titres en Uncial Antiqua (comme la carte MJ)');
@@ -47,6 +47,36 @@ module.exports = {
     verifier(await page.evaluer("selectedColor === '#9b2c2c' && document.getElementById('tool-draw').classList.contains('active')"),
       'tableau : une couleur du nuancier passe en mode dessin avec cette couleur');
     await page.capture('tableau-mj-style.png');
+
+    // --- Annuler (Ctrl + Z) : mon dernier tracé disparaît, partout -----------------------------
+    verifier(await page.evaluer("document.getElementById('annuler-dessin').disabled"), 'annuler : bouton inactif sans tracé');
+    // Le bac à sable démarre sans fichier de dessins.
+    const dessins = () => { try { return lireJson('tableau_dessins.json').traces || []; } catch (_) { return []; } };
+    const nbAvant = dessins().length;
+    const [cx, cy, cw, ch] = await page.evaluer("(() => { const r = document.getElementById('scene-canvas').getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()");
+    await page.souris('mousePressed', cx + cw * 0.3, cy + ch * 0.92);
+    for (let i = 1; i <= 8; i++) await page.souris('mouseMoved', cx + cw * (0.3 + i * 0.03), cy + ch * 0.92);
+    await page.souris('mouseReleased', cx + cw * 0.54, cy + ch * 0.92);
+    await page.attendre('false', 8);   // le fichier des dessins est écrit après 1 s
+    const monTrait = dessins().slice(-1)[0];
+    verifier(dessins().length === nbAvant + 1 && monTrait?.id && monTrait.auteur === 'mj', 'tracé enregistré avec son identifiant et son auteur (MJ)');
+    verifier(await page.evaluer("!document.getElementById('annuler-dessin').disabled"), 'annuler : bouton actif après un tracé');
+
+    // Un joueur ne peut pas annuler le tracé du MJ.
+    await page.evaluer(`new Promise(resoudre => {
+      const s = io({ query: { role: 'player', playerId: '${premier.id}' } });
+      s.on('connect', () => { s.emit('tableauAnnuler', { id: '${monTrait.id}' }); setTimeout(() => { s.close(); resoudre(true); }, 400); });
+    })`);
+    await page.attendre('false', 2);
+    verifier(dessins().some(t => t.id === monTrait.id), 'annuler : un joueur ne peut pas retirer le tracé du MJ');
+
+    // Ctrl + Z : retiré ici et dans le fichier.
+    await page.cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'z', code: 'KeyZ', windowsVirtualKeyCode: 90, modifiers: 2 });
+    await page.cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'z', code: 'KeyZ', windowsVirtualKeyCode: 90, modifiers: 2 });
+    verifier(await page.attendre(`!traces.some(t => t.id === '${monTrait.id}')`, 10), 'Ctrl + Z : le tracé disparaît du tableau');
+    await page.attendre('false', 8);
+    verifier(!dessins().some(t => t.id === monTrait.id) && dessins().length === nbAvant, 'Ctrl + Z : le tracé est retiré du fichier (tous les écrans)');
+    verifier(await page.evaluer("document.getElementById('annuler-dessin').disabled"), 'annuler : plus rien à annuler');
 
     // --- Sélection : clic sur un pion → fiche soulignée dans la liste (comme la carte) -------
     await page.cliquer('#tool-move');

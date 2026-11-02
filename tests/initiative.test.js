@@ -79,6 +79,41 @@ verifier(repare.tour === 0 && repare.round === 1 && repare.entrees[0].nom === 'p
 verifier(initiative.normaliserEtat(null).actif === false, 'Sans état : aucun combat.');
 console.log('PASS: initiative — tri, tours et rounds, retrait, créatures cachées, état réparé');
 
+// --- V2.4 : créatures mortes sautées ; ajout en cours de combat ------------------------
+{
+  const combat = initiative.demarrer([
+    { kind: 'player', entityId: 'p1', nom: 'Jayce', valeur: 20 },
+    { kind: 'mob', entityId: 'mort1', nom: 'Squelette', valeur: 15 },
+    { kind: 'mob', entityId: 'mort2', nom: 'Zombie', valeur: 12 },
+    { kind: 'player', entityId: 'p2', nom: 'Elarion', valeur: 10 }
+  ]).etat;
+  const horsJeu = entree => entree.entityId.startsWith('mort');
+  let r = initiative.avancerVivant(combat, initiative.suivant, horsJeu);
+  verifier(r.success && r.etat.entrees[r.etat.tour].nom === 'Elarion' && r.etat.round === 1, 'Suivant doit sauter les créatures mortes.');
+  r = initiative.avancerVivant(r.etat, initiative.suivant, horsJeu);
+  verifier(r.etat.entrees[r.etat.tour].nom === 'Jayce' && r.etat.round === 2, 'Suivant doit repasser au round suivant.');
+  r = initiative.avancerVivant(r.etat, initiative.precedent, horsJeu);
+  verifier(r.etat.entrees[r.etat.tour].nom === 'Elarion' && r.etat.round === 1, 'Précédent doit sauter les créatures mortes.');
+  const tousMorts = initiative.avancerVivant(combat, initiative.suivant, () => true);
+  verifier(tousMorts.success && tousMorts.etat.tour === 1, 'Tous hors jeu : le tour avance d\'un cran, sans boucle.');
+  verifier(initiative.avancerVivant(combat, initiative.suivant, null).etat.tour === 1, 'Sans critère : comportement habituel.');
+
+  // Ajout en cours de combat : rang selon la valeur, la main ne change pas.
+  const enCours = { ...combat, tour: 3 };   // Elarion joue
+  r = initiative.ajouter(enCours, [
+    { kind: 'mob', entityId: 'g1', nom: 'Gobelin #1', valeur: 14 },
+    { kind: 'mob', entityId: 'g2', nom: 'Gobelin #2', valeur: 0 },
+    { kind: 'player', entityId: 'p1', nom: 'Jayce', valeur: 99 }     // déjà présent : ignoré
+  ]);
+  const noms = r.etat.entrees.map(e => e.nom);
+  verifier(JSON.stringify(noms) === JSON.stringify(['Jayce', 'Squelette', 'Gobelin #1', 'Zombie', 'Elarion', 'Gobelin #2']),
+    `Ajout : rang selon la valeur (${noms.join(', ')}).`);
+  verifier(r.etat.entrees[r.etat.tour].nom === 'Elarion', 'Ajout : celui qui joue garde la main.');
+  verifier(!initiative.ajouter(initiative.normaliserEtat(null), [{ kind: 'mob', entityId: 'x', nom: 'X' }]).success,
+    'Ajout hors combat : refusé (les créatures attendent la préparation).');
+}
+console.log('PASS: initiative — créatures mortes sautées, ajout en cours de combat à son rang');
+
 // --- Routes (serveur réel) --------------------------------------------------------
 const PORT = 3290 + Math.floor(Math.random() * 50);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -129,6 +164,23 @@ async function appel(methode, route, corps, entetes = {}) {
 
     r = await appel('POST', '/api/initiative/terminer', {}, MJ);
     verifier(r.donnees.actif === false && r.donnees.entrees.length === 0, 'Terminer doit effacer le combat.');
+
+    // V2.4 — Une créature morte est sautée par « Suivant » et signalée.
+    const mort = (await appel('POST', '/api/mobs', { nom: 'Squelette brisé', hp: { max: 8, current: 0 } }, MJ)).donnees.mob;
+    verifier(mort?.statut === 'mort', 'Préparation : créature morte.');
+    r = await appel('POST', '/api/initiative/demarrer', { entrees: [
+      { kind: 'player', entityId: 'p1', nom: 'Jayce', valeur: 20 },
+      { kind: 'mob', entityId: mort.id, nom: mort.nom, valeur: 15 },
+      { kind: 'player', entityId: 'p2', nom: 'Elarion', valeur: 10 }
+    ] }, MJ);
+    verifier(r.donnees.entrees[1].horsJeu === true && !r.donnees.entrees[0].horsJeu, 'La créature morte doit être signalée « hors jeu ».');
+    r = await appel('POST', '/api/initiative/suivant', {}, MJ);
+    verifier(r.donnees.entrees[r.donnees.tour].nom === 'Elarion', '« Suivant » doit sauter la créature morte.');
+    r = await appel('POST', '/api/initiative/precedent', {}, MJ);
+    verifier(r.donnees.entrees[r.donnees.tour].nom === 'Jayce', '« Précédent » doit sauter la créature morte.');
+    r = await appel('GET', '/api/initiative');
+    verifier(r.donnees.entrees.some(e => e.horsJeu === true), 'La table voit aussi la créature morte barrée.');
+    await appel('POST', '/api/initiative/terminer', {}, MJ);
 
     const page = fs.readFileSync(path.join(__dirname, '..', 'website', 'ecran.html'), 'utf8');
     verifier(page.includes("socket.on('initiativeUpdated'") && page.includes('id="initiative"'), 'L\'Écran doit afficher l\'initiative.');

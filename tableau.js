@@ -20,6 +20,7 @@
 // ---------------------------------------------------------------------------
 
 const fs = require('fs');
+const crypto = require('crypto');
 const { creerDepot, cheminDonnees } = require('./storage');
 
 const MAX_ELEMENTS = 5000;   // au-delà, les plus anciens sont retirés
@@ -50,6 +51,17 @@ const taille = valeur => Math.max(1, Math.min(50, Number(valeur) || 1));
 // enregistrés redeviennent des coups de gomme.
 const ANCIEN_FOND = '#fffdf7';
 
+// V2.4 — Chaque dessin porte un identifiant (choisi par la page qui le trace,
+// pour pouvoir l'annuler) et son auteur (fixé par le serveur d'après la
+// connexion : « mj », « player:… »). Les anciens dessins n'en ont pas.
+const identifiant = valeur => (typeof valeur === 'string' && /^[\w:.-]{1,64}$/.test(valeur) ? valeur : null);
+const auteurValide = valeur => (typeof valeur === 'string' && valeur.length <= 160 ? valeur : null);
+function marques(element) {
+  const id = identifiant(element.id);
+  const auteur = auteurValide(element.auteur);
+  return { ...(id ? { id } : {}), ...(auteur ? { auteur } : {}) };
+}
+
 function normaliser(element) {
   if (!element || typeof element !== 'object') return null;
   const gomme = element.type !== 'texte' && (element.gomme === true || couleur(element.color) === ANCIEN_FOND);
@@ -61,7 +73,7 @@ function normaliser(element) {
     const y = nombre(element.y);
     const text = typeof element.text === 'string' ? element.text.trim().slice(0, MAX_TEXTE) : '';
     if (x === null || y === null || !text) return null;
-    return { type: 'texte', x, y, text, color, size: taille(element.size) };
+    return { type: 'texte', x, y, text, color, size: taille(element.size), ...marques(element) };
   }
 
   if (!Array.isArray(element.points)) return null;
@@ -70,24 +82,41 @@ function normaliser(element) {
     .filter(([x, y]) => x !== null && y !== null);
   if (points.length < 2) return null;
   return gomme
-    ? { type: 'trait', gomme: true, points, color, size: taille(element.size) }
-    : { type: 'trait', points, color, size: taille(element.size) };
+    ? { type: 'trait', gomme: true, points, color, size: taille(element.size), ...marques(element) }
+    : { type: 'trait', points, color, size: taille(element.size), ...marques(element) };
 }
 
 // Lecture initiale : après les fonctions de validation qu'elle utilise.
 let traces = lire();
 
-function ajouter(element) {
-  const propre = normaliser(element);
+function ajouter(element, auteur) {
+  // L'auteur vient de la connexion, jamais du message ; sans identifiant
+  // fourni, le serveur en attribue un.
+  const propre = normaliser({ ...element, auteur: auteur || null });
   if (!propre) return null;
+  if (!propre.id) propre.id = crypto.randomUUID();
+  if (traces.some(trace => trace.id === propre.id)) return null;   // déjà reçu
   traces.push(propre);
   if (traces.length > MAX_ELEMENTS) traces = traces.slice(-MAX_ELEMENTS);
   sauvegarder();
   return propre;
 }
 
-const ajouterTrait = trait => ajouter({ ...trait, type: 'trait' });
-const ajouterTexte = texte => ajouter({ ...texte, type: 'texte' });
+const ajouterTrait = (trait, auteur) => ajouter({ ...trait, type: 'trait' }, auteur);
+const ajouterTexte = (texte, auteur) => ajouter({ ...texte, type: 'texte' }, auteur);
+
+/**
+ * V2.4 — Annuler : retire un dessin. Permis à son auteur, et au MJ.
+ * Renvoie true si le dessin a été retiré.
+ */
+function retirer(id, demandeur) {
+  const index = traces.findIndex(trace => trace.id && trace.id === id);
+  if (index === -1) return false;
+  if (demandeur !== 'mj' && traces[index].auteur !== demandeur) return false;
+  traces.splice(index, 1);
+  sauvegarder();
+  return true;
+}
 
 function vider() {
   traces = [];
@@ -98,4 +127,4 @@ function getTraces() {
   return traces;
 }
 
-module.exports = { getTraces, ajouterTrait, ajouterTexte, vider, MAX_ELEMENTS };
+module.exports = { getTraces, ajouterTrait, ajouterTexte, retirer, vider, MAX_ELEMENTS };

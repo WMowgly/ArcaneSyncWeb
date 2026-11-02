@@ -47,7 +47,9 @@ function buildMapEntities() {
     statut: mob.statut || 'vivant',
     statuts: mob.statuts || [],
     description: mob.description || '',
-    notes: mob.notes || ''
+    notes: mob.notes || '',
+    // Rencontre d'origine : vue MJ seulement (voir map.entiteAffichable).
+    rencontre: mob.rencontre || null
   }));
 
   return { players, mobs };

@@ -80,6 +80,49 @@ function precedent(etat) {
   return { success: true, etat };
 }
 
+/**
+ * V2.4 — Tour suivant / précédent en sautant les combattants hors jeu
+ * (créatures mortes : un personnage à 0 PV garde son tour, pour ses jets de
+ * survie). `estHorsJeu(entree)` est fourni par l'appelant : ce module ne
+ * connaît pas les créatures. Si tous sont hors jeu, ou si l'on ne peut plus
+ * reculer, le résultat de la première opération est gardé.
+ */
+function avancerVivant(etat, operation, estHorsJeu) {
+  const premier = operation(etat);
+  if (!premier.success || typeof estHorsJeu !== 'function') return premier;
+  let resultat = premier;
+  for (let essai = 0; essai < resultat.etat.entrees.length; essai += 1) {
+    const courant = resultat.etat.entrees[resultat.etat.tour];
+    if (!courant || !estHorsJeu(courant)) return resultat;
+    const suite = operation(resultat.etat);
+    const immobile = suite.success && suite.etat.tour === resultat.etat.tour && suite.etat.round === resultat.etat.round;
+    if (!suite.success || immobile) return resultat;
+    resultat = suite;
+  }
+  return premier;
+}
+
+/**
+ * V2.4 — Ajoute des combattants à un combat en cours (rencontre déployée) :
+ * chacun prend son rang selon sa valeur (après ceux de valeur égale ou
+ * supérieure). Celui qui joue garde la main ; un combattant déjà présent
+ * n'est pas ajouté deux fois.
+ */
+function ajouter(etat, entrees) {
+  if (!etat.actif) return { success: false, message: 'Aucun combat en cours.' };
+  const presents = new Set(etat.entrees.map(entree => entree.id));
+  const nouvelles = normaliserEntrees(entrees).filter(entree => !presents.has(entree.id));
+  if (!nouvelles.length) return { success: true, etat };
+  const courant = etat.entrees[etat.tour]?.id;
+  const liste = etat.entrees.slice();
+  nouvelles.forEach(nouvelle => {
+    const rang = liste.findIndex(entree => entree.valeur < nouvelle.valeur);
+    liste.splice(rang === -1 ? liste.length : rang, 0, nouvelle);
+  });
+  const tour = Math.max(0, liste.findIndex(entree => entree.id === courant));
+  return { success: true, etat: { ...etat, entrees: liste, tour } };
+}
+
 /** Retire un combattant (mort, fuite) sans perdre le fil du tour. */
 function retirer(etat, id) {
   const index = etat.entrees.findIndex(entree => entree.id === id);
@@ -144,5 +187,7 @@ module.exports = {
   retirer,
   deplacer,
   basculerCache,
-  projectionTable
+  projectionTable,
+  avancerVivant,
+  ajouter
 };

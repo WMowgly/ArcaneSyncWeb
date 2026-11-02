@@ -94,8 +94,14 @@ window.ArcaneMap = (function () {
       cadrage: null,
       suivreActif: false,
       zoneEcranVisible: false,
-      apercuCadrage: null          // rectangle en cours de tracé (carte MJ)
+      apercuCadrage: null,         // rectangle en cours de tracé (carte MJ)
+      // V2.4 — « Pings » du MJ en cours d'animation : [{ x, y, debut }],
+      // en cases (fractions comprises).
+      pings: []
     };
+
+    // V2.4 — Durée d'un ping (ms) : quelques pulsations, puis il s'efface.
+    const DUREE_PING = 4000;
 
     // V2.4 — Taille de la zone suivie quand aucun cadrage n'est choisi.
     const SUIVI_PAR_DEFAUT = { w: 16, h: 10 };
@@ -1020,6 +1026,54 @@ window.ArcaneMap = (function () {
       if (state.apercuCadrage) rectangle(state.apercuCadrage, '#d4af37', 3, '🖥️ Nouveau cadrage');
     }
 
+    /**
+     * V2.4 — Pings : cercles qui s'élargissent et s'estompent, avec un point
+     * central, pour montrer un endroit à la table. Plus grands sur l'Écran.
+     */
+    function dessinerPings() {
+      if (!state.pings.length) return;
+      const g = grid();
+      const maintenant = performance.now();
+      state.pings = state.pings.filter(p => maintenant - p.debut < DUREE_PING);
+      state.pings.forEach(p => {
+        const age = (maintenant - p.debut) / DUREE_PING;          // 0 → 1
+        const cx = GUTTER + p.x * g.cellSize;
+        const cy = GUTTER + p.y * g.cellSize;
+        const ampleur = g.cellSize * (ECRAN ? 4 : 1.8);
+        ctx.save();
+        for (let onde = 0; onde < 3; onde += 1) {
+          const phase = ((maintenant - p.debut) / 900 + onde / 3) % 1;
+          ctx.beginPath();
+          ctx.arc(cx, cy, g.cellSize * 0.3 + phase * ampleur, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(214, 40, 40, ${(1 - phase) * (1 - age * 0.6)})`;
+          ctx.lineWidth = Math.max(2, g.cellSize / (ECRAN ? 5 : 10));
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, Math.max(4, g.cellSize / (ECRAN ? 3 : 5)), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(214, 40, 40, ${1 - age * 0.7})`;
+        ctx.shadowColor = 'rgba(255, 80, 80, 0.9)';
+        ctx.shadowBlur = Math.max(6, g.cellSize / 3);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    let animationPings = null;
+    function animerPings() {
+      render();
+      animationPings = state.pings.length ? requestAnimationFrame(animerPings) : null;
+    }
+
+    /** Ajoute un ping (en cases) et lance son animation. */
+    function pushPing(point) {
+      const x = Number(point?.x);
+      const y = Number(point?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      state.pings.push({ x, y, debut: performance.now() });
+      if (!animationPings) animationPings = requestAnimationFrame(animerPings);
+    }
+
     function dessinerSurvol() {
       if (!state.hoverCell || !inBounds(state.hoverCell)) return;
       const g = grid();
@@ -1071,6 +1125,7 @@ window.ArcaneMap = (function () {
 
       dessinerAura();
       dessinerZoneEcran();
+      dessinerPings();
       dessinerMesure();
       dessinerSurvol();
       dessinerCoordonnees();
@@ -1141,6 +1196,7 @@ window.ArcaneMap = (function () {
       },
       setGhost(ghost) { state.ghost = ghost; render(); },
       setOption(nom, valeur) { state[nom] = valeur; render(); },
+      pushPing,
 
       /** 1 = ajusté à l'espace disponible ; au-delà, le conteneur défile. */
       setZoom(valeur) {

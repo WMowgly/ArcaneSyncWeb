@@ -816,6 +816,15 @@ function candidatsAutourDeLAction(map) {
       }
     : { x: Math.floor(map.grid.cols / 2), y: Math.floor(map.grid.rows / 2) };
 
+  return candidatsAutourDe(map, centre);
+}
+
+/**
+ * Cases candidates en anneaux successifs autour d'un centre, du plus proche
+ * au plus lointain (V2.4 : aussi pour déployer une rencontre là où le MJ a
+ * cliqué).
+ */
+function candidatsAutourDe(map, centre) {
   const candidats = [];
   const portee = Math.max(map.grid.cols, map.grid.rows);
 
@@ -833,6 +842,42 @@ function candidatsAutourDeLAction(map) {
   }
 
   return [centre, ...candidats];
+}
+
+/**
+ * V2.4 — Place plusieurs entités groupées autour d'une case (rencontre
+ * préparée) : cases praticables et libres, les plus proches d'abord, en une
+ * seule écriture. `options.visibleToPlayers` : false pour une embuscade.
+ */
+function placerGroupe(mapId, entites = [], centre = {}, options = {}) {
+  return muterMap(mapId, brouillon => {
+    const pointDeDepart = {
+      x: entier(centre.x, Math.floor(brouillon.grid.cols / 2), 0, brouillon.grid.cols - 1),
+      y: entier(centre.y, Math.floor(brouillon.grid.rows / 2), 0, brouillon.grid.rows - 1)
+    };
+    const occupees = casesOccupees(brouillon);
+    const murs = cellulesBloquantes(brouillon, 'movement');
+    const candidats = candidatsAutourDe(brouillon, pointDeDepart);
+    const placements = [];
+
+    (Array.isArray(entites) ? entites : []).forEach(entite => {
+      const kind = entite?.kind === 'player' ? 'player' : 'mob';
+      const entityId = texte(entite?.entityId, '', 120);
+      if (!entityId) return;
+      const id = tokenIdPour(kind, entityId);
+      const position = trouverCaseLibre(brouillon, occupees, candidats, murs);
+      occupees.add(cellKey(position.x, position.y));
+      brouillon.tokens[id] = normaliserToken(
+        { kind, entityId, ...position, visibleToPlayers: options.visibleToPlayers !== false },
+        brouillon.grid,
+        { id }
+      );
+      placements.push({ tokenId: id, x: position.x, y: position.y });
+    });
+
+    if (!placements.length) return { success: false, message: 'Aucune créature à placer.' };
+    return { placements };
+  });
 }
 
 function placerToken(mapId, donnees = {}) {
@@ -878,6 +923,21 @@ function updateToken(mapId, tokenId, donnees = {}) {
     );
 
     return { tokenId };
+  });
+}
+
+/**
+ * V2.4 — Plusieurs jetons cachés ou montrés en une seule écriture (sous-liste
+ * d'une rencontre déployée). Les jetons absents de la carte sont ignorés.
+ */
+function definirVisibiliteTokens(mapId, tokenIds = [], visible = true) {
+  return muterMap(mapId, brouillon => {
+    const ids = [...new Set(Array.isArray(tokenIds) ? tokenIds : [])].filter(id => brouillon.tokens[id]);
+    if (!ids.length) return { success: false, message: 'Aucun jeton de ce groupe sur la carte.' };
+    ids.forEach(id => {
+      brouillon.tokens[id] = normaliserToken({ ...brouillon.tokens[id], visibleToPlayers: visible === true }, brouillon.grid, { id });
+    });
+    return { tokenIds: ids };
   });
 }
 
@@ -1704,6 +1764,8 @@ function entiteAffichable(entities, token, pourMj) {
     base.mana = source.mana || { current: 0, max: 0 };
     base.description = source.description || '';
     base.notes = source.notes || '';
+    // V2.4 : rencontre d'origine (sous-liste de la liste « Sur la carte »).
+    if (token.kind === 'mob') base.rencontre = source.rencontre || null;
   }
 
   return base;
@@ -1936,7 +1998,9 @@ module.exports = {
   duplicateMap,
 
   placerToken,
+  placerGroupe,
   updateToken,
+  definirVisibiliteTokens,
   retirerToken,
   deplacerToken,
   synchroniserTokens,

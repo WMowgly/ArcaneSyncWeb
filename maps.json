@@ -67,54 +67,6 @@
           "label": "",
           "gmNotes": ""
         },
-        "mob:mob_addc23d8e0371487": {
-          "id": "mob:mob_addc23d8e0371487",
-          "kind": "mob",
-          "entityId": "mob_addc23d8e0371487",
-          "x": 31,
-          "y": 4,
-          "size": 1,
-          "visibleToPlayers": true,
-          "locked": false,
-          "vision": {
-            "range": 6
-          },
-          "color": "#1e349d",
-          "label": "",
-          "gmNotes": ""
-        },
-        "mob:mob_edc09436bc24386c": {
-          "id": "mob:mob_edc09436bc24386c",
-          "kind": "mob",
-          "entityId": "mob_edc09436bc24386c",
-          "x": 33,
-          "y": 15,
-          "size": 1,
-          "visibleToPlayers": true,
-          "locked": false,
-          "vision": {
-            "range": 6
-          },
-          "color": "#7d3f3f",
-          "label": "",
-          "gmNotes": ""
-        },
-        "mob:mob_887fe0184f5eb319": {
-          "id": "mob:mob_887fe0184f5eb319",
-          "kind": "mob",
-          "entityId": "mob_887fe0184f5eb319",
-          "x": 31,
-          "y": 9,
-          "size": 1,
-          "visibleToPlayers": true,
-          "locked": false,
-          "vision": {
-            "range": 6
-          },
-          "color": "#7d3f3f",
-          "label": "",
-          "gmNotes": ""
-        },
         "player:char_bbab36ec3cfd4b9486aba0e7da726870": {
           "id": "player:char_bbab36ec3cfd4b9486aba0e7da726870",
           "kind": "player",
@@ -128,6 +80,86 @@
             "range": 6
           },
           "color": "#3f6287",
+          "label": "",
+          "gmNotes": ""
+        },
+        "mob:mob_d083fc770726915a": {
+          "id": "mob:mob_d083fc770726915a",
+          "kind": "mob",
+          "entityId": "mob_d083fc770726915a",
+          "x": 21,
+          "y": 13,
+          "size": 1,
+          "visibleToPlayers": true,
+          "locked": false,
+          "vision": {
+            "range": 6
+          },
+          "color": "#7d3f3f",
+          "label": "",
+          "gmNotes": ""
+        },
+        "mob:mob_1d9c63adf656c90e": {
+          "id": "mob:mob_1d9c63adf656c90e",
+          "kind": "mob",
+          "entityId": "mob_1d9c63adf656c90e",
+          "x": 20,
+          "y": 12,
+          "size": 1,
+          "visibleToPlayers": true,
+          "locked": false,
+          "vision": {
+            "range": 6
+          },
+          "color": "#7d3f3f",
+          "label": "",
+          "gmNotes": ""
+        },
+        "mob:mob_55f32a23df9227fa": {
+          "id": "mob:mob_55f32a23df9227fa",
+          "kind": "mob",
+          "entityId": "mob_55f32a23df9227fa",
+          "x": 20,
+          "y": 13,
+          "size": 1,
+          "visibleToPlayers": true,
+          "locked": false,
+          "vision": {
+            "range": 6
+          },
+          "color": "#7d3f3f",
+          "label": "",
+          "gmNotes": ""
+        },
+        "mob:mob_d9acd9c49d92b483": {
+          "id": "mob:mob_d9acd9c49d92b483",
+          "kind": "mob",
+          "entityId": "mob_d9acd9c49d92b483",
+          "x": 20,
+          "y": 14,
+          "size": 1,
+          "visibleToPlayers": true,
+          "locked": false,
+          "vision": {
+            "range": 6
+          },
+          "color": "#7d3f3f",
+          "label": "",
+          "gmNotes": ""
+        },
+        "mob:mob_82c79df41e411917": {
+          "id": "mob:mob_82c79df41e411917",
+          "kind": "mob",
+          "entityId": "mob_82c79df41e411917",
+          "x": 21,
+          "y": 12,
+          "size": 1,
+          "visibleToPlayers": true,
+          "locked": false,
+          "vision": {
+            "range": 6
+          },
+          "color": "#7d3f3f",
           "label": "",
           "gmNotes": ""
         }
@@ -144,7 +176,7 @@
         "revealed": []
       },
       "createdAt": "2026-10-26T21:44:04.677Z",
-      "updatedAt": "2026-11-01T21:08:28.856Z"
+      "updatedAt": "2026-11-02T13:21:58.384Z"
     }
   }
 }

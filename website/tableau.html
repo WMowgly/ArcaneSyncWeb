@@ -48,6 +48,7 @@
     .outils{display:flex;gap:4px}
     .tool-btn{width:38px;padding:7px 0;font-size:16px;line-height:1;text-align:center}
     .tool-btn.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
+    .tool-btn:disabled{opacity:.4;cursor:not-allowed}
     .separateur{width:1px;align-self:stretch;background:var(--bord-clair)}
     .nuancier{display:flex;gap:6px;align-items:center}
     .nuancier button{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid #fffdf6;box-shadow:0 0 0 1px var(--bord)}
@@ -71,6 +72,14 @@
     .entity-groupe-titre::before{content:'▾';display:inline-block;width:10px;transition:transform .15s}
     .entity-groupe:not([open]) > .entity-groupe-titre::before{transform:rotate(-90deg)}
     .entity-groupe-corps{display:grid;gap:5px;margin-top:5px}
+    .groupe-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* V2.4 — Sous-liste d'une rencontre déployée, dans MOB. */
+    .entity-groupe.sous-groupe{min-width:0;padding-left:7px;border-left:2px solid #c9a96e}
+    .sous-groupe > .entity-groupe-titre{margin:2px 0 0;font-size:11.5px;color:#7d3f3f}
+    /* Boutons sur une seconde ligne : le nom de la rencontre reste lisible. */
+    .sous-groupe > .entity-groupe-titre{flex-wrap:wrap;row-gap:3px}
+    .groupe-actions{display:flex;gap:4px;flex:1 0 100%;padding-left:16px}
+    .groupe-actions button{margin:0;padding:1px 8px;font-size:10.5px;line-height:1.4}
     .badge{display:inline-block;padding:1px 6px;border-radius:8px;background:#efe4cd;font-size:10px}
     .badge.hidden-badge{background:#f7e2e2;color:#7a2222}
     .badge.etat-statut{background:#efe0f3;color:#5b2d6b}
@@ -95,6 +104,7 @@
     .entity-item.selection{outline:2px solid #2b4c7e;outline-offset:1px}
     .entite-actions{display:flex;gap:4px;margin-top:6px}
     .entite-actions button{flex:1 1 0;min-width:0;padding:4px 2px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+    .entite-actions button.icone{flex:0 0 30px}
 
     /* Fenêtre « PV / PM » : la même que sur la carte MJ. */
     #entity-modal[hidden]{display:none}
@@ -168,6 +178,8 @@
             <button id="tool-text" type="button" class="tool-btn" title="Écrire un texte">📝</button>
             <button id="tool-erase" type="button" class="tool-btn" title="Gomme : efface les dessins, jamais les pions">🧽</button>
           </div>
+          <button id="annuler-dessin" type="button" class="tool-btn" disabled
+            title="Annuler mon dernier tracé, texte ou coup de gomme (Ctrl + Z)">↶</button>
           <span class="separateur"></span>
           <div class="nuancier" id="nuancier" role="group" aria-label="Couleur du tracé">
             <button type="button" data-couleur="#1f1a14" title="Noir" style="background:#1f1a14" class="active"></button>
@@ -252,6 +264,13 @@
     let traces = [];
     let traitEnCours = null;
     const FOND = '#fffdf7';
+    // V2.4 — Mes dessins (identifiants), du plus ancien au plus récent :
+    // « Annuler » (Ctrl + Z) retire le dernier. Le serveur n'accepte de
+    // retirer que les dessins de leur auteur (ou du MJ).
+    const mesDessins = [];
+    const boutonAnnuler = document.getElementById('annuler-dessin');
+    const nouvelId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    function majAnnuler(){ boutonAnnuler.disabled = !mesDessins.length; }
     // V2.4 — Combattant dont c'est le tour : anneau doré (« player:… »).
     let actifId = null;
     // V2.4 — Pion sélectionné par le MJ (sur le tableau ou dans la liste).
@@ -530,6 +549,7 @@
               <button type="button" data-act="stats" data-id="${id}" title="Modifier les PV, le mana${isMob ? ' et les statuts' : ''}">PV / PM</button>
               <button type="button" data-act="focus" data-id="${id}" title="Sélectionner sur le tableau">Voir</button>
               <button type="button" data-scene-visibility="${id}" title="${masque ? 'Montrer aux joueurs' : 'Cacher aux joueurs'} et à l'Écran">${masque ? 'Montrer' : 'Cacher'}</button>
+              ${isMob ? `<button type="button" data-act="retirer" data-id="${id}" class="danger icone" title="Retirer de la partie (tableau blanc, carte, initiative)">✖</button>` : ''}
             </div>`
           : '';
         const classes=['entity-item',isMob?'mob':'pj',masque?'cache':'',mort?'mort':'',actifId===token.id?'actif':'',selectionId===token.id?'selection':''].filter(Boolean).join(' ');
@@ -549,11 +569,33 @@
       ].filter(([,liste])=>liste.length);
       // Chaque groupe se replie ; l'état survit aux rafraîchissements et aux
       // rechargements (mémorisé dans le navigateur), comme sur la carte MJ.
-      tokenList.innerHTML=groupes.map(([titre,liste])=>`
-        <details class="entity-groupe" data-groupe="${titre}" ${groupesReplies.has(titre) ? '' : 'open'}>
-          <summary class="entity-groupe-titre">${titre} <span class="badge">${liste.length}</span></summary>
-          <div class="entity-groupe-corps">${liste.map(fiche).join('')}</div>
-        </details>`).join('');
+      const blocGroupe=(cle,titre,nombre,contenu,classe='',actions='')=>`
+        <details class="entity-groupe ${classe}" data-groupe="${escapeHtml(cle)}" ${groupesReplies.has(cle) ? '' : 'open'}>
+          <summary class="entity-groupe-titre"><span class="groupe-nom" title="${escapeHtml(titre)}">${escapeHtml(titre)}</span> <span class="badge">${nombre}</span>${actions}</summary>
+          <div class="entity-groupe-corps">${contenu}</div>
+        </details>`;
+      // V2.4 : dans MOB, les créatures d'une rencontre déployée forment une
+      // sous-liste nommée comme la rencontre (MJ seulement : les joueurs ne
+      // reçoivent pas cette information), avec ses boutons : tout cacher /
+      // montrer, tout retirer de la partie.
+      const actionsRencontre=r=>{
+        if(role!=='mj') return '';
+        const toutesCachees=r.liste.every(t=>t.visibleToPlayers===false);
+        const cle=escapeHtml(r.cle);
+        return `<span class="groupe-actions">
+            <button type="button" data-groupe-act="visibilite" data-deploiement="${cle}" data-visible="${toutesCachees}"
+              title="${toutesCachees ? 'Montrer' : 'Cacher'} toutes les créatures de cette rencontre aux joueurs et à l'Écran">${toutesCachees ? 'Montrer' : 'Cacher'}</button>
+            <button type="button" data-groupe-act="supprimer" data-deploiement="${cle}" data-titre="${escapeHtml(r.titre)}" data-nombre="${r.liste.length}"
+              class="danger" title="Retirer de la partie toutes les créatures de cette rencontre">✖ Supprimer</button>
+          </span>`;
+      };
+      const contenuMob=liste=>{
+        const {libres,groupes:rencontres}=ArcaneOutils.regrouperParRencontre(liste,t=>entityForToken(t)?.rencontre);
+        return libres.map(fiche).join('')+rencontres.map(r=>
+          blocGroupe(`rencontre:${r.cle}`,`⚔️ ${r.titre}`,r.liste.length,r.liste.map(fiche).join(''),'sous-groupe',actionsRencontre(r))).join('');
+      };
+      tokenList.innerHTML=groupes.map(([titre,liste])=>
+        blocGroupe(titre,titre,liste.length,titre==='MOB' ? contenuMob(liste) : liste.map(fiche).join(''))).join('');
       tokenList.querySelectorAll('details.entity-groupe').forEach(groupe=>{
         groupe.addEventListener('toggle',()=>{
           if(groupe.open) groupesReplies.delete(groupe.dataset.groupe);
@@ -586,7 +628,59 @@
             }
           });
         });
+        tokenList.querySelectorAll('[data-act="retirer"]').forEach(button=>
+          button.addEventListener('click',()=>retirerDeLaPartie(button.dataset.id).catch(error=>setStatus(error.message,true))));
+        // Boutons d'une sous-liste de rencontre (dans l'en-tête repliable).
+        tokenList.querySelectorAll('button[data-groupe-act]').forEach(button=>{
+          button.addEventListener('click',event=>{
+            event.preventDefault();   // ne replie pas le groupe
+            actionRencontre(button).catch(error=>setStatus(error.message,true));
+          });
+        });
       }
+    }
+
+    // Appel au serveur (MJ) : message d'erreur du serveur repris tel quel.
+    async function envoyer(methode,url,corps){
+      const response=await fetch(url,{
+        method:methode,
+        headers:{'Content-Type':'application/json'},
+        ...(corps===undefined ? {} : {body:JSON.stringify(corps)})
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.message||`Erreur HTTP ${response.status}`);
+      return data;
+    }
+
+    // V2.4 — Retirer une créature de la partie : elle quitte aussi la carte
+    // et l'initiative (un pion du tableau blanc existe pour chaque créature).
+    async function retirerDeLaPartie(tokenId){
+      const token=scene.tokens[tokenId];
+      if(!token || token.type!=='mob') return;
+      const nom=entityForToken(token)?.nom || 'cette créature';
+      if(!confirm(`Retirer « ${nom} » de la partie ?\n\nElle disparaît du tableau blanc, de la carte et de l'initiative.`)) return;
+      await envoyer('DELETE',`/api/mobs/${encodeURIComponent(token.entityId)}`);
+      if(selectionId===tokenId) selectionId=null;
+      setStatus(`« ${nom} » retirée de la partie.`);
+      await loadScene();
+    }
+
+    // V2.4 — Sous-liste d'une rencontre : tout cacher / montrer, ou tout
+    // retirer de la partie (la rencontre préparée reste dans Données de jeu).
+    async function actionRencontre(button){
+      const deploiement=encodeURIComponent(button.dataset.deploiement);
+      if(button.dataset.groupeAct==='visibilite'){
+        const data=await envoyer('PUT',`/api/session/scene/rencontres/deploiements/${deploiement}/visibilite`,
+          {visible:button.dataset.visible==='true'});
+        setStatus(data.message);
+        await loadScene();
+        return;
+      }
+      if(!confirm(`Retirer de la partie les ${button.dataset.nombre} créature(s) de « ${button.dataset.titre.replace(/^⚔️ /,'')} » ?\n\n`
+        +'Elles disparaissent du tableau blanc, de la carte et de l\'initiative. La rencontre préparée reste dans Données de jeu.')) return;
+      const data=await envoyer('DELETE',`/api/rencontres/deploiements/${deploiement}`);
+      setStatus(data.message);
+      await loadScene();
     }
 
     // Cacher / montrer un pion (créature ou personnage) aux joueurs et à
@@ -801,8 +895,10 @@
     function addText(point) {
       const text=prompt('Entrez votre texte :');
       if(!text) return;
-      const texte={type:'texte',x:point.x,y:point.y,text,color:selectedColor,size:drawSize};
+      const texte={type:'texte',id:nouvelId(),x:point.x,y:point.y,text,color:selectedColor,size:drawSize};
       traces.push(texte);
+      mesDessins.push(texte.id);
+      majAnnuler();
       dessinerTrace(texte);
       composer();
       socket.emit('text',texte);
@@ -813,16 +909,36 @@
       const trait=traitEnCours;
       traitEnCours=null;
       if(!trait || trait.points.length<2) return;
+      trait.id=nouvelId();
       traces.push(trait);
+      mesDessins.push(trait.id);
+      majAnnuler();
       socket.emit('tableauTrait',trait);
     }
+
+    /** Annule mon dernier dessin (trait, texte ou coup de gomme). */
+    function annulerDessin(){
+      const id=mesDessins.pop();
+      majAnnuler();
+      if(!id) return;
+      traces=traces.filter(trace=>trace.id!==id);
+      renderScene();
+      socket.emit('tableauAnnuler',{id});
+    }
+    boutonAnnuler.addEventListener('click',annulerDessin);
+    document.addEventListener('keydown',event=>{
+      if(!(event.ctrlKey||event.metaKey) || event.key.toLowerCase()!=='z' || event.shiftKey) return;
+      if(event.target.closest('input, textarea, select') || modaleTokenId) return;
+      event.preventDefault();
+      annulerDessin();
+    });
 
     // Outils : un intitulé court sous le tableau, comme sur la carte MJ.
     const AIDES={
       move: role==='mj'
         ? 'Glissez un pion pour le déplacer (tous les pions).'
         : 'Glissez votre pion pour le déplacer.',
-      draw: 'Glissez pour tracer. Visible en direct par toute la table, et enregistré.',
+      draw: 'Glissez pour tracer. Visible en direct par toute la table, et enregistré. Ctrl + Z annule votre dernier tracé.',
       text: 'Cliquez pour poser un texte.',
       erase: 'Glissez pour gommer les dessins : le fond et les pions ne sont jamais effacés.'
     };
@@ -1015,6 +1131,17 @@
     socket.on('clearDrawings',()=>{
       traces=[];
       traitEnCours=null;
+      mesDessins.length=0;
+      majAnnuler();
+      renderScene();
+    });
+
+    // V2.4 — Un dessin annulé (ici ou sur un autre poste) disparaît partout.
+    socket.on('tableauRetire',({id}={})=>{
+      if(!id) return;
+      traces=traces.filter(trace=>trace.id!==id);
+      const index=mesDessins.indexOf(id);
+      if(index!==-1){ mesDessins.splice(index,1); majAnnuler(); }
       renderScene();
     });
 

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+    "nom": "Bataillon",
+    "notes": "",
+    "groupes": [
+      {
+        "templateId": "mobtpl_f7b99faf4c9317a0",
+        "quantite": 1,
+        "initiative": null
+      },
+      {
+        "templateId": "mobtpl_44dc34336d969672",
+        "quantite": 4,
+        "initiative": null
+      }
+    ],
+    "createdAt": "2026-11-02T12:43:16.017Z",
+    "updatedAt": "2026-11-02T12:43:16.017Z"
+  }
+]

@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-11-02T00:02:43.403Z",
+  "lastSaved": "2026-11-02T13:21:42.359Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -24,8 +24,8 @@
           "current": 12
         },
         "protection": {
-          "max": 0,
-          "current": 0
+          "max": 1,
+          "current": 1
         }
       },
       "bonus_vie": 0,
@@ -40,7 +40,7 @@
         "chance": 0,
         "intelligence": 0
       },
-      "lastSaved": "2026-10-29T22:53:49.727Z",
+      "lastSaved": "2026-11-02T12:41:01.439Z",
       "personalNotes": "",
       "privateMessages": [
         {
@@ -109,7 +109,8 @@
           false,
           false
         ]
-      }
+      },
+      "revision": 1
     },
     "char_d3716eaec00e4dd59c29d950599d1dad": {
       "id": "char_d3716eaec00e4dd59c29d950599d1dad",
@@ -517,12 +518,12 @@
       "createdAt": "2026-10-26T22:06:26.858Z",
       "updatedAt": "2026-10-26T22:06:26.858Z"
     },
-    "mob_edc09436bc24386c": {
-      "id": "mob_edc09436bc24386c",
-      "nom": "Créature #2",
-      "categorie": "autre",
-      "icone": "👹",
-      "templateId": "",
+    "mob_4292ad3b7416e766": {
+      "id": "mob_4292ad3b7416e766",
+      "nom": "Commandant",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_f7b99faf4c9317a0",
       "description": "",
       "stats": {
         "force": 0,
@@ -535,14 +536,14 @@
         "intelligence": 0
       },
       "hp": {
-        "max": 0,
-        "current": 0
+        "max": 20,
+        "current": 20
       },
       "mana": {
-        "max": 0,
-        "current": 0
+        "max": 20,
+        "current": 20
       },
-      "statut": "mort",
+      "statut": "vivant",
       "statuts": [],
       "armure": {
         "type": "",
@@ -562,15 +563,16 @@
       "spells": [],
       "competences": [],
       "notes": "",
-      "createdAt": "2026-10-28T19:43:47.711Z",
-      "updatedAt": "2026-10-28T19:43:47.711Z"
+      "initiative": null,
+      "createdAt": "2026-11-02T12:42:21.759Z",
+      "updatedAt": "2026-11-02T12:43:32.830Z"
     },
-    "mob_887fe0184f5eb319": {
-      "id": "mob_887fe0184f5eb319",
-      "nom": "Créature #3",
-      "categorie": "autre",
-      "icone": "👹",
-      "templateId": "",
+    "mob_58e63b683e3892c2": {
+      "id": "mob_58e63b683e3892c2",
+      "nom": "Soldat",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
       "description": "",
       "stats": {
         "force": 0,
@@ -583,14 +585,14 @@
         "intelligence": 0
       },
       "hp": {
-        "max": 0,
-        "current": 0
+        "max": 10,
+        "current": 10
       },
       "mana": {
-        "max": 0,
-        "current": 0
+        "max": 10,
+        "current": 10
       },
-      "statut": "mort",
+      "statut": "vivant",
       "statuts": [],
       "armure": {
         "type": "",
@@ -610,8 +612,431 @@
       "spells": [],
       "competences": [],
       "notes": "",
-      "createdAt": "2026-10-28T19:43:50.262Z",
-      "updatedAt": "2026-10-28T19:43:50.262Z"
+      "initiative": null,
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T12:43:32.846Z"
+    },
+    "mob_056b1efff68d0980": {
+      "id": "mob_056b1efff68d0980",
+      "nom": "Soldat #2",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T12:43:32.851Z"
+    },
+    "mob_b8a792991b7431bf": {
+      "id": "mob_b8a792991b7431bf",
+      "nom": "Soldat #3",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T12:43:32.855Z"
+    },
+    "mob_658337b49a3edc5d": {
+      "id": "mob_658337b49a3edc5d",
+      "nom": "Soldat #4",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T12:43:32.860Z"
+    },
+    "mob_d083fc770726915a": {
+      "id": "mob_d083fc770726915a",
+      "nom": "Commandant #2",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_f7b99faf4c9317a0",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 20,
+        "current": 20
+      },
+      "mana": {
+        "max": 20,
+        "current": 20
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "rencontre": {
+        "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+        "nom": "Bataillon",
+        "deploiement": "141b430c-9c08-473a-9fac-e4d12c41631d",
+        "le": "2026-11-02T13:04:48.817Z"
+      },
+      "createdAt": "2026-11-02T12:42:21.759Z",
+      "updatedAt": "2026-11-02T13:04:48.818Z"
+    },
+    "mob_1d9c63adf656c90e": {
+      "id": "mob_1d9c63adf656c90e",
+      "nom": "Soldat #5",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "rencontre": {
+        "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+        "nom": "Bataillon",
+        "deploiement": "141b430c-9c08-473a-9fac-e4d12c41631d",
+        "le": "2026-11-02T13:04:48.817Z"
+      },
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T13:04:48.824Z"
+    },
+    "mob_55f32a23df9227fa": {
+      "id": "mob_55f32a23df9227fa",
+      "nom": "Soldat #6",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "rencontre": {
+        "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+        "nom": "Bataillon",
+        "deploiement": "141b430c-9c08-473a-9fac-e4d12c41631d",
+        "le": "2026-11-02T13:04:48.817Z"
+      },
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T13:04:48.830Z"
+    },
+    "mob_d9acd9c49d92b483": {
+      "id": "mob_d9acd9c49d92b483",
+      "nom": "Soldat #7",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "rencontre": {
+        "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+        "nom": "Bataillon",
+        "deploiement": "141b430c-9c08-473a-9fac-e4d12c41631d",
+        "le": "2026-11-02T13:04:48.817Z"
+      },
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T13:04:48.835Z"
+    },
+    "mob_82c79df41e411917": {
+      "id": "mob_82c79df41e411917",
+      "nom": "Soldat #8",
+      "categorie": "humanoide",
+      "icone": "🗡️",
+      "templateId": "mobtpl_44dc34336d969672",
+      "description": "",
+      "stats": {
+        "force": 0,
+        "dexterite": 0,
+        "magie": 0,
+        "constitution": 0,
+        "charisme": 0,
+        "perception": 0,
+        "chance": 0,
+        "intelligence": 0
+      },
+      "hp": {
+        "max": 10,
+        "current": 10
+      },
+      "mana": {
+        "max": 10,
+        "current": 10
+      },
+      "statut": "vivant",
+      "statuts": [],
+      "armure": {
+        "type": "",
+        "resistance": "",
+        "durabilite": {
+          "max": 0,
+          "current": 0
+        },
+        "protection": {
+          "max": 0,
+          "current": 0
+        }
+      },
+      "bonus_vie": 0,
+      "intox": 0,
+      "armes": [],
+      "spells": [],
+      "competences": [],
+      "notes": "",
+      "initiative": null,
+      "rencontre": {
+        "id": "rencontre_50e302f2-75b6-4dee-8cde-22bc4f6202ce",
+        "nom": "Bataillon",
+        "deploiement": "141b430c-9c08-473a-9fac-e4d12c41631d",
+        "le": "2026-11-02T13:04:48.817Z"
+      },
+      "createdAt": "2026-11-02T12:42:40.946Z",
+      "updatedAt": "2026-11-02T13:04:48.841Z"
     }
   },
   "publicNotes": [
@@ -672,22 +1097,6 @@
         "y": 0.18,
         "visibleToPlayers": false
       },
-      "mob:mob_edc09436bc24386c": {
-        "id": "mob:mob_edc09436bc24386c",
-        "type": "mob",
-        "entityId": "mob_edc09436bc24386c",
-        "x": 0.12,
-        "y": 0.36,
-        "visibleToPlayers": true
-      },
-      "mob:mob_887fe0184f5eb319": {
-        "id": "mob:mob_887fe0184f5eb319",
-        "type": "mob",
-        "entityId": "mob_887fe0184f5eb319",
-        "x": 0.26821608040201006,
-        "y": 0.416741064616612,
-        "visibleToPlayers": true
-      },
       "mob:mob_e5ff92276d1dc841": {
         "id": "mob:mob_e5ff92276d1dc841",
         "type": "mob",
@@ -695,15 +1104,96 @@
         "x": 0.7638190954773869,
         "y": 0.4212053503308978,
         "visibleToPlayers": true
+      },
+      "mob:mob_4292ad3b7416e766": {
+        "id": "mob:mob_4292ad3b7416e766",
+        "type": "mob",
+        "entityId": "mob_4292ad3b7416e766",
+        "x": 0.57,
+        "y": 0.36,
+        "visibleToPlayers": true
+      },
+      "mob:mob_58e63b683e3892c2": {
+        "id": "mob:mob_58e63b683e3892c2",
+        "type": "mob",
+        "entityId": "mob_58e63b683e3892c2",
+        "x": 0.72,
+        "y": 0.36,
+        "visibleToPlayers": true
+      },
+      "mob:mob_056b1efff68d0980": {
+        "id": "mob:mob_056b1efff68d0980",
+        "type": "mob",
+        "entityId": "mob_056b1efff68d0980",
+        "x": 0.87,
+        "y": 0.36,
+        "visibleToPlayers": true
+      },
+      "mob:mob_b8a792991b7431bf": {
+        "id": "mob:mob_b8a792991b7431bf",
+        "type": "mob",
+        "entityId": "mob_b8a792991b7431bf",
+        "x": 0.12,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_658337b49a3edc5d": {
+        "id": "mob:mob_658337b49a3edc5d",
+        "type": "mob",
+        "entityId": "mob_658337b49a3edc5d",
+        "x": 0.27,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_d083fc770726915a": {
+        "id": "mob:mob_d083fc770726915a",
+        "type": "mob",
+        "entityId": "mob_d083fc770726915a",
+        "x": 0.42,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_1d9c63adf656c90e": {
+        "id": "mob:mob_1d9c63adf656c90e",
+        "type": "mob",
+        "entityId": "mob_1d9c63adf656c90e",
+        "x": 0.57,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_55f32a23df9227fa": {
+        "id": "mob:mob_55f32a23df9227fa",
+        "type": "mob",
+        "entityId": "mob_55f32a23df9227fa",
+        "x": 0.72,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_d9acd9c49d92b483": {
+        "id": "mob:mob_d9acd9c49d92b483",
+        "type": "mob",
+        "entityId": "mob_d9acd9c49d92b483",
+        "x": 0.87,
+        "y": 0.54,
+        "visibleToPlayers": true
+      },
+      "mob:mob_82c79df41e411917": {
+        "id": "mob:mob_82c79df41e411917",
+        "type": "mob",
+        "entityId": "mob_82c79df41e411917",
+        "x": 0.12,
+        "y": 0.72,
+        "visibleToPlayers": true
       }
     }
   },
   "activeMapId": "map_97a4b44fe820c8b5",
-  "ecranVue": "tableau",
+  "ecranVue": "carte",
   "ecranMasquerMorts": true,
   "ecranGroupe": true,
   "ecranCadrage": null,
   "ecranSuivreActif": false,
+  "ecranRideau": false,
   "initiative": {
     "actif": false,
     "round": 1,

@@ -66,9 +66,21 @@
     #initiative li { padding: 5px 8px; border-radius: 6px; border: 1px solid #e0cfa9; background: #fffdf6; font-size: 15px; }
     #initiative li.courant { border: 2px solid var(--bord); background: #f3e3c8; font-weight: 700; }
     #initiative li.courant::before { content: '▶ '; }
+    #initiative li.hors-jeu { opacity: .5; text-decoration: line-through; }
     #initiative-cache { margin: 6px 0 0; font-size: 13px; font-style: italic; opacity: .8; }
     /* Le panneau d'initiative reste sur la carte, à gauche de la colonne du groupe. */
     body.avec-groupe #initiative { right: calc(var(--largeur-groupe) + 12px); }
+
+    /* V2.4 — Rideau baissé par le MJ : rien de la partie n'est visible, pas
+       même le nom de la carte. */
+    #rideau {
+      position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      background: radial-gradient(circle at center, #4a3423 0%, #2a1d12 70%, #1a120b 100%); color: #f4e6c8;
+    }
+    #rideau[hidden] { display: none; }
+    #rideau img { width: min(140px, 22vw); opacity: .9; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .5)); }
+    #rideau p { margin: 0; font-family: 'Uncial Antiqua', cursive; font-size: clamp(22px, 3.4vw, 46px); text-align: center; }
 
     /* V2.4 — PV du groupe : colonne à droite de la carte, lisible de loin. */
     :root { --largeur-groupe: 250px; }
@@ -131,6 +143,12 @@
     <!-- Chargé à la première ouverture : le tableau blanc en spectateur. -->
   </section>
 
+  <!-- V2.4 : rideau baissé par le MJ (préparation). -->
+  <div id="rideau" hidden aria-live="polite">
+    <img src="img/icon.png" alt="">
+    <p>La partie reprend dans un instant…</p>
+  </div>
+
   <!-- V2.4 : PV du groupe, à droite de la carte comme du tableau blanc. -->
   <aside id="groupe" hidden aria-label="Points de vie du groupe"></aside>
   </div><!-- fin de .ecran-corps -->
@@ -168,6 +186,8 @@
 
     socket.on('mapState', appliquerCarte);
     socket.on('mapDrawPreview', apercu => renderer.pushPreview(apercu));
+    // V2.4 — Ping du MJ : cercle pulsant à l'endroit montré.
+    socket.on('mapPing', ping => { if (ping?.mapId && ping.mapId === renderer.state.map?.id) renderer.pushPing(ping); });
     socket.on('connect', () => {
       statut.textContent = '🟢 Synchronisé';
       socket.emit('mapRequest');
@@ -213,12 +233,13 @@
       if (panneau.hidden) return;
       document.getElementById('initiative-round').textContent = etat.round;
       document.getElementById('initiative-ordre').innerHTML = etat.entrees.map(e =>
-        `<li class="${e.id === etat.courant ? 'courant' : ''}">${e.kind === 'mob' ? '👹' : '👤'} ${echapper(e.nom)}</li>`).join('');
+        `<li class="${e.id === etat.courant ? 'courant' : ''}${e.horsJeu ? ' hors-jeu' : ''}">${e.horsJeu ? '💀' : e.kind === 'mob' ? '👹' : '👤'} ${echapper(e.nom)}</li>`).join('');
       document.getElementById('initiative-cache').hidden = etat.courant !== null;
     }
 
     socket.on('initiativeUpdated', chargerInitiative);
     socket.on('connect', chargerInitiative);
+    socket.on('mobUpdated', chargerInitiative);   // créature morte : barrée sans attendre
 
     // --- V2.4 : bandeau des PV du groupe -----------------------------------
     // Les personnages seulement, barres et chiffres. Les PV sont déjà publics
@@ -262,6 +283,7 @@
     // --- V2.4 : réglages du MJ (bandeau, cadrage, suivi du combattant) -------
     socket.on('ecranReglages', (nouveaux = {}) => {
       reglages = { ...reglages, ...nouveaux };
+      document.getElementById('rideau').hidden = reglages.rideau !== true;
       renderer.setOption('suivreActif', reglages.suivreActif === true);
       renderer.setOption('cadrage', reglages.cadrage || null);
       renderGroupe();

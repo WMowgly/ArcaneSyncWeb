@@ -178,7 +178,9 @@ function getSceneState(viewerRole='viewer', viewerPlayerId=null) {
           id: mob.id,
           nom: mob.nom || 'Mob',
           hp: mob.hp || {current:0,max:0},
-          ...(isMj ? { mana: mob.mana || {current:0,max:0} } : {}),
+          // V2.4 : la rencontre d'origine (sous-liste des participants) est
+          // un secret du MJ, comme le mana.
+          ...(isMj ? { mana: mob.mana || {current:0,max:0}, rencontre: mob.rencontre || null } : {}),
           statut: mob.statut || 'vivant'
         }))
     }
@@ -195,38 +197,47 @@ function setMobSceneVisibility(mobId, visible) {
  * personnage, à son propre joueur).
  */
 function setSceneTokenVisibility(tokenId, visible) {
-  const scene = ensureSceneState();
-  const token = scene.tokens[tokenId];
-  if (!token) return {success:false,message:'Pion introuvable dans la scène.'};
-  const mobId = token.entityId;
-
-  const nouvelleSession = {
-    ...session,
-    scene: {
-      ...session.scene,
-      tokens: {
-        ...session.scene.tokens,
-        [tokenId]: {
-          ...session.scene.tokens[tokenId],
-          visibleToPlayers: Boolean(visible)
-        }
-      }
-    },
-    lastSaved:new Date().toISOString()
-  };
-
-  if(!ecrireSession(nouvelleSession)) {
-    return {success:false,message:'Impossible de sauvegarder la visibilité du mob.'};
-  }
-
-  session=nouvelleSession;
+  const resultat = setSceneTokensVisibility([tokenId], visible);
+  if (!resultat.success) return resultat;
   return {
     success:true,
-    mobId,
+    mobId:session.scene.tokens[tokenId].entityId,
     visibleToPlayers:Boolean(visible)
   };
 }
 
+/**
+ * V2.4 — Plusieurs pions cachés ou montrés en une seule écriture (sous-liste
+ * d'une rencontre déployée). Les pions absents de la scène sont ignorés.
+ */
+function setSceneTokensVisibility(tokenIds, visible) {
+  const scene = ensureSceneState();
+  const ids = [...new Set(Array.isArray(tokenIds) ? tokenIds : [])].filter(id => scene.tokens[id]);
+  if (!ids.length) return {success:false,message:'Pion introuvable dans la scène.'};
+
+  const tokens = { ...session.scene.tokens };
+  ids.forEach(id => { tokens[id] = { ...tokens[id], visibleToPlayers: Boolean(visible) }; });
+  const nouvelleSession = {
+    ...session,
+    scene: { ...session.scene, tokens },
+    lastSaved:new Date().toISOString()
+  };
+
+  if(!ecrireSession(nouvelleSession)) {
+    return {success:false,message:'Impossible de sauvegarder la visibilité.'};
+  }
+
+  session=nouvelleSession;
+  return { success:true, tokenIds:ids, visibleToPlayers:Boolean(visible) };
+}
+
+/**
+ * Met la scène en cohérence avec la partie et la renvoie COMPLÈTE (vue MJ,
+ * pions cachés compris) : usage interne au serveur, jamais envoyée telle
+ * quelle. V2.4 : renvoyait la vue d'un spectateur, sans les pions cachés ;
+ * un pion caché ne pouvait plus être montré ni déplacé, et « Replacer les
+ * pions » le rendait visible.
+ */
 function ensureSceneState() {
   const raw = session.scene || DEFAULT_SCENE;
   const tokens = buildSceneTokens(raw.tokens || {});
@@ -236,12 +247,12 @@ function ensureSceneState() {
     gridSize: raw.gridSize || DEFAULT_SCENE.gridSize,
     tokens
   };
-  if (JSON.stringify(session.scene || {}) === JSON.stringify(next)) return getSceneState();
+  if (JSON.stringify(session.scene || {}) === JSON.stringify(next)) return getSceneState('mj');
 
   const nouvelleSession = {...session, scene:next, lastSaved:new Date().toISOString()};
-  if (!ecrireSession(nouvelleSession)) return getSceneState();
+  if (!ecrireSession(nouvelleSession)) return getSceneState('mj');
   session = nouvelleSession;
-  return getSceneState();
+  return getSceneState('mj');
 }
 
 function moveSceneToken(tokenId, x, y, role, playerId) {
@@ -315,6 +326,8 @@ let session = {
   ecranGroupe: true,
   ecranCadrage: null,
   ecranSuivreActif: false,
+  // V2.4 : rideau baissé = l'Écran masque tout (préparation du MJ).
+  ecranRideau: false,
   // Ordre d'initiative du combat en cours (voir initiative.js).
   initiative: null,
   // Règles des repos court / long, choisies par le MJ (voir repos.js).
@@ -385,6 +398,7 @@ function lireSession() {
       ecranGroupe: donnees.ecranGroupe !== false,
       ecranCadrage: normaliserCadrage(donnees.ecranCadrage),
       ecranSuivreActif: donnees.ecranSuivreActif === true,
+      ecranRideau: donnees.ecranRideau === true,
       initiative: initiativeModele.normaliserEtat(donnees.initiative),
       repos: reposModele.normaliserRegles(donnees.repos)
     };
@@ -570,6 +584,7 @@ function importerSession(nouvelleSession) {
     ecranGroupe: nouvelleSession.ecranGroupe !== false,
     ecranCadrage: normaliserCadrage(nouvelleSession.ecranCadrage),
     ecranSuivreActif: nouvelleSession.ecranSuivreActif === true,
+    ecranRideau: nouvelleSession.ecranRideau === true,
     initiative: initiativeModele.normaliserEtat(nouvelleSession.initiative),
     repos: reposModele.normaliserRegles(nouvelleSession.repos)
   };
@@ -911,7 +926,8 @@ function getEcranReglages() {
     masquerMorts: getEcranMasquerMorts(),
     groupe: session.ecranGroupe !== false,
     cadrage: normaliserCadrage(session.ecranCadrage),
-    suivreActif: session.ecranSuivreActif === true
+    suivreActif: session.ecranSuivreActif === true,
+    rideau: session.ecranRideau === true
   };
 }
 
@@ -920,7 +936,7 @@ function getEcranReglages() {
  * `partiel` : { masquerMorts?, groupe?, suivreActif? (booléens), cadrage? (rectangle ou null) }.
  */
 function setEcranReglages(partiel = {}) {
-  const BOOLEENS = { masquerMorts: 'ecranMasquerMorts', groupe: 'ecranGroupe', suivreActif: 'ecranSuivreActif' };
+  const BOOLEENS = { masquerMorts: 'ecranMasquerMorts', groupe: 'ecranGroupe', suivreActif: 'ecranSuivreActif', rideau: 'ecranRideau' };
   const changements = {};
   for (const [cle, champ] of Object.entries(BOOLEENS)) {
     if (partiel[cle] === undefined) continue;
@@ -1014,23 +1030,32 @@ function initiativeSans(kind, entityId) {
   return resultat.success ? resultat.etat : etat;
 }
 
-function supprimerMobSession(id) {
-  if (!session.mobs?.[id]) return false;
+/**
+ * V2.4 — Plusieurs créatures retirées de la partie en une seule écriture
+ * (suppression d'une rencontre déployée). Résultat : { success, nombre }.
+ */
+function supprimerMobsSession(ids) {
+  const presents = [...new Set(Array.isArray(ids) ? ids : [])].filter(id => session.mobs?.[id]);
+  if (!presents.length) return { success: true, nombre: 0 };
 
   const mobs = { ...session.mobs };
-  delete mobs[id];
+  let initiative = initiativeModele.normaliserEtat(session.initiative);
+  presents.forEach(id => {
+    delete mobs[id];
+    // Une créature retirée de la partie quitte aussi l'ordre d'initiative.
+    const resultat = initiativeModele.retirer(initiative, `mob:${id}`);
+    if (resultat.success) initiative = resultat.etat;
+  });
 
-  const nouvelleSession = {
-    ...session,
-    mobs,
-    // Un mob retiré de la partie quitte aussi l'ordre d'initiative.
-    initiative: initiativeSans('mob', id),
-    lastSaved: new Date().toISOString()
-  };
-
-  if (!ecrireSession(nouvelleSession)) return false;
+  const nouvelleSession = { ...session, mobs, initiative, lastSaved: new Date().toISOString() };
+  if (!ecrireSession(nouvelleSession)) return { success: false, nombre: 0 };
   session = nouvelleSession;
-  return true;
+  return { success: true, nombre: presents.length };
+}
+
+function supprimerMobSession(id) {
+  const resultat = supprimerMobsSession([id]);
+  return resultat.success && resultat.nombre === 1;
 }
 
 /**
@@ -1117,6 +1142,7 @@ module.exports = {
   resetScenePositions,
   setMobSceneVisibility,
   setSceneTokenVisibility,
+  setSceneTokensVisibility,
   getActiveMapId,
   setActiveMapId,
   getEcranVue,
@@ -1134,5 +1160,6 @@ module.exports = {
   getSessionMobById,
   sauvegarderMobSession,
   supprimerMobSession,
+  supprimerMobsSession,
   supprimerJoueurSession
 };

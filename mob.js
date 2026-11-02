@@ -96,6 +96,24 @@ function nommerInstance(nomBase, mobsExistants = {}) {
   return freres.length ? `${base} #${freres.length + 1}` : base;
 }
 
+/**
+ * Lien d'une créature vers la rencontre qui l'a déployée : { id, nom,
+ * deploiement, le }. `deploiement` distingue deux déploiements de la même
+ * rencontre ; le nom est celui du moment du déploiement.
+ */
+function normaliserLienRencontre(lien) {
+  if (!lien || typeof lien !== 'object') return null;
+  const texte = (valeur, max) => (typeof valeur === 'string' ? valeur.trim().slice(0, max) : '');
+  const deploiement = texte(lien.deploiement, 80);
+  if (!deploiement) return null;
+  return {
+    id: texte(lien.id, 120),
+    nom: texte(lien.nom, 120) || 'Rencontre',
+    deploiement,
+    le: texte(lien.le, 40)
+  };
+}
+
 function normaliserMob(input = {}, options = {}) {
   const now = new Date().toISOString();
   const categorie = CATEGORIES_MOB[input.categorie] ? input.categorie : 'autre';
@@ -142,6 +160,16 @@ function normaliserMob(input = {}, options = {}) {
     spells: Array.isArray(input.spells) ? clone(input.spells) : [],
     competences: Array.isArray(input.competences) ? clone(input.competences) : [],
     notes: input.notes || '',
+    // V2.4 : initiative prévue par une rencontre préparée (pré-remplie dans
+    // la préparation du combat). null : à saisir par le MJ.
+    initiative: (() => {
+      if (input.initiative === null || input.initiative === undefined || input.initiative === '') return null;
+      const n = Math.round(Number(input.initiative));
+      return Number.isFinite(n) ? Math.max(-99, Math.min(999, n)) : null;
+    })(),
+    // V2.4 : rencontre qui a déployé cette créature (sous-liste nommée comme
+    // la rencontre sur la carte MJ et le tableau blanc). null sinon.
+    rencontre: normaliserLienRencontre(input.rencontre),
     createdAt: input.createdAt || now,
     updatedAt: now
   };
@@ -157,7 +185,9 @@ function getMobTemplateById(id) {
 
 function createMobTemplate(data) {
   // Un modèle n'a pas de filiation : c'est lui la référence.
-  const template = normaliserMob({ ...data, templateId: '' }, { id: generateId('mobtpl') });
+  // Un modèle n'appartient à aucune rencontre (cas d'une créature déployée
+  // promue en modèle).
+  const template = normaliserMob({ ...data, templateId: '', rencontre: null }, { id: generateId('mobtpl') });
   if (!ecrireTemplatesAfter(() => templates.push(template))) return null;
   return clone(template);
 }

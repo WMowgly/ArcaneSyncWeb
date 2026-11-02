@@ -341,6 +341,9 @@
       border: 1px solid #e0cfa9; border-radius: 7px; background: #fffdf6;
     }
     .initiative-ordre li.courant { border: 2px solid #8b5e3c; background: #f3e3c8; font-weight: 600; }
+    /* V2.4 : créature morte, sautée par « Suivant ». */
+    .initiative-ordre li.hors-jeu { opacity: .55; }
+    .initiative-ordre li.hors-jeu .nom { text-decoration: line-through; }
     .initiative-ordre .valeur { min-width: 34px; text-align: center; font-weight: 700; color: #5c3b21; }
     .initiative-ordre .nom { flex: 1; }
     .initiative-ordre .cache { font-size: .8em; color: #7a2222; }
@@ -1196,7 +1199,8 @@
       ]);
       const lignes = [
         ...joueurs.map(j => ({ kind: 'player', entityId: j.id, nom: j.nom })),
-        ...mobs.filter(m => (Number(m.hp?.current) || 0) > 0).map(m => ({ kind: 'mob', entityId: m.id, nom: m.nom }))
+        ...mobs.filter(m => (Number(m.hp?.current) || 0) > 0)
+          .map(m => ({ kind: 'mob', entityId: m.id, nom: m.nom, valeur: Number.isInteger(m.initiative) ? m.initiative : null }))
       ];
       definirOrdreManuel(false);
       document.getElementById('initiative-preparation-liste').innerHTML = lignes.length
@@ -1204,7 +1208,7 @@
             <td class="cellule-poignee"><span class="poignee" title="Saisir pour déplacer" aria-hidden="true">⠿</span></td>
             <td><input type="checkbox" data-a="participe" checked aria-label="${escapeHtml(l.nom)} participe"></td>
             <td class="${l.kind === 'mob' ? 'initiative-mob' : ''}">${l.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(l.nom)}</td>
-            <td><input type="number" data-a="valeur" min="-99" max="999" step="1" placeholder="0" aria-label="Initiative de ${escapeHtml(l.nom)}"></td>
+            <td><input type="number" data-a="valeur" min="-99" max="999" step="1" placeholder="0"${l.valeur !== null && l.valeur !== undefined ? ` value="${l.valeur}"` : ''} aria-label="Initiative de ${escapeHtml(l.nom)}"></td>
             <td>${l.kind === 'mob' ? `<input type="checkbox" data-a="cache" aria-label="Cacher ${escapeHtml(l.nom)}">` : ''}</td>
           </tr>`).join('')
         : '<tr><td colspan="5">Aucun combattant disponible.</td></tr>';
@@ -1295,14 +1299,14 @@
       // Ordre modifiable à la main : glisser une ligne, ou ▲ ▼.
       const dernier = etat.entrees.length - 1;
       document.getElementById('initiative-ordre').innerHTML = etat.entrees.map((e, i) => `
-        <li class="${i === etat.tour ? 'courant' : ''}" data-id="${escapeHtml(e.id)}" data-index="${i}">
+        <li class="${i === etat.tour ? 'courant' : ''}${e.horsJeu ? ' hors-jeu' : ''}" data-id="${escapeHtml(e.id)}" data-index="${i}"${e.horsJeu ? ' title="Morte : sautée par « Suivant »"' : ''}>
           <span class="poignee" title="Saisir pour déplacer" aria-hidden="true">⠿</span>
           <span class="deplacer">
             <button type="button" data-a="monter" title="Monter" aria-label="Monter ${escapeHtml(e.nom)}" ${i === 0 ? 'disabled' : ''}>▲</button>
             <button type="button" data-a="descendre" title="Descendre" aria-label="Descendre ${escapeHtml(e.nom)}" ${i === dernier ? 'disabled' : ''}>▼</button>
           </span>
           <span class="valeur">${e.valeur}</span>
-          <span class="nom">${e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
+          <span class="nom">${e.horsJeu ? '💀' : e.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(e.nom)}${e.cache ? ' <span class="cache">(cachée)</span>' : ''}</span>
           ${e.kind === 'mob' ? `<button type="button" data-a="cacher" title="${e.cache ? 'Montrer sur l’Écran' : 'Cacher de l’Écran'}">${e.cache ? '👁 Montrer' : '🙈 Cacher'}</button>` : ''}
           <button type="button" data-a="retirer" title="Retirer du combat">✖</button>
         </li>`).join('');
@@ -1371,6 +1375,8 @@
     rendreReordonnable(ordreInitiative, 'li[data-id]', (ligne, position) => deplacerCombattant(ligne.dataset.id, position));
 
     socket.on('initiativeUpdated', () => chargerInitiative());
+    // Une créature qui meurt est signalée (et sera sautée) sans attendre le tour suivant.
+    socket.on('mobUpdated', () => chargerInitiative());
     chargerInitiative();
 
     document.getElementById('public-note-save')?.addEventListener('click', savePublicNoteMJ);
