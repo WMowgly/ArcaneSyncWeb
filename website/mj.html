@@ -45,18 +45,7 @@
       background: #fff4d6; color: #5c3b21; font-weight: 600;
     }
     .mj-cta:hover { background: #f0e2c4; }
-    /* Choix de ce qu'affiche l'Écran partagé. */
-    .mj-ecran {
-      display: inline-flex; align-items: center; gap: 0; white-space: nowrap;
-      border: 2px solid #8b5e3c; border-radius: 8px; overflow: hidden; background: #fff4d6;
-    }
-    .mj-ecran span { padding: 0 10px; font-weight: 600; color: #5c3b21; }
-    .mj-ecran button {
-      margin: 0; padding: 9px 12px; border: 0; border-left: 1px solid #8b5e3c; border-radius: 0;
-      background: transparent; color: #5c3b21; font: inherit; cursor: pointer;
-    }
-    .mj-ecran button:hover { background: #f0e2c4; }
-    .mj-ecran button[aria-pressed="true"] { background: #8b5e3c; color: #fefae0; font-weight: 600; }
+    /* Choix de ce qu'affiche l'Écran partagé : choix-ecran.js (V2.4). */
 
     /* Neutralisation de la largeur fixe et des effets de vignette. */
     .mj-page section.card {
@@ -505,6 +494,7 @@
 
 </style>
   <script src="outils-communs.js"></script>
+  <script src="choix-ecran.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -516,11 +506,7 @@
            « Ouvrir ma carte » de l'Interface de Jeu du joueur. -->
       <a class="mj-cta" href="modification.html">📚 Données de jeu</a>
       <a class="mj-cta" href="map.html">🗺️ Ouvrir la carte de jeu</a>
-      <div class="mj-ecran" role="group" aria-label="Affichage de l'Écran partagé">
-        <span>🖥️ Écran</span>
-        <button type="button" data-ecran-vue="carte" aria-pressed="false">Carte</button>
-        <button type="button" data-ecran-vue="tableau" aria-pressed="false">Tableau blanc</button>
-      </div>
+      <div id="choix-ecran"></div>
     </header>
 
     <!-- Ordre de la page : ce qui sert pendant la partie d'abord
@@ -1089,28 +1075,8 @@
     socket.on('publicNotesUpdated', () => loadPublicNotesMJ());
 
     // Écran partagé : le MJ choisit la vue ; tous les écrans la suivent.
-    function afficherVueEcran(vue) {
-      document.querySelectorAll('[data-ecran-vue]').forEach(bouton =>
-        bouton.setAttribute('aria-pressed', String(bouton.dataset.ecranVue === vue)));
-    }
-    socket.on('ecranVue', ({ vue } = {}) => afficherVueEcran(vue));
-    fetch('/api/ecran').then(r => r.json()).then(({ vue }) => afficherVueEcran(vue)).catch(() => {});
-    document.querySelectorAll('[data-ecran-vue]').forEach(bouton => {
-      bouton.addEventListener('click', async () => {
-        try {
-          const response = await fetch('/api/ecran', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vue: bouton.dataset.ecranVue })
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.message || `Erreur HTTP ${response.status}`);
-          afficherVueEcran(result.vue);
-        } catch (error) {
-          alert(`Impossible de changer l'affichage de l'Écran : ${error.message}`);
-        }
-      });
-    });
+    // Ce qu'affiche l'Écran partagé (composant commun, choix-ecran.js).
+    ArcaneChoixEcran.monter(document.getElementById('choix-ecran'), socket);
 
     // ---------------------------------------------------------------
     // Repos court / long : règles modifiables, personnages au choix.

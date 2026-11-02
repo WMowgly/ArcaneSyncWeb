@@ -1,6 +1,6 @@
 {
   "id": "session_active",
-  "lastSaved": "2026-11-01T20:54:14.039Z",
+  "lastSaved": "2026-11-02T00:02:43.403Z",
   "players": {
     "char_d2721b53731f417da61f2709b44f684b": {
       "id": "char_d2721b53731f417da61f2709b44f684b",
@@ -639,8 +639,8 @@
         "id": "player:char_d3716eaec00e4dd59c29d950599d1dad",
         "type": "player",
         "entityId": "char_d3716eaec00e4dd59c29d950599d1dad",
-        "x": 0.27,
-        "y": 0.18
+        "x": 0.3341708542713568,
+        "y": 0.13995535033089773
       },
       "player:char_44eafd6d703f46fba8002fbc779050bf": {
         "id": "player:char_44eafd6d703f46fba8002fbc779050bf",
@@ -660,8 +660,8 @@
         "id": "mob:mob_49678c78fe979cf6",
         "type": "mob",
         "entityId": "mob_49678c78fe979cf6",
-        "x": 0.72,
-        "y": 0.18,
+        "x": 0.7267587939698492,
+        "y": 0.16450892175946916,
         "visibleToPlayers": true
       },
       "mob:mob_addc23d8e0371487": {
@@ -670,7 +670,7 @@
         "entityId": "mob_addc23d8e0371487",
         "x": 0.87,
         "y": 0.18,
-        "visibleToPlayers": true
+        "visibleToPlayers": false
       },
       "mob:mob_edc09436bc24386c": {
         "id": "mob:mob_edc09436bc24386c",
@@ -684,22 +684,22 @@
         "id": "mob:mob_887fe0184f5eb319",
         "type": "mob",
         "entityId": "mob_887fe0184f5eb319",
-        "x": 0.27,
-        "y": 0.36,
+        "x": 0.26821608040201006,
+        "y": 0.416741064616612,
         "visibleToPlayers": true
       },
       "mob:mob_e5ff92276d1dc841": {
         "id": "mob:mob_e5ff92276d1dc841",
         "type": "mob",
         "entityId": "mob_e5ff92276d1dc841",
-        "x": 0.72,
-        "y": 0.18,
+        "x": 0.7638190954773869,
+        "y": 0.4212053503308978,
         "visibleToPlayers": true
       }
     }
   },
   "activeMapId": "map_97a4b44fe820c8b5",
-  "ecranVue": "carte",
+  "ecranVue": "tableau",
   "ecranMasquerMorts": true,
   "ecranGroupe": true,
   "ecranCadrage": null,

@@ -30,6 +30,7 @@ const {
   ensureSceneState,
   resetScenePositions,
   setMobSceneVisibility,
+  setSceneTokenVisibility,
   getEcranVue,
   setEcranVue,
   getEcranReglages,
@@ -256,8 +257,29 @@ app.post('/api/session/scene/mob/:id/toggle-visibility',(req,res)=>{
   });
 });
 
+// V2.4 — Bascule de visibilité de n'importe quel pion du tableau blanc
+// (« player:… » ou « mob:… »), comme le bouton Cacher / Montrer de la carte.
+app.post('/api/session/scene/token/:tokenId/toggle-visibility', (req, res) => {
+  if (refuserSiPasMj(req, res)) return;
+  const scene = ensureSceneState();
+  const token = scene.tokens[req.params.tokenId];
+  if (!token) return res.status(404).json({ message: 'Pion introuvable dans la scène.' });
+
+  // Le serveur décide du prochain état (aucun booléen lu dans la requête).
+  const nextVisible = token.visibleToPlayers === false;
+  const result = setSceneTokenVisibility(req.params.tokenId, nextVisible);
+  if (!result.success) return res.status(500).json({ message: result.message });
+
+  io.emit('sceneUpdated');
+  res.json({
+    message: nextVisible ? 'Pion rendu visible aux joueurs.' : 'Pion caché aux joueurs.',
+    tokenId: req.params.tokenId,
+    visibleToPlayers: nextVisible
+  });
+});
+
 // V2.3 : PUT /api/session/scene/mob/:id/visibility, sans appelant, a été
-// retirée ; le tableau blanc utilise la bascule ci-dessus.
+// retirée ; le tableau blanc utilise les bascules ci-dessus.
 
 app.post('/api/session/scene/reset',(req,res)=>{
   if (refuserSiPasMj(req, res)) return;

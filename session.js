@@ -132,17 +132,26 @@ function getSceneState(viewerRole='viewer', viewerPlayerId=null) {
   const allTokens = buildSceneTokens(raw.tokens || {});
   const isMj = viewerRole === 'mj';
 
-  // Les mobs cachés restent dans la session et restent visibles par le MJ,
-  // mais ne sont jamais envoyés aux joueurs.
+  // Les pions cachés restent dans la session et restent visibles par le MJ,
+  // mais ne sont jamais envoyés aux joueurs ni à l'Écran. V2.4 : comme sur
+  // la carte, un personnage peut être caché aussi ; son joueur voit toujours
+  // son propre pion.
   const visibleTokens = Object.fromEntries(
     Object.entries(allTokens).filter(([, token]) =>
-      token.type !== 'mob' || token.visibleToPlayers !== false || isMj
+      isMj
+      || token.visibleToPlayers !== false
+      || (token.type === 'player' && viewerPlayerId && token.entityId === viewerPlayerId)
     )
   );
 
   const visibleMobIds = new Set(
     Object.values(visibleTokens)
       .filter(token => token.type === 'mob')
+      .map(token => token.entityId)
+  );
+  const visiblePlayerIds = new Set(
+    Object.values(visibleTokens)
+      .filter(token => token.type === 'player')
       .map(token => token.entityId)
   );
 
@@ -152,10 +161,15 @@ function getSceneState(viewerRole='viewer', viewerPlayerId=null) {
     gridSize: raw.gridSize || DEFAULT_SCENE.gridSize,
     tokens: visibleTokens,
     entities: {
-      players: Object.values(session.players || {}).map(player => ({
+      // V2.4 : le mana n'est transmis qu'au MJ (liste des participants),
+      // comme sur la carte.
+      players: Object.values(session.players || {})
+        .filter(player => isMj || visiblePlayerIds.has(player.id))
+        .map(player => ({
         id: player.id,
         nom: player.nom || 'Joueur',
         hp: player.hp || {current:0,max:0},
+        ...(isMj ? { mana: player.mana || {current:0,max:0} } : {}),
         statuts: player.statuts || []
       })),
       mobs: Object.values(session.mobs || {})
@@ -164,7 +178,7 @@ function getSceneState(viewerRole='viewer', viewerPlayerId=null) {
           id: mob.id,
           nom: mob.nom || 'Mob',
           hp: mob.hp || {current:0,max:0},
-          mana: mob.mana || {current:0,max:0},
+          ...(isMj ? { mana: mob.mana || {current:0,max:0} } : {}),
           statut: mob.statut || 'vivant'
         }))
     }
@@ -172,10 +186,19 @@ function getSceneState(viewerRole='viewer', viewerPlayerId=null) {
 }
 
 function setMobSceneVisibility(mobId, visible) {
+  return setSceneTokenVisibility(`mob:${mobId}`, visible);
+}
+
+/**
+ * V2.4 — Visibilité d'un pion du tableau blanc (créature ou personnage),
+ * comme sur la carte. Un pion caché n'est envoyé qu'au MJ (et, pour un
+ * personnage, à son propre joueur).
+ */
+function setSceneTokenVisibility(tokenId, visible) {
   const scene = ensureSceneState();
-  const tokenId = `mob:${mobId}`;
   const token = scene.tokens[tokenId];
-  if (!token) return {success:false,message:'Mob introuvable dans la scène.'};
+  if (!token) return {success:false,message:'Pion introuvable dans la scène.'};
+  const mobId = token.entityId;
 
   const nouvelleSession = {
     ...session,
@@ -1093,6 +1116,7 @@ module.exports = {
   moveSceneToken,
   resetScenePositions,
   setMobSceneVisibility,
+  setSceneTokenVisibility,
   getActiveMapId,
   setActiveMapId,
   getEcranVue,

@@ -33,6 +33,8 @@ function buildMapEntities() {
       id: joueur.id,
       nom: etat.nom || joueur.nom,
       hp: etat.hp || { current: 0, max: 0 },
+      // Mana : transmis à la vue MJ seulement (voir map.entiteAffichable).
+      mana: etat.mana || { current: 0, max: 0 },
       statuts: etat.statuts || []
     };
   });

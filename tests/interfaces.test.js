@@ -80,7 +80,14 @@ console.log('PASS: tableau blanc — traits et textes validés, enregistrés, re
   const ecran = source('website', 'ecran.html');
   verifier(ecran.includes("socket.on('ecranVue'") && !ecran.includes('<button type="button" data-vue='),
     'L\'Écran doit suivre la vue du MJ, sans boutons de choix.');
-  verifier(source('website', 'mj.html').includes('data-ecran-vue="tableau"'), 'Commande de l\'Écran absente de l\'interface MJ.');
+  // V2.4 : sélecteur commun (choix-ecran.js) monté par la page MJ, la carte
+  // MJ et le tableau blanc.
+  verifier(source('website', 'choix-ecran.js').includes('data-ecran-vue="tableau"'), 'Commande de l\'Écran absente du composant commun.');
+  for (const page of ['mj.html', 'map.html', 'tableau.html']) {
+    const html = source('website', page);
+    verifier(html.includes('<script src="choix-ecran.js"></script>') && html.includes('ArcaneChoixEcran.monter('),
+      `Commande de l'Écran absente de ${page}.`);
+  }
 }
 console.log('PASS: Écran — vue choisie par le MJ, enregistrée, diffusée, appliquée');
 

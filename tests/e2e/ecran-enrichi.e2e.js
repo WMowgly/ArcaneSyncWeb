@@ -37,6 +37,13 @@ module.exports = {
       'bandeau : barres et chiffres (« PV / max »)');
     verifier(await page.evaluer(`!document.querySelector('#groupe').textContent.includes('Ogre lointain')`), 'bandeau : personnages seulement');
     verifier(await barreVerte(true) === false, `Écran : pas de barre de vie au-dessus des jetons (${pleinsPv.nom})`);
+    const manaEcran = await page.evaluer(`new Promise(resoudre => {
+      const s = io({ query: { role: 'ecran' } });
+      s.on('mapState', m => { resoudre(Object.values(m?.tokens || {}).some(t => t.entity && 'mana' in t.entity)); s.close(); });
+      s.emit('mapRequest');
+      setTimeout(() => { resoudre(null); s.close(); }, 5000);
+    })`);
+    verifier(manaEcran === false, 'Écran : le mana des personnages et créatures n\'est pas transmis');
     verifier(await page.evaluer(`(() => {
         const carte = document.getElementById('vue-carte').getBoundingClientRect();
         const groupe = document.getElementById('groupe').getBoundingClientRect();
@@ -111,6 +118,28 @@ module.exports = {
     verifier(await page.attendre(`window.ArcaneRendu.state.actifId === 'player:${second.id}'`, 20),
       'carte MJ : anneau doré sur le combattant actif');
     verifier(await barreVerte(false) === true, `carte MJ : la barre de vie reste au-dessus des jetons (${pleinsPv.nom})`);
+
+    // Liste « Sur la carte » : jauges PV et Mana chiffrées, états, combattant actif.
+    const fiche = id => `#entity-list .entity-item[data-id="${id}"]`;
+    await page.attendre(`!!document.querySelector('${fiche('player:' + premier.id)}')`, 20);
+    const sess = lireJson('session.json').players[premier.id];
+    const textes = await page.evaluer(`(() => {
+      const f = document.querySelector('${fiche('player:' + premier.id)}');
+      return { pv: f.querySelector('.jauge-pv .jauge-texte').textContent, mana: f.querySelector('.jauge-mana .jauge-texte').textContent };
+    })()`);
+    const attenduMana = sess.mana?.max > 0 ? `${sess.mana.current} / ${sess.mana.max}` : '—';
+    verifier(textes.pv === `${sess.hp.current} / ${sess.hp.max}` && textes.mana === attenduMana,
+      `liste MJ : PV et Mana chiffrés (${JSON.stringify(textes)})`);
+    verifier(await page.evaluer(`document.querySelector('${fiche('player:' + second.id)}').classList.contains('actif')`),
+      'liste MJ : la fiche du combattant actif est mise en avant');
+    verifier(await page.evaluer(`[...document.querySelectorAll('#entity-list .entity-item.mob')].every(f => f.querySelector('.jauge-mana'))`),
+      'liste MJ : le mana des créatures est affiché aussi');
+    verifier(await page.evaluer(`[...document.querySelectorAll('#entity-list .entity-item.mort')].every(f => f.textContent.includes('Mort'))
+        && document.querySelectorAll('#entity-list .entity-item.mort').length > 0`),
+      'liste MJ : les créatures mortes sont signalées');
+    verifier(await page.evaluer(`[...document.querySelectorAll('#entity-list .entite-actions button[data-act="stats"]')].every(b => b.textContent.includes('PV / PM'))`),
+      'liste MJ : boutons nommés (PV / PM, Voir, Cacher)');
+    await page.capture('carte-mj-liste.png', '#entity-list');
     verifier(await page.evaluer("document.getElementById('opt-ecran-suivre').checked === false && document.getElementById('opt-ecran-groupe').checked === true"),
       'carte MJ : « Suivre » décoché, bandeau coché');
 

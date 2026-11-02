@@ -24,7 +24,7 @@ module.exports = {
 
     // Un rafraîchissement de la liste (déplacement d'un pion) garde l'état.
     await api('PUT', `/api/maps/${mapId}/tokens/mob:${mobId}`, { visibleToPlayers: false }, mj);
-    verifier(await page.attendre(`${groupe('MOB')}.textContent.includes('caché') && !${groupe('PJ')}.open`, 20),
+    verifier(await page.attendre(`${groupe('MOB')}.querySelector('.entity-item.cache') && !${groupe('PJ')}.open`, 20),
       'MJ : groupe replié conservé quand la liste se rafraîchit');
 
     // Rechargement de la page : l'état est mémorisé dans le navigateur.

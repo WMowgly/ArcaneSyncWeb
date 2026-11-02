@@ -52,6 +52,7 @@
     }
     .map-header{display:flex;align-items:baseline;gap:10px;padding:8px 2px 10px;flex:0 0 auto}
     .map-header h1{font-size:1.15rem;white-space:nowrap}
+    .map-header #choix-ecran{align-self:center;flex:0 0 auto}
     #active-map-name{font-size:12px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     /* V1.13.10 : le bandeau doit etre impossible a manquer — on regarde
        une carte qui n’est PAS celle du MJ, et l’edition est bloquee. */
@@ -178,11 +179,35 @@
     .case-ecran input{width:auto;margin:0}
     #best-gerer{display:inline-flex;align-items:center;padding:3px 8px;border:1px solid var(--bord);border-radius:5px;background:var(--actif);color:var(--encre);text-decoration:none;font-size:12px;white-space:nowrap}
 
-    .entity-list{display:grid;gap:5px;max-height:44vh;overflow-y:auto}
-    .entity-item{border:1px solid var(--bord-clair);border-radius:6px;padding:6px 7px;background:#fffdf6;font-size:11.5px}
-    .entity-item strong{display:block;font-size:12px;margin-bottom:3px}
-    .entity-item .row{margin-top:5px}
-    .entity-item button{padding:3px 5px;font-size:10.5px}
+    .entity-list{display:grid;gap:5px;max-height:44vh;overflow-y:auto;overflow-x:hidden}
+    #entity-list{max-height:62vh}
+    /* V2.4 — Fiches de la liste « Sur la carte » : nom lisible, jauges PV et
+       Mana chiffrées, états en pastilles, boutons nommés. */
+    .entity-item{border:1px solid var(--bord-clair);border-left:4px solid #3f6287;border-radius:6px;padding:6px 8px 7px;background:#fffdf6;font-size:11.5px}
+    .entity-item.mob{border-left-color:#7d3f3f}
+    .entity-item.cache{border-style:dashed;border-left-style:solid;background:#faf6ee}
+    .entity-item.mort{opacity:.62}
+    .entity-item.selection{outline:2px solid #2b4c7e;outline-offset:1px}
+    .entity-item.actif{border-color:#d4af37;border-left-color:#d4af37;background:#fff6d9;box-shadow:0 0 0 2px rgba(212,175,55,.35)}
+    .entite-tete{display:flex;align-items:baseline;gap:6px}
+    .entite-nom{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .entity-item.actif .entite-nom::before{content:'▶ ';color:#9a7410}
+    .entite-pos{flex:0 0 auto;font-size:10.5px;color:#7a6650}
+    .entity-item{min-width:0}
+    .jauge{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:5px;margin-top:4px}
+    .jauge-nom{font-size:10.5px;font-weight:700;color:#5c3b21}
+    .jauge-barre{position:relative;height:15px;border:1px solid #8b5e3c;border-radius:8px;background:#e9e2d2;overflow:hidden}
+    .jauge-remplie{position:absolute;inset:0 auto 0 0}
+    .jauge-mana .jauge-remplie{background:linear-gradient(to right,#3c5e8b,#5485bc)}
+    .jauge-texte{position:absolute;inset:0;text-align:center;line-height:13px;font-size:11px;font-weight:700;color:#fff;
+      text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+    .entite-etats{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+    .entite-etats .badge{margin:0}
+    .badge.etat-statut{background:#efe0f3;color:#5b2d6b}
+    .badge.etat-grave{background:#f7e2e2;color:#7a2222;font-weight:700}
+    .entite-actions{display:flex;gap:4px;margin-top:6px}
+    .entite-actions button{flex:1 1 0;min-width:0;padding:4px 2px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+    .entite-actions button.icone{flex:0 0 30px}
     .entity-groupe-titre{margin:4px 0 0;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;user-select:none}
     .entity-groupe-titre::-webkit-details-marker{display:none}
     .entity-groupe-titre::before{content:'▾';display:inline-block;width:10px;transition:transform .15s}
@@ -216,6 +241,7 @@
     }
   </style>
   <script src="outils-communs.js"></script>
+  <script src="choix-ecran.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -224,6 +250,8 @@
     <header class="map-header">
       <h1>🗺️ Carte — MJ</h1>
       <span id="active-map-name">aucune carte active</span>
+      <!-- Ce qu'affiche l'Écran partagé (choix-ecran.js), comme sur le tableau blanc. -->
+      <div id="choix-ecran"></div>
       <div id="vue-joueur-barre" hidden>
         <span>👁 Vue de <b id="vue-joueur-nom"></b></span>
         <button id="btn-quitter-vue-joueur" type="button">✖ Revenir à la vue MJ</button>
@@ -1420,6 +1448,12 @@
       renderer.setSelection(type === 'token' ? id : null);
       renderInspector();
       majIndicationAura();
+      // V2.4 : la fiche du pion choisi est soulignée et amenée en vue dans la liste.
+      renderEntityList();
+      if (type === 'token') {
+        [...document.querySelectorAll('#entity-list .entity-item')].find(f => f.dataset.id === id)
+          ?.scrollIntoView({ block: 'nearest' });
+      }
     }
 
     /**
@@ -1844,19 +1878,48 @@
         });
       });
 
+      // Jauge chiffrée « actuel / max » ; PV colorés selon ce qu'il reste.
+      function jauge(classe, libelle, ressource) {
+        const max = Math.max(0, Number(ressource?.max) || 0);
+        const cur = Math.max(0, Math.min(Number(ressource?.current) || 0, max));
+        const part = max > 0 ? cur / max : 0;
+        const couleur = classe === 'jauge-pv'
+          ? `background:${part > 0.5 ? '#3f7d4a' : part > 0.2 ? '#b08948' : '#8b3e3c'}` : '';
+        return `<div class="jauge ${classe}">
+            <span class="jauge-nom">${libelle}</span>
+            <span class="jauge-barre"><span class="jauge-remplie" style="width:${Math.round(part * 100)}%;${couleur}"></span>
+              <span class="jauge-texte">${max > 0 ? `${cur} / ${max}` : '—'}</span></span>
+          </div>`;
+      }
+
       function ligneEntite(token) {
+        const entite = token.entity || {};
+        const mob = token.kind === 'mob';
+        const mort = mob && entite.statut === 'mort';
+        const actif = renderer.state.actifId === token.id;
+        const id = escapeHtml(token.id);
+        const etats = [
+          ...(mort ? ['<span class="badge etat-grave">💀 Mort</span>'] : []),
+          ...(entite.statuts || []).map(s => `<span class="badge ${s.id === 'agonie' ? 'etat-grave' : 'etat-statut'}">${escapeHtml(s.nom || s.id)}</span>`),
+          ...(token.visibleToPlayers ? [] : ['<span class="badge hidden-badge">🙈 Caché aux joueurs</span>'])
+        ];
+        const choisi = renderer.state.selectedId === token.id;
+        const classes = ['entity-item', mob ? 'mob' : 'pj', token.visibleToPlayers ? '' : 'cache', mort ? 'mort' : '', actif ? 'actif' : '', choisi ? 'selection' : '']
+          .filter(Boolean).join(' ');
         return `
-          <div class="entity-item">
-            <strong>${token.kind === 'mob' ? '👹' : '👤'} ${escapeHtml(token.label || token.entity?.nom || token.entityId)}</strong>
-            <span class="badge">${token.x},${token.y}</span>
-            <span class="badge">PV ${escapeHtml(token.entity?.hp?.current ?? '?')}/${escapeHtml(token.entity?.hp?.max ?? '?')}</span>
-            ${token.visibleToPlayers ? '' : '<span class="badge hidden-badge">caché</span>'}
-            <div class="row">
-              <button data-act="stats" data-id="${escapeHtml(token.id)}" title="PV / PM">⚙️</button>
-              <button data-act="focus" data-id="${escapeHtml(token.id)}" title="Inspecter">🔍</button>
-              <button data-act="toggle" data-id="${escapeHtml(token.id)}">${token.visibleToPlayers ? '🚫 Cacher' : '👁️ Montrer'}</button>
-              ${token.kind === 'mob'
-                ? `<button data-act="remove" data-id="${escapeHtml(token.id)}" class="danger">✖</button>` : ''}
+          <div class="${classes}" data-id="${id}">
+            <div class="entite-tete">
+              <span class="entite-nom" title="${escapeHtml(token.label || entite.nom || token.entityId)}">${mob ? '👹' : '👤'} ${escapeHtml(token.label || entite.nom || token.entityId)}</span>
+              <span class="entite-pos" title="Position (colonne, ligne)">📍 ${token.x},${token.y}</span>
+            </div>
+            ${jauge('jauge-pv', 'PV', entite.hp)}
+            ${jauge('jauge-mana', 'Mana', entite.mana)}
+            ${etats.length ? `<div class="entite-etats">${etats.join('')}</div>` : ''}
+            <div class="entite-actions">
+              <button data-act="stats" data-id="${id}" title="Modifier les PV, le mana et les statuts">PV / PM</button>
+              <button data-act="focus" data-id="${id}" title="Sélectionner sur la carte">Voir</button>
+              <button data-act="toggle" data-id="${id}" title="${token.visibleToPlayers ? 'Cacher aux joueurs et à l\'Écran' : 'Montrer aux joueurs et à l\'Écran'}">${token.visibleToPlayers ? 'Cacher' : 'Montrer'}</button>
+              ${mob ? `<button data-act="remove" data-id="${id}" class="danger icone" title="Retirer de la carte">✖</button>` : ''}
             </div>
           </div>`;
       }
@@ -2134,6 +2197,9 @@
       await reglerEcran({ cadrage: zone }, `L'Écran montre maintenant ${zone.w} × ${zone.h} cases.`);
     }
 
+    // Ce qu'affiche l'Écran : carte ou tableau blanc (composant commun).
+    ArcaneChoixEcran.monter(document.getElementById('choix-ecran'), socket);
+
     document.getElementById('btn-ecran-cadrer').addEventListener('click', () => setTool('ecran'));
     document.getElementById('btn-ecran-entiere').addEventListener('click', () =>
       reglerEcran({ cadrage: null }, "L'Écran montre toute la carte.").catch(error => setStatus(error.message, true)));
@@ -2147,6 +2213,7 @@
       try {
         const etat = await (await fetch('/api/initiative?role=mj')).json();
         renderer.setOption('actifId', etat.actif ? (etat.entrees?.[etat.tour]?.id || null) : null);
+        renderEntityList();
       } catch (_) { /* hors ligne : l'anneau reviendra à la reconnexion */ }
     }
     socket.on('initiativeUpdated', chargerCombattantActif);

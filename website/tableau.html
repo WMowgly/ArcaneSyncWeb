@@ -3,195 +3,207 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scène de jeu — ArcaneSync V1.10</title>
+  <title>Tableau blanc — ArcaneSync</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="img/icon.png">
   <link rel="stylesheet" href="polices/polices.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="mj-code.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 0 12px 30px;
-      background: #fdf6e3;
-      color: #3b2f1e;
-      font-family: 'Uncial Antiqua', cursive;
+    /* V2.4 — Même habillage que la carte MJ : panneaux clairs à fin liseré,
+       police système lisible, Uncial Antiqua réservée aux titres. */
+    :root{
+      --parchemin:#fdf6e3; --panneau:#fffaf0; --bord:#8b5e3c; --bord-clair:#d9c8a9;
+      --encre:#3b2f1e; --actif:#e6d9b8; --danger:#9b2c2c;
     }
-    .scene-container {
-      width: min(1500px, 100%);
-      margin: 20px auto;
+    body{
+      margin:0; padding:0 0 16px; background:var(--parchemin); color:var(--encre);
+      font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',sans-serif;
+      font-size:13px; line-height:1.4;
     }
-    .scene-header {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .scene-header h1 { margin-bottom: 6px; }
-    .scene-status {
-      min-height: 22px;
-      font-size: 0.95rem;
-    }
-    .scene-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 280px;
-      gap: 15px;
-      align-items: start;
-    }
-    .scene-board-card,
-    .scene-sidebar {
-      background: rgba(255,248,220,0.96);
-      border: 3px solid #8b5e3c;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(59,47,30,0.18);
-    }
-    .scene-board-card { padding: 12px; }
-    .scene-sidebar { padding: 15px; }
-    .scene-toolbar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .scene-toolbar button,
-    .scene-toolbar select,
-    .scene-toolbar input {
-      font-family: inherit;
-      border: 1px solid #8b5e3c;
-      border-radius: 5px;
-      padding: 7px 9px;
-      background: #fff6e1;
-    }
-    .scene-toolbar .tool-active {
-      box-shadow: inset 0 0 0 2px #8b5e3c;
-      font-weight: bold;
-    }
-    .scene-canvas-wrap {
-      width: 100%;
-      overflow: hidden;
-      border: 2px solid #8b5e3c;
-      border-radius: 8px;
-      background: #fff;
-      position: relative;
-      touch-action: none;
-    }
-    #scene-canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      cursor: crosshair;
-      touch-action: none;
-    }
-    .scene-help {
-      margin: 8px 0 0;
-      font-size: 0.88rem;
-      opacity: 0.85;
-    }
-    .scene-sidebar h2,
-    .scene-sidebar h3 { margin-top: 0; }
-    .scene-token-list {
-      display: grid;
-      gap: 7px;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-    .scene-token-item {
-      border: 1px solid #8b5e3c;
-      border-radius: 7px;
-      padding: 8px;
-      background: #fff6e1;
-    }
-    .scene-token-item strong { display: block; }
-    .scene-token-item small { display: block; margin-top: 3px; }
-    .scene-role-badge {
-      display: inline-block;
-      padding: 3px 7px;
-      border-radius: 10px;
-      background: #eadfcf;
-      font-size: 0.82rem;
-    }
-    .scene-legend {
-      margin-top: 15px;
-      padding-top: 12px;
-      border-top: 1px solid #8b5e3c;
-      font-size: 0.9rem;
-    }
-    .scene-legend div { margin: 5px 0; }
+    h1,h2,h3{font-family:'Uncial Antiqua',cursive;font-weight:400;margin:0}
+
+    .scene-container{width:100%;max-width:1900px;margin:0 auto;padding:0 10px;box-sizing:border-box}
+    .tableau-tete{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:8px 2px 10px}
+    .tableau-tete h1{font-size:1.15rem;white-space:nowrap}
+    .role-badge{font-size:11.5px;padding:2px 9px;border-radius:10px;background:#efe4cd;border:1px solid var(--bord-clair)}
+    #choix-ecran[hidden]{display:none}
+    .statut{margin-left:auto;font-size:11.5px;padding:3px 10px;border-radius:11px;background:#f1e7d0;
+      border:1px solid var(--bord-clair);white-space:nowrap;max-width:46ch;overflow:hidden;text-overflow:ellipsis}
+
+    .scene-layout{display:grid;grid-template-columns:minmax(0,1fr) 258px;gap:10px;align-items:start}
+    .panel{background:var(--panneau);border:1px solid var(--bord);border-radius:8px;padding:9px;
+      box-shadow:0 1px 3px rgba(59,47,30,.12);box-sizing:border-box;min-width:0}
+
+    button,select,input{font-family:inherit;font-size:12px;color:var(--encre);
+      border:1px solid var(--bord);border-radius:5px;padding:5px 7px;background:#fffdf6}
+    button{cursor:pointer;white-space:nowrap}
+    button:hover:not(:disabled){background:var(--actif)}
+    button.danger{background:#f7e2e2;border-color:var(--danger);color:#7a2222}
+    button[hidden]{display:none}
+
+    /* Barre d'outils : boutons carrés et nuancier, comme sur la carte MJ. */
+    .scene-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 11px;margin-bottom:8px;
+      padding-bottom:8px;border-bottom:1px solid var(--bord-clair)}
+    .outils{display:flex;gap:4px}
+    .tool-btn{width:38px;padding:7px 0;font-size:16px;line-height:1;text-align:center}
+    .tool-btn.active{background:var(--actif);box-shadow:inset 0 0 0 2px var(--bord)}
+    .separateur{width:1px;align-self:stretch;background:var(--bord-clair)}
+    .nuancier{display:flex;gap:6px;align-items:center}
+    .nuancier button{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid #fffdf6;box-shadow:0 0 0 1px var(--bord)}
+    .nuancier button.active{box-shadow:0 0 0 3px var(--encre)}
+    .scene-toolbar label{display:inline-flex;align-items:center;gap:5px;margin:0;font-size:11.5px}
+    #draw-color{width:34px;height:26px;padding:2px}
+    #draw-size{width:52px}
+    .espace{flex:1 1 auto}
+
+    .scene-canvas-wrap{width:100%;overflow:hidden;border:1px solid var(--bord-clair);border-radius:6px;
+      background:#fff;position:relative;touch-action:none}
+    #scene-canvas{display:block;width:100%;height:auto;cursor:grab;touch-action:none}
+    .hint{font-size:11px;opacity:.75;line-height:1.35;margin:6px 0 0}
+
+    /* Participants (MJ) : mêmes fiches que la liste de la carte MJ. */
+    .scene-sidebar h2{font-size:1rem;margin-bottom:8px}
+    .scene-token-list{display:grid;gap:5px;max-height:70vh;overflow-y:auto;overflow-x:hidden}
+    /* Groupes PJ / MOB repliables, comme sur la carte MJ. */
+    .entity-groupe-titre{margin:4px 0 0;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;user-select:none}
+    .entity-groupe-titre::-webkit-details-marker{display:none}
+    .entity-groupe-titre::before{content:'▾';display:inline-block;width:10px;transition:transform .15s}
+    .entity-groupe:not([open]) > .entity-groupe-titre::before{transform:rotate(-90deg)}
+    .entity-groupe-corps{display:grid;gap:5px;margin-top:5px}
+    .badge{display:inline-block;padding:1px 6px;border-radius:8px;background:#efe4cd;font-size:10px}
+    .badge.hidden-badge{background:#f7e2e2;color:#7a2222}
+    .badge.etat-statut{background:#efe0f3;color:#5b2d6b}
+    .badge.etat-grave{background:#f7e2e2;color:#7a2222;font-weight:700}
+    .entity-item{min-width:0;border:1px solid var(--bord-clair);border-left:4px solid #3f6287;border-radius:6px;
+      padding:6px 8px 7px;background:#fffdf6;font-size:11.5px}
+    .entity-item.mob{border-left-color:#7d3f3f}
+    .entity-item.cache{border-style:dashed;border-left-style:solid;background:#faf6ee}
+    .entity-item.mort{opacity:.62}
+    .entity-item.actif{border-color:#d4af37;border-left-color:#d4af37;background:#fff6d9;box-shadow:0 0 0 2px rgba(212,175,55,.35)}
+    .entite-nom{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .entity-item.actif .entite-nom::before{content:'▶ ';color:#9a7410}
+    .jauge{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:5px;margin-top:4px}
+    .jauge-nom{font-size:10.5px;font-weight:700;color:#5c3b21}
+    .jauge-barre{position:relative;height:15px;border:1px solid #8b5e3c;border-radius:8px;background:#e9e2d2;overflow:hidden}
+    .jauge-remplie{position:absolute;inset:0 auto 0 0}
+    .jauge-mana .jauge-remplie{background:linear-gradient(to right,#3c5e8b,#5485bc)}
+    .jauge-texte{position:absolute;inset:0;text-align:center;line-height:13px;font-size:11px;font-weight:700;color:#fff;
+      text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+    .entite-etats{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+    .entity-item{cursor:pointer}
+    .entity-item.selection{outline:2px solid #2b4c7e;outline-offset:1px}
+    .entite-actions{display:flex;gap:4px;margin-top:6px}
+    .entite-actions button{flex:1 1 0;min-width:0;padding:4px 2px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+
+    /* Fenêtre « PV / PM » : la même que sur la carte MJ. */
+    #entity-modal[hidden]{display:none}
+    .modal-fond{position:fixed;inset:0;background:rgba(30,24,14,.55);z-index:50;
+      display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal{background:var(--panneau);border:2px solid var(--bord);border-radius:10px;
+      width:min(430px,100%);max-height:92vh;overflow-y:auto;box-sizing:border-box;
+      box-shadow:0 8px 28px rgba(30,24,14,.4);padding:14px 16px 16px;text-align:left}
+    .modal h2{font-size:15px;margin-bottom:2px}
+    .modal .modal-sous{font-size:11.5px;opacity:.7;margin:0 0 10px}
+    .modal label{display:block;font-size:11px;opacity:.75;margin:7px 0 2px}
+    .modal label.check{display:flex;align-items:center;gap:6px;font-size:11.5px;opacity:1;margin:9px 0 0}
+    .modal label.check input{width:auto;padding:0}
+    .modal .row{display:flex;gap:5px}
+    .modal .row>*{flex:1 1 0;min-width:0}
+    .modal .full{width:100%;box-sizing:border-box}
+    .modal-res{border:1px solid var(--bord-clair);border-radius:7px;padding:9px;margin-bottom:9px;background:#fffdf6}
+    .modal-res h4{margin:0 0 6px;font-size:12px;font-family:inherit;font-weight:600}
+    .modal-jauge{height:12px;border:1px solid var(--encre);border-radius:3px;background:#fff;overflow:hidden;margin-bottom:6px}
+    .modal-jauge>div{height:100%;transition:width .2s}
+    .modal-pas{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+    .modal-pas button{flex:1 1 0;padding:4px 0;font-size:11px}
+    .modal-actions{display:flex;gap:8px;margin-top:12px}
+    .modal-actions button{flex:1 1 0;padding:8px 0}
+    .modal-actions .primary{background:#e9dcbc;font-weight:600}
+    .statut-liste{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+    .statut-pastille{font-size:11px;padding:4px 9px;border-radius:11px}
+    .statut-pastille.actif{background:#f7e2e2;border-color:var(--danger);color:#7a2222;font-weight:600}
+
     /* La liste des participants est réservée au MJ : joueurs et spectateurs
        ne voient que le tableau, sur toute la largeur. */
-    body:not(.role-mj) .scene-sidebar { display: none; }
-    body:not(.role-mj) .scene-layout { grid-template-columns: minmax(0, 1fr); }
-    @media (max-width: 900px) {
-      .scene-layout { grid-template-columns: 1fr; }
-      .scene-sidebar { order: 2; }
+    body:not(.role-mj) .scene-sidebar{display:none}
+    body:not(.role-mj) .scene-layout{grid-template-columns:minmax(0,1fr)}
+    @media (max-width:900px){
+      .scene-layout{grid-template-columns:1fr}
+      .scene-sidebar{order:2}
     }
-    @media (max-width: 600px) {
-      body { padding: 0 6px 20px; }
-      .scene-toolbar > * { flex: 1 1 auto; }
+    @media (max-width:600px){
+      .scene-container{padding:0 6px}
+      .espace{display:none}
     }
 
     /* Intégré dans l'Écran partagé (?embed=1) : le tableau seul. */
-    body.integre { padding: 0 8px; }
-    body.integre .scene-container { margin: 8px auto; }
-    body.integre .scene-header,
+    body.integre{padding:0}
+    body.integre .scene-container{padding:8px}
+    body.integre .tableau-tete,
     body.integre .scene-toolbar,
-    body.integre .scene-help,
-    body.integre #scene-role { display: none; }
+    body.integre .scene-help{display:none}
+    body.integre .scene-board-card{border:0;box-shadow:none;padding:0;background:transparent}
   </style>
   <script src="outils-communs.js"></script>
+  <script src="choix-ecran.js"></script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
 
   <main class="scene-container">
-    <header class="scene-header">
-      <h1>🗺️ Scène de jeu</h1>
-      <div id="scene-status" class="scene-status">Connexion au tableau...</div>
+    <header class="tableau-tete">
+      <h1>📝 Tableau blanc</h1>
+      <span id="scene-role" class="role-badge">Mode spectateur</span>
+      <div id="choix-ecran" hidden></div>
+      <span id="scene-status" class="statut">Connexion au tableau…</span>
     </header>
 
     <div class="scene-layout">
-      <section class="scene-board-card">
+      <section class="scene-board-card panel">
         <div class="scene-toolbar">
-          <button id="tool-move" type="button" class="tool-active">✋ Déplacer</button>
-          <button id="tool-draw" type="button">✏️ Dessiner</button>
-          <button id="tool-text" type="button">📝 Texte</button>
-          <button id="tool-erase" type="button">🧽 Gomme</button>
-          <label>Taille
-            <input id="draw-size" type="number" min="1" max="50" value="3" style="width:55px">
-          </label>
-          <label>Couleur
-            <input id="draw-color" type="color" value="#000000">
-          </label>
-          <button id="clear-drawing" type="button">🗑️ Effacer dessins</button>
-          <button id="reset-positions" type="button" hidden>↺ Réinitialiser positions</button>
-          <button id="download-scene" type="button">📥 Export PNG</button>
+          <div class="outils" role="group" aria-label="Outils">
+            <button id="tool-move" type="button" class="tool-btn active" title="Déplacer un pion">✋</button>
+            <button id="tool-draw" type="button" class="tool-btn" title="Dessiner">✏️</button>
+            <button id="tool-text" type="button" class="tool-btn" title="Écrire un texte">📝</button>
+            <button id="tool-erase" type="button" class="tool-btn" title="Gomme : efface les dessins, jamais les pions">🧽</button>
+          </div>
+          <span class="separateur"></span>
+          <div class="nuancier" id="nuancier" role="group" aria-label="Couleur du tracé">
+            <button type="button" data-couleur="#1f1a14" title="Noir" style="background:#1f1a14" class="active"></button>
+            <button type="button" data-couleur="#9b2c2c" title="Rouge" style="background:#9b2c2c"></button>
+            <button type="button" data-couleur="#2b4c7e" title="Bleu" style="background:#2b4c7e"></button>
+            <button type="button" data-couleur="#2f6b3a" title="Vert" style="background:#2f6b3a"></button>
+            <button type="button" data-couleur="#c08a1e" title="Or" style="background:#c08a1e"></button>
+            <button type="button" data-couleur="#ffffff" title="Blanc" style="background:#ffffff"></button>
+          </div>
+          <label title="Autre couleur"><input id="draw-color" type="color" value="#1f1a14"></label>
+          <label>Épaisseur <input id="draw-size" type="number" min="1" max="50" value="3"></label>
+          <span class="espace"></span>
+          <button id="clear-drawing" type="button" class="danger" title="Effacer tous les dessins et textes, pour toute la table">🗑️ Effacer les dessins</button>
+          <button id="reset-positions" type="button" hidden title="Replacer les pions à leur position de départ">↺ Replacer les pions</button>
+          <button id="download-scene" type="button" title="Exporter le tableau en image PNG">📥 PNG</button>
         </div>
 
         <div class="scene-canvas-wrap">
           <canvas id="scene-canvas" width="1200" height="675"></canvas>
         </div>
 
-        <p class="scene-help">
-          <strong>Déplacer :</strong> faites glisser un token.
-          Le MJ peut déplacer tous les tokens ; un joueur peut déplacer uniquement son propre personnage.
-          <strong>Visibilité :</strong> seul le MJ peut cacher ou révéler un mob déjà créé.
-          Un mob caché reste dans la partie mais n'est pas envoyé aux joueurs.
-          Les dessins et textes sont synchronisés en direct et enregistrés : ils restent après un rechargement, jusqu'à « Effacer dessins » (MJ).
-        </p>
+        <p class="hint scene-help" id="tool-hint"></p>
       </section>
 
-      <aside class="scene-sidebar">
-        <span id="scene-role" class="scene-role-badge">Mode spectateur</span>
+      <aside class="scene-sidebar panel">
         <h2>Participants</h2>
         <div id="scene-token-list" class="scene-token-list">
-          <p>Chargement...</p>
+          <p class="hint">Chargement…</p>
         </div>
-        <div class="scene-legend">
-          <div>👤 Joueur = personnage du groupe</div>
-          <div>👹 Mob = adversaire actif</div>
-          <div>🖱️ Le déplacement est synchronisé immédiatement.</div>
-        </div>
+        <p class="hint">Cliquez un pion ou une fiche pour le sélectionner ; double-cliquez un pion pour ses PV / PM. Un pion caché reste dans la partie mais n'est montré ni aux joueurs ni à l'Écran.</p>
       </aside>
     </div>
   </main>
+
+  <!-- Fenêtre « PV / PM » (MJ), comme sur la carte. -->
+  <div id="entity-modal" hidden></div>
 
   <script src="navbar.js"></script>
   <script>
@@ -233,13 +245,17 @@
     let dragTokenId = null;
     let activeTool = 'move';
     let lastPoint = null;
-    let selectedColor = '#000000';
+    let selectedColor = '#1f1a14';
     let drawSize = 3;
     // Dessins enregistrés (traits et textes) : redessinés à chaque rendu de
     // la scène, et conservés par le serveur pour les écrans qui arrivent.
     let traces = [];
     let traitEnCours = null;
     const FOND = '#fffdf7';
+    // V2.4 — Combattant dont c'est le tour : anneau doré (« player:… »).
+    let actifId = null;
+    // V2.4 — Pion sélectionné par le MJ (sur le tableau ou dans la liste).
+    let selectionId = null;
 
     roleEl.textContent =
       role === 'mj' ? '🎲 Mode MJ' :
@@ -247,6 +263,12 @@
       '👁️ Mode spectateur';
     resetButton.hidden = role !== 'mj';
     clearDrawingButton.hidden = role !== 'mj';
+
+    // V2.4 — Le MJ choisit d'ici aussi ce qu'affiche l'Écran partagé.
+    if (role === 'mj') {
+      document.getElementById('choix-ecran').hidden = false;
+      ArcaneChoixEcran.monter(document.getElementById('choix-ecran'), socket);
+    }
 
     function escapeHtml(value) { return ArcaneOutils.echapper(value); }   // outils-communs.js
 
@@ -302,75 +324,106 @@
       return (scene.entities.mobs || []).find(x=>x.id===token.entityId);
     }
 
-    // Dessine le pion et RENVOIE son étiquette, posée ensuite par
-    // dessinerEtiquettes sans chevaucher les autres (V2.3).
+    // V2.4 — Pions au style de la carte MJ. Barre de vie pour le MJ seulement
+    // (comme sur la carte : ni l'Écran ni les joueurs ne voient les PV des
+    // créatures). Renvoie l'étiquette, posée ensuite sans chevauchement.
+    const RAYON = 22;
     function renderToken(token) {
       const x=token.x*scene.width;
       const y=token.y*scene.height;
       const entity=entityForToken(token);
       const isMob=token.type==='mob';
-      const radius=27;
+      const mort=isMob && entity?.statut==='mort';
+      // Pion caché (créature ou personnage, V2.4) : pointillés et « CACHÉ ».
+      const cache=token.visibleToPlayers===false;
+      const actif=actifId===token.id;
+
+      ctx.save();
+      ctx.globalAlpha=mort ? 0.55 : 1;
+
+      if(actif){
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x,y,RAYON+5,0,Math.PI*2);
+        ctx.shadowColor='rgba(255,200,40,0.9)';
+        ctx.shadowBlur=14;
+        ctx.strokeStyle='#d4af37';
+        ctx.lineWidth=5;
+        ctx.stroke();
+        ctx.restore();
+      }
 
       ctx.beginPath();
-      ctx.arc(x,y,radius,0,Math.PI*2);
+      ctx.arc(x,y,RAYON,0,Math.PI*2);
       ctx.fillStyle=isMob ? '#7d3f3f' : '#3f6287';
       ctx.fill();
-      ctx.lineWidth=3;
-      ctx.strokeStyle='#3b2f1e';
+      const selectionne=selectionId===token.id;
+      ctx.lineWidth=selectionne ? 4 : 2.5;
+      ctx.strokeStyle=selectionne ? '#d4af37' : '#3b2f1e';
+      if(cache) ctx.setLineDash([5,4]);
       ctx.stroke();
+      ctx.setLineDash([]);
 
       ctx.fillStyle='#fff';
-      ctx.font='bold 17px sans-serif';
+      ctx.font=`${RAYON}px sans-serif`;
       ctx.textAlign='center';
       ctx.textBaseline='middle';
-      ctx.fillText(isMob ? '👹' : '👤',x,y);
+      ctx.fillText(isMob ? '👹' : '👤',x,y+1);
 
-      const name=entity?.nom || (isMob?'Mob':'Joueur');
-      const label=name.length>18 ? `${name.slice(0,17)}…` : name;
-
-      if(entity?.hp) {
+      if(role==='mj' && entity?.hp) {
         const max=Math.max(1,Number(entity.hp.max)||1);
         const current=Math.max(0,Number(entity.hp.current)||0);
         const pct=Math.max(0,Math.min(1,current/max));
+        const by=y-RAYON-9;
         ctx.fillStyle='#fff';
-        ctx.fillRect(x-27,y-40,54,7);
-        ctx.fillStyle='#8b3e3c';
-        ctx.fillRect(x-27,y-40,54*pct,7);
+        ctx.fillRect(x-RAYON,by,RAYON*2,6);
+        ctx.fillStyle=pct>0.5?'#3f7d4a':pct>0.2?'#b08948':'#8b3e3c';
+        ctx.fillRect(x-RAYON,by,RAYON*2*pct,6);
         ctx.strokeStyle='#3b2f1e';
-        ctx.strokeRect(x-27,y-40,54,7);
+        ctx.lineWidth=1;
+        ctx.strokeRect(x-RAYON,by,RAYON*2,6);
       }
 
-      if(isMob && token.visibleToPlayers === false) {
-        ctx.fillStyle='#6b4b2f';
-        ctx.font='bold 12px sans-serif';
-        ctx.fillText('CACHÉ',x,y-51);
-      } else if(isMob && entity?.statut==='mort') {
-        ctx.fillStyle='#3b2f1e';
-        ctx.font='bold 13px sans-serif';
-        ctx.fillText('MORT',x,y-51);
+      if(cache || mort){
+        ctx.fillStyle=cache ? '#9b2c2c' : '#3b2f1e';
+        ctx.font='bold 10px sans-serif';
+        ctx.fillText(cache ? 'CACHÉ' : 'MORT',x,y-RAYON-16);
       }
-      return { label, x, y };
+      ctx.restore();
+
+      const name=entity?.nom || (isMob?'Mob':'Joueur');
+      const label=name.length>18 ? `${name.slice(0,17)}…` : name;
+      return {
+        label, x, y, actif, alpha: mort ? 0.55 : 1,
+        // Le pion, sa barre et son marqueur : aucune étiquette ne les couvre.
+        zone: { x: x-RAYON-5, y: y-RAYON-22, w: (RAYON+5)*2, h: RAYON*2+27 }
+      };
     }
 
     // V2.3 — Noms sans chevauchement : sous le pion, au-dessus, puis plus bas.
     function dessinerEtiquettes(etiquettes) {
-      const posees=[];
+      const posees=etiquettes.map(e=>e.zone);
       const chevauche=r=>posees.some(p=>r.x<p.x+p.w+1&&p.x<r.x+r.w+1&&r.y<p.y+p.h+1&&p.y<r.y+r.h+1);
-      ctx.font='bold 15px sans-serif';
+      ctx.font='bold 13px sans-serif';
       etiquettes.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(e=>{
-        const w=Math.max(70,ctx.measureText(e.label).width+16), h=23, x=e.x-w/2;
-        const places=[e.y+31,e.y-80,e.y+55,e.y+79].map(y=>({x,y,w,h}));
-        const place=places.find(r=>!chevauche(r))||places[0];
+        const w=ctx.measureText(e.label).width+12, h=20, x=e.x-w/2;
+        const dessous=e.y+RAYON+6;
+        const places=[dessous,e.y-RAYON-24-h,dessous+h+2,dessous+2*(h+2)]
+          .filter(y=>y>=0 && y+h<=scene.height).map(y=>({x,y,w,h}));
+        const place=places.find(r=>!chevauche(r))||places[0]||{x,y:dessous,w,h};
         posees.push(place);
-        ctx.fillStyle='rgba(255,248,220,0.92)';
+        ctx.save();
+        ctx.globalAlpha=e.alpha;
+        ctx.fillStyle=e.actif ? 'rgba(250,222,130,0.97)' : 'rgba(255,248,220,0.92)';
         ctx.fillRect(place.x,place.y,w,h);
-        ctx.strokeStyle='#8b5e3c';
-        ctx.lineWidth=1;
+        ctx.strokeStyle=e.actif ? '#9a7410' : '#8b5e3c';
+        ctx.lineWidth=e.actif ? 2 : 1;
         ctx.strokeRect(place.x,place.y,w,h);
         ctx.fillStyle='#3b2f1e';
         ctx.textAlign='center';
         ctx.textBaseline='middle';
-        ctx.fillText(e.label,e.x,place.y+h/2);
+        ctx.fillText(e.label,e.x,place.y+h/2+1);
+        ctx.restore();
       });
     }
 
@@ -432,57 +485,100 @@
       cctx.restore();
     }
 
+    // Jauge chiffrée « actuel / max », comme sur la carte MJ.
+    function jauge(classe, libelle, ressource) {
+      const max=Math.max(0,Number(ressource?.max)||0);
+      const cur=Math.max(0,Math.min(Number(ressource?.current)||0,max));
+      const part=max>0 ? cur/max : 0;
+      const couleur=classe==='jauge-pv' ? `background:${part>0.5?'#3f7d4a':part>0.2?'#b08948':'#8b3e3c'}` : '';
+      return `<div class="jauge ${classe}">
+          <span class="jauge-nom">${libelle}</span>
+          <span class="jauge-barre"><span class="jauge-remplie" style="width:${Math.round(part*100)}%;${couleur}"></span>
+            <span class="jauge-texte">${max>0 ? `${cur} / ${max}` : '—'}</span></span>
+        </div>`;
+    }
+
+    // Groupes PJ / MOB repliés par le MJ, mémorisés dans ce navigateur.
+    const CLE_GROUPES_REPLIES='arcanesync.tableau.groupesReplies';
+    const groupesReplies=new Set((()=>{
+      try{ return JSON.parse(localStorage.getItem(CLE_GROUPES_REPLIES)) || []; }catch(_){ return []; }
+    })());
+
     function renderTokenList() {
       const tokens=Object.values(scene.tokens||{});
       if(!tokens.length){
-        tokenList.innerHTML='<p>Aucun participant visible dans la scène.</p>';
+        tokenList.innerHTML='<p class="hint">Aucun participant visible dans la scène.</p>';
         return;
       }
 
-      tokenList.innerHTML=tokens.map(token=>{
+      const fiche = token => {
         const entity=entityForToken(token);
         const isMob=token.type==='mob';
-        const hp=entity?.hp ? `${entity.hp.current ?? 0} / ${entity.hp.max ?? 0}` : '—';
-        // Statut (vivant / mort) affiché pour les créatures seulement : les
-        // statuts des personnages ont été retirés.
-        const status=isMob ? (entity?.statut || 'vivant') : '';
-        const visibility = isMob && token.visibleToPlayers === false
-          ? '<small><strong>🚫 Caché aux joueurs</strong></small>'
+        const mort=isMob && entity?.statut==='mort';
+        const cache=isMob && token.visibleToPlayers===false;
+        const etats=[
+          ...(mort ? ['<span class="badge etat-grave">💀 Mort</span>'] : []),
+          ...(entity?.statuts||[]).map(s=>`<span class="badge ${s.id==='agonie'?'etat-grave':'etat-statut'}">${escapeHtml(s.nom||s.id)}</span>`),
+          ...(token.visibleToPlayers===false ? ['<span class="badge hidden-badge">🙈 Caché aux joueurs</span>'] : [])
+        ];
+        // Actions du MJ, comme sur la carte : PV / PM, Voir, Cacher / Montrer
+        // (personnages compris).
+        const id=escapeHtml(token.id);
+        const masque=token.visibleToPlayers===false;
+        const visibilityButton = role === 'mj'
+          ? `<div class="entite-actions">
+              <button type="button" data-act="stats" data-id="${id}" title="Modifier les PV, le mana${isMob ? ' et les statuts' : ''}">PV / PM</button>
+              <button type="button" data-act="focus" data-id="${id}" title="Sélectionner sur le tableau">Voir</button>
+              <button type="button" data-scene-visibility="${id}" title="${masque ? 'Montrer aux joueurs' : 'Cacher aux joueurs'} et à l'Écran">${masque ? 'Montrer' : 'Cacher'}</button>
+            </div>`
           : '';
-
-        const visibilityButton = isMob && role === 'mj'
-          ? `<button type="button" data-scene-visibility="${escapeHtml(token.entityId)}">
-              ${token.visibleToPlayers === false ? '👁️ Montrer aux joueurs' : '🚫 Cacher aux joueurs'}
-             </button>`
-          : '';
-
-        return `<div class="scene-token-item">
-          <strong>${isMob?'👹':'👤'} ${escapeHtml(entity?.nom || (isMob?'Mob':'Joueur'))}</strong>
-          <small>HP : ${escapeHtml(hp)}</small>
-          ${status ? `<small>Statut : ${escapeHtml(status)}</small>` : ''}
-          ${visibility}
+        const classes=['entity-item',isMob?'mob':'pj',masque?'cache':'',mort?'mort':'',actifId===token.id?'actif':'',selectionId===token.id?'selection':''].filter(Boolean).join(' ');
+        return `<div class="${classes}" data-id="${escapeHtml(token.id)}">
+          <span class="entite-nom" title="${escapeHtml(entity?.nom||'')}">${isMob?'👹':'👤'} ${escapeHtml(entity?.nom || (isMob?'Mob':'Joueur'))}</span>
+          ${jauge('jauge-pv','PV',entity?.hp)}
+          ${entity?.mana ? jauge('jauge-mana','Mana',entity.mana) : ''}
+          ${etats.length ? `<div class="entite-etats">${etats.join('')}</div>` : ''}
           ${visibilityButton}
         </div>`;
-      }).join('');
+      };
+
+      const parNom=(a,b)=>(entityForToken(a)?.nom||'').localeCompare(entityForToken(b)?.nom||'');
+      const groupes=[
+        ['PJ', tokens.filter(t=>t.type!=='mob').sort(parNom)],
+        ['MOB', tokens.filter(t=>t.type==='mob').sort(parNom)]
+      ].filter(([,liste])=>liste.length);
+      // Chaque groupe se replie ; l'état survit aux rafraîchissements et aux
+      // rechargements (mémorisé dans le navigateur), comme sur la carte MJ.
+      tokenList.innerHTML=groupes.map(([titre,liste])=>`
+        <details class="entity-groupe" data-groupe="${titre}" ${groupesReplies.has(titre) ? '' : 'open'}>
+          <summary class="entity-groupe-titre">${titre} <span class="badge">${liste.length}</span></summary>
+          <div class="entity-groupe-corps">${liste.map(fiche).join('')}</div>
+        </details>`).join('');
+      tokenList.querySelectorAll('details.entity-groupe').forEach(groupe=>{
+        groupe.addEventListener('toggle',()=>{
+          if(groupe.open) groupesReplies.delete(groupe.dataset.groupe);
+          else groupesReplies.add(groupe.dataset.groupe);
+          try{ localStorage.setItem(CLE_GROUPES_REPLIES, JSON.stringify([...groupesReplies])); }catch(_){ /* stockage indisponible */ }
+        });
+      });
 
       if(role === 'mj'){
+        // Clic sur une fiche : sélection, comme un clic sur le pion.
+        tokenList.querySelectorAll('.entity-item').forEach(item=>{
+          item.addEventListener('click',event=>{
+            if(event.target.closest('button')) return;
+            selectionner(item.dataset.id);
+          });
+        });
+        tokenList.querySelectorAll('[data-act="stats"]').forEach(button=>
+          button.addEventListener('click',()=>ouvrirModale(button.dataset.id)));
+        tokenList.querySelectorAll('[data-act="focus"]').forEach(button=>
+          button.addEventListener('click',()=>{ selectionner(button.dataset.id); canvas.scrollIntoView({block:'nearest',behavior:'smooth'}); }));
         tokenList.querySelectorAll('[data-scene-visibility]').forEach(button=>{
           button.addEventListener('click',async()=>{
-            const mobId=button.getAttribute('data-scene-visibility');
-            const token=scene.tokens[`mob:${mobId}`];
-            if(!token) return;
-
             try{
               button.disabled=true;
-              const response=await fetch(`/api/session/scene/mob/${encodeURIComponent(mobId)}/toggle-visibility`,{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({role:'mj'})
-              });
-              const result=await response.json();
-              if(!response.ok) throw new Error(result.message||'Impossible de modifier la visibilité.');
-              setStatus(result.message);
-              await loadScene();
+              await basculerVisibilite(button.getAttribute('data-scene-visibility'));
             }catch(error){
               setStatus(error.message,true);
             }finally{
@@ -492,6 +588,193 @@
         });
       }
     }
+
+    // Cacher / montrer un pion (créature ou personnage) aux joueurs et à
+    // l'Écran ; le serveur décide du nouvel état (toggle-visibility).
+    async function basculerVisibilite(tokenId){
+      if(!scene.tokens[tokenId]) return;
+      const response=await fetch(`/api/session/scene/token/${encodeURIComponent(tokenId)}/toggle-visibility`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({role:'mj'})
+      });
+      const result=await response.json();
+      if(!response.ok) throw new Error(result.message||'Impossible de modifier la visibilité.');
+      setStatus(result.message);
+      await loadScene();
+    }
+
+    // V2.4 — Sélection d'un pion par le MJ : bordure dorée sur le tableau et
+    // fiche soulignée (et amenée en vue) dans la liste, comme sur la carte.
+    function selectionner(tokenId){
+      selectionId=tokenId && scene.tokens[tokenId] ? tokenId : null;
+      composer();
+      renderTokenList();
+      if(selectionId){
+        [...tokenList.querySelectorAll('.entity-item')].find(f=>f.dataset.id===selectionId)
+          ?.scrollIntoView({block:'nearest'});
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Fenêtre « PV / PM » (MJ) : la même que sur la carte MJ.
+    // ---------------------------------------------------------------------
+    let catalogueStatuts=[];
+    let modaleTokenId=null;
+    if(role==='mj'){
+      fetch('/api/statuses').then(r=>r.json()).then(liste=>{ catalogueStatuts=Array.isArray(liste)?liste:[]; }).catch(()=>{});
+    }
+
+    const pourcentage=(courant,maximum)=>{
+      const max=Math.max(1,Number(maximum)||1);
+      return Math.max(0,Math.min(100,(Number(courant)||0)/max*100));
+    };
+
+    function blocRessource(cle,titre,teinte,valeurs){
+      const cur=Number(valeurs?.current ?? 0);
+      const max=Number(valeurs?.max ?? 0);
+      return `
+        <div class="modal-res">
+          <h4>${titre}</h4>
+          <div class="modal-jauge"><div data-jauge="${cle}" style="width:${pourcentage(cur,max)}%;background:${teinte}"></div></div>
+          <div class="row">
+            <div><label for="mod-${cle}-cur">Actuel</label><input id="mod-${cle}-cur" class="full" type="number" value="${cur}"></div>
+            <div><label for="mod-${cle}-max">Maximum</label><input id="mod-${cle}-max" class="full" type="number" min="0" value="${max}"></div>
+          </div>
+          <div class="modal-pas">
+            <button type="button" data-res="${cle}" data-delta="-5">−5</button>
+            <button type="button" data-res="${cle}" data-delta="-1">−1</button>
+            <button type="button" data-res="${cle}" data-delta="1">+1</button>
+            <button type="button" data-res="${cle}" data-delta="5">+5</button>
+            <button type="button" data-res="${cle}" data-plein="1">Max</button>
+          </div>
+        </div>`;
+    }
+
+    function majJauge(cle){
+      const cur=document.getElementById(`mod-${cle}-cur`);
+      const max=document.getElementById(`mod-${cle}-max`);
+      const jauge=document.querySelector(`[data-jauge="${cle}"]`);
+      if(cur && max && jauge) jauge.style.width=`${pourcentage(cur.value,max.value)}%`;
+    }
+
+    function fermerModale(){
+      modaleTokenId=null;
+      const conteneur=document.getElementById('entity-modal');
+      conteneur.hidden=true;
+      conteneur.innerHTML='';
+    }
+
+    function ouvrirModale(tokenId){
+      const token=scene.tokens[tokenId];
+      if(!token || role!=='mj') return;
+      modaleTokenId=tokenId;
+      selectionner(tokenId);
+      const entite=entityForToken(token) || {};
+      const estMob=token.type==='mob';
+      const appliques=new Set((entite.statuts||[]).map(s=>s.id));
+      const pastilles=!estMob ? '' : catalogueStatuts
+        .filter(cat=>cat.id!=='agonie')
+        .map(cat=>`<button type="button" class="statut-pastille${appliques.has(cat.id)?' actif':''}"
+            data-statut="${escapeHtml(cat.id)}" data-applique="${appliques.has(cat.id)}">${escapeHtml(cat.nom)}</button>`)
+        .join('');
+
+      const conteneur=document.getElementById('entity-modal');
+      conteneur.hidden=false;
+      conteneur.innerHTML=`
+        <div class="modal-fond" data-fermer="fond">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Propriétés du pion">
+            <h2>${estMob?'👹':'👤'} ${escapeHtml(entite.nom||token.entityId)}</h2>
+            <p class="modal-sous">${estMob ? `Créature de la partie active — ${escapeHtml(entite.statut||'vivant')}` : 'Personnage joueur'}</p>
+            ${estMob ? `<label style="margin-top:0">Statuts</label><div class="statut-liste">${pastilles}</div>` : ''}
+            ${blocRessource('hp','Points de vie','#8b3e3c',entite.hp)}
+            ${blocRessource('mana','Mana','#3c5e8b',entite.mana)}
+            <label class="check"><input type="checkbox" id="mod-visible" ${token.visibleToPlayers!==false?'checked':''}> Visible par les joueurs et l'Écran</label>
+            <p class="hint" id="mod-status"></p>
+            <div class="modal-actions">
+              <button id="mod-apply" class="primary" type="button">✔ Appliquer</button>
+              <button id="mod-cancel" type="button">✖ Annuler</button>
+            </div>
+            ${estMob
+              ? '<p class="hint">La fiche complète (stats, sorts, armes) reste éditable depuis l\'interface MJ.</p>'
+              : '<p class="hint">Les PV et le mana actuels sont des ressources de partie ; un maximum modifié l\'est aussi sur la fiche.</p>'}
+          </div>
+        </div>`;
+
+      conteneur.querySelectorAll('[data-res]').forEach(bouton=>{
+        bouton.addEventListener('click',()=>{
+          const cle=bouton.dataset.res;
+          const champ=document.getElementById(`mod-${cle}-cur`);
+          const maximum=Number(document.getElementById(`mod-${cle}-max`).value)||0;
+          champ.value=bouton.dataset.plein ? maximum
+            : Math.max(0,Math.min(maximum,(Number(champ.value)||0)+Number(bouton.dataset.delta)));
+          majJauge(cle);
+        });
+      });
+      ['hp','mana'].forEach(cle=>{
+        document.getElementById(`mod-${cle}-cur`).addEventListener('input',()=>majJauge(cle));
+        document.getElementById(`mod-${cle}-max`).addEventListener('input',()=>majJauge(cle));
+      });
+      conteneur.querySelectorAll('[data-statut]').forEach(pastille=>{
+        pastille.addEventListener('click',()=>basculerStatut(token,pastille.dataset.statut,pastille.dataset.applique==='true'));
+      });
+      document.getElementById('mod-cancel').addEventListener('click',fermerModale);
+      document.getElementById('mod-apply').addEventListener('click',appliquerModale);
+      conteneur.querySelector('[data-fermer="fond"]').addEventListener('click',event=>{
+        if(event.target===event.currentTarget) fermerModale();
+      });
+    }
+
+    async function basculerStatut(token,statutId,dejaApplique){
+      const base=`/api/mobs/${encodeURIComponent(token.entityId)}/statuses`;
+      try{
+        const response=dejaApplique
+          ? await fetch(`${base}/${encodeURIComponent(statutId)}`,{method:'DELETE'})
+          : await fetch(base,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({statutId})});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.message||'Statut non modifié.');
+        await loadScene();
+        ouvrirModale(token.id);   // la fenêtre repart de l'état à jour
+      }catch(error){
+        const etat=document.getElementById('mod-status');
+        if(etat){ etat.textContent=error.message; etat.style.color='#9b2c2c'; }
+      }
+    }
+
+    async function appliquerModale(){
+      const token=scene.tokens[modaleTokenId];
+      if(!token) return fermerModale();
+      const lire=id=>Number(document.getElementById(id).value)||0;
+      const hp={current:lire('mod-hp-cur'),max:lire('mod-hp-max')};
+      const mana={current:lire('mod-mana-cur'),max:lire('mod-mana-max')};
+      const bouton=document.getElementById('mod-apply');
+      const etat=document.getElementById('mod-status');
+      try{
+        bouton.disabled=true;
+        etat.textContent='Enregistrement…';
+        const response=token.type==='mob'
+          ? await fetch(`/api/mobs/${encodeURIComponent(token.entityId)}`,{
+              method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hp,mana})})
+          : await fetch('/api/session/player',{
+              method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({id:token.entityId,nouvellesDonnees:{hp,mana}})});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.message||'Enregistrement impossible.');
+        const visible=document.getElementById('mod-visible').checked;
+        if(visible!==(token.visibleToPlayers!==false)) await basculerVisibilite(token.id);
+        setStatus(`${entityForToken(token)?.nom||'Pion'} mis à jour.`);
+        fermerModale();
+        await loadScene();
+      }catch(error){
+        etat.textContent=error.message;
+        etat.style.color='#9b2c2c';
+        bouton.disabled=false;
+      }
+    }
+
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape' && modaleTokenId) fermerModale();
+    });
 
     function applyScene(nextScene) {
       if(!nextScene) return;
@@ -534,11 +817,20 @@
       socket.emit('tableauTrait',trait);
     }
 
+    // Outils : un intitulé court sous le tableau, comme sur la carte MJ.
+    const AIDES={
+      move: role==='mj'
+        ? 'Glissez un pion pour le déplacer (tous les pions).'
+        : 'Glissez votre pion pour le déplacer.',
+      draw: 'Glissez pour tracer. Visible en direct par toute la table, et enregistré.',
+      text: 'Cliquez pour poser un texte.',
+      erase: 'Glissez pour gommer les dessins : le fond et les pions ne sont jamais effacés.'
+    };
+
     function setTool(tool) {
       activeTool=tool;
-      document.querySelectorAll('.scene-toolbar button').forEach(b=>b.classList.remove('tool-active'));
-      const button=document.getElementById(`tool-${tool}`);
-      if(button)button.classList.add('tool-active');
+      document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active', b.id===`tool-${tool}`));
+      document.getElementById('tool-hint').textContent=AIDES[tool]||'';
       canvas.style.cursor=tool==='move'?'grab':tool==='erase'?'cell':'crosshair';
     }
 
@@ -549,7 +841,23 @@
     document.getElementById('draw-size').addEventListener('input',e=>{
       drawSize=Math.max(1,Math.min(50,Number(e.target.value)||1));
     });
-    document.getElementById('draw-color').addEventListener('input',e=>selectedColor=e.target.value);
+
+    // Couleur : nuancier de la carte MJ, ou couleur libre.
+    const choixCouleur=document.getElementById('draw-color');
+    function marquerNuancier(){
+      document.querySelectorAll('#nuancier button').forEach(b=>
+        b.classList.toggle('active', b.dataset.couleur.toLowerCase()===selectedColor.toLowerCase()));
+    }
+    choixCouleur.addEventListener('input',e=>{ selectedColor=e.target.value; marquerNuancier(); });
+    document.querySelectorAll('#nuancier button').forEach(bouton=>{
+      bouton.addEventListener('click',()=>{
+        selectedColor=bouton.dataset.couleur;
+        choixCouleur.value=selectedColor;
+        marquerNuancier();
+        if(activeTool==='move' || activeTool==='erase') setTool('draw');
+      });
+    });
+    setTool('move');
 
     canvas.addEventListener('pointerdown',event=>{
       event.preventDefault();
@@ -557,6 +865,7 @@
 
       if(activeTool==='move'){
         const token=tokenAt(point);
+        if(role==='mj') selectionner(token ? token.id : null);
         if(token && canMoveToken(token)){
           dragTokenId=token.id;
           canvas.setPointerCapture?.(event.pointerId);
@@ -606,6 +915,11 @@
         canvas.style.cursor='grab';
       }
     }
+    canvas.addEventListener('dblclick',event=>{
+      if(role!=='mj') return;
+      const token=tokenAt(canvasPoint(event));
+      if(token) ouvrirModale(token.id);
+    });
     canvas.addEventListener('pointerup',stopPointer);
     canvas.addEventListener('pointercancel',stopPointer);
     canvas.addEventListener('pointerleave',()=>{ if(drawing) stopPointer(); });
@@ -632,12 +946,27 @@
       link.click();
     });
 
+    // V2.4 — Combattant actif : vue complète pour le MJ, vue « table » sinon
+    // (une créature cachée n'y est jamais désignée).
+    async function chargerCombattantActif(){
+      try{
+        const etat=await (await fetch(`/api/initiative${role==='mj' ? '?role=mj' : ''}`)).json();
+        actifId=!etat.actif ? null
+          : role==='mj' ? (etat.entrees?.[etat.tour]?.id || null)
+          : (etat.courant || null);
+      }catch(_){ actifId=null; }
+      composer();
+      renderTokenList();
+    }
+
     socket.on('connect',()=>{
-      setStatus('🟢 Scène synchronisée en temps réel.');
+      setStatus('🟢 Tableau synchronisé.');
       socket.emit('stateSyncRequest');
       socket.emit('sceneRequest');
       socket.emit('tableauTracesRequest');
+      chargerCombattantActif();
     });
+    socket.on('initiativeUpdated',chargerCombattantActif);
 
     socket.on('tableauTraces',({traces:enregistrees}={})=>{
       traces=Array.isArray(enregistrees)?enregistrees:[];
